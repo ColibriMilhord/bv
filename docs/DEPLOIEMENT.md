@@ -1,0 +1,168 @@
+# Mise en production — bellevuedaveyron.fr
+
+Marche à suivre pour publier la version issue de la branche
+`claude/dev-scan-seo-ia-nwugpt` sur l'hébergement Hostinger.
+
+Comptez une quinzaine de minutes. **Suivez l'ordre des étapes** : l'étape 1
+conditionne le fonctionnement du site.
+
+---
+
+## ⚠ À lire avant de commencer
+
+Les mots de passe ont été sortis du code. `config/db.php` et
+`config/mail_config.php` ne contiennent plus aucun identifiant : ils les lisent
+désormais dans un fichier `config/secrets.php`, qui n'existe pas encore sur le
+serveur et qui n'est volontairement pas dans le dépôt.
+
+**Si vous téléversez les fichiers sans avoir créé `config/secrets.php` au
+préalable, le site perdra l'accès à la base de données et à l'envoi de mails.**
+D'où l'ordre : secrets d'abord, fichiers ensuite.
+
+---
+
+## Étape 1 — Créer `config/secrets.php` sur le serveur
+
+Dans le gestionnaire de fichiers Hostinger (hPanel → Fichiers → Gestionnaire de
+fichiers), ouvrir le dossier `config/` du site, créer un fichier nommé
+**`secrets.php`** et y coller ceci, en remplaçant les valeurs :
+
+```php
+<?php
+return [
+    'DB_HOST' => 'localhost',
+    'DB_NAME' => 'u424962071_rbellevue',
+    'DB_USER' => 'u424962071_rbellevue',
+    'DB_PASS' => 'le_mot_de_passe_de_la_base',
+
+    'SMTP_HOST'      => 'smtp.hostinger.com',
+    'SMTP_PORT'      => 465,
+    'SMTP_USER'      => 'reservation@bellevuedaveyron.fr',
+    'SMTP_PASS'      => 'le_mot_de_passe_de_la_boite',
+    'SMTP_FROM'      => 'reservation@bellevuedaveyron.fr',
+    'SMTP_FROM_NAME' => "Bellevue d'Aveyron",
+];
+```
+
+Les valeurs actuelles se retrouvent, si besoin, dans les anciens fichiers
+encore en ligne : `config/db.php` (variable `$password`) et
+`config/mail_config.php` (constante `SMTP_PASS`). **Lisez-les avant de
+téléverser quoi que ce soit**, puisque le téléversement va les remplacer.
+
+> **Profitez-en pour changer ces deux mots de passe.** Ils ont circulé en clair
+> dans le dépôt Git et restent lisibles dans son historique : les sortir du
+> code ne suffit pas à les rendre sûrs. Changez-les dans hPanel (base de
+> données et boîte e-mail), puis saisissez les nouvelles valeurs ici.
+
+---
+
+## Étape 2 — Sauvegarder l'existant
+
+Toujours dans le gestionnaire de fichiers Hostinger : sélectionner le dossier
+du site, **Compresser** en `.zip`, puis télécharger l'archive sur votre
+ordinateur. C'est votre filet de sécurité, à conserver quelques semaines.
+
+Sauvegarder également la base : hPanel → Bases de données → phpMyAdmin →
+onglet **Exporter** → Exécuter.
+
+---
+
+## Étape 3 — Récupérer les fichiers à publier
+
+Sur GitHub, sélectionner la branche **`claude/dev-scan-seo-ia-nwugpt`**, puis
+bouton vert **« Code » → « Download ZIP »**. Décompresser sur votre ordinateur.
+
+---
+
+## Étape 4 — Téléverser
+
+Copier le contenu du dossier décompressé vers la racine du site sur le serveur
+(`public_html/` ou équivalent), en écrasant les fichiers existants.
+
+**Quatre points de vigilance :**
+
+1. **Les fichiers commençant par un point.** `config/.htaccess` et
+   `ARCHIVE/.htaccess` protègent des dossiers sensibles. La plupart des clients
+   FTP les masquent par défaut : dans FileZilla, menu **Serveur → Forcer
+   l'affichage des fichiers cachés**. Sans eux, la protection n'est pas posée.
+
+2. **Ne pas écraser `config/secrets.php`.** Le fichier créé à l'étape 1 n'est
+   pas dans l'archive : il doit rester tel quel.
+
+3. **Créer le dossier `cache/`** à la racine du site s'il n'existe pas, et le
+   laisser accessible en écriture (permissions 755). Il sert au cache de
+   l'agenda. En cas d'impossibilité, le site fonctionne quand même, simplement
+   sans cache.
+
+4. **Trois fichiers sont à supprimer** du serveur, s'ils y sont encore :
+   `check_db.php`, `fetch_datatourisme.php` (scripts de debug qui exposaient le
+   schéma de la base et la clé Datatourisme) et `bellevue_debug_mail.log` (il
+   contient des adresses e-mail de clients, à la racine web).
+
+Les dossiers `docs/` et `tools/` peuvent être téléversés ou non : ils ne
+servent qu'à la documentation et à la maintenance, et `robots.txt` interdit
+déjà leur indexation.
+
+---
+
+## Étape 5 — Vérifier
+
+Dans l'ordre, en notant tout ce qui cloche :
+
+| À ouvrir | Attendu |
+|---|---|
+| `https://bellevuedaveyron.fr/` | Page d'accueil complète, **tarifs et calendrier affichés** (preuve que la base répond) |
+| `https://bellevuedaveyron.fr/decouvrir.php` | Page Découvrir, cartes et agenda de proximité affichés |
+| `https://bellevuedaveyron.fr/robots.txt` | Le fichier s'affiche en texte |
+| `https://bellevuedaveyron.fr/sitemap.xml` | Le fichier s'affiche |
+| `https://bellevuedaveyron.fr/llms.txt` | Le fichier s'affiche |
+| `https://bellevuedaveyron.fr/config/db.php` | **Erreur 403** — si le fichier se télécharge, le `.htaccess` n'est pas monté |
+| `https://bellevuedaveyron.fr/admin/` | Page de connexion, puis tableau de bord |
+| Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
+| Formulaire de réservation du site | **Faire un envoi de test** : le mail arrive bien aux destinataires réglés |
+
+Si les tarifs n'apparaissent pas ou si l'administration répond « Service
+temporairement indisponible » : `config/secrets.php` est absent, mal nommé, ou
+une valeur est erronée. C'est la cause dans la quasi-totalité des cas.
+
+---
+
+## Étape 6 — Après la mise en ligne
+
+1. **Google Search Console** (<https://search.google.com/search-console>) :
+   ajouter la propriété `bellevuedaveyron.fr`, puis soumettre
+   `https://bellevuedaveyron.fr/sitemap.xml`. Faire de même sur **Bing
+   Webmaster Tools**, qui alimente Copilot et une partie de ChatGPT.
+2. **Redirections 301** vers `https://bellevuedaveyron.fr` depuis `www` et,
+   si le domaine `.com` sert encore le site, depuis celui-ci également
+   (hPanel → Domaines → Redirections).
+3. **Valider les distances** de la page Découvrir avec un calculateur
+   d'itinéraire, et me signaler les écarts : elles alimentent aussi le balisage
+   et `llms.txt`.
+4. **Photos** : voir `docs/seo-ia/installer-python-windows.md` et
+   `images/decouvrir/README.md`. Rien d'urgent, le site est complet sans elles.
+
+---
+
+## En cas de problème
+
+Restaurer l'archive `.zip` de l'étape 2, et me décrire le message d'erreur
+exact. Le fichier `config/secrets.php` créé à l'étape 1, lui, peut rester en
+place : il n'est utilisé que par la nouvelle version.
+
+---
+
+## Pour mémoire — ce que cette version change
+
+- Données structurées, `robots.txt`, `sitemap.xml`, `llms.txt`, FAQ,
+  métadonnées : référencement par les moteurs de réponse (voir
+  `docs/seo-ia/audit-2026-09-08.md`).
+- Coordonnées GPS corrigées et distances routières rectifiées.
+- Agenda trié par proximité réelle, rendu côté serveur.
+- Destinataires du formulaire réglables dans l'administration.
+- Mots de passe sortis du code ; `?show_log=1` et les deux scripts de
+  maintenance de l'administration désormais réservés aux administrateurs
+  connectés.
+
+**Prérequis serveur** : PHP 7.4 ou plus récent (Hostinger propose 8.x par
+défaut ; vérifiable dans hPanel → Avancé → Configuration PHP).

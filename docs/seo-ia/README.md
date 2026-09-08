@@ -17,6 +17,7 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `config/seo.php` | Identité du site, rendu des balises `<head>`, constructeurs de nœuds JSON-LD, questions fréquentes. **Le fichier à recopier en premier sur un autre projet.** |
 | `config/medias.php` | Registre des visuels : texte alternatif, image de repli, substitution par un fichier local. |
 | `config/agenda.php` | Données externes : cache, calcul de distance, filtrage par rayon, socle éditorial de repli. |
+| `config/notifications.php` | Destinataires des demandes du formulaire, réglables dans « Paramètres du Gîte ». Expéditeur non modifiable. |
 | `config/env.php` | Lecture des secrets : variables d'environnement, puis `config/secrets.php` (non versionné). Aucun mot de passe dans le dépôt. |
 | `config/secrets.example.php` | Modèle à recopier en `config/secrets.php` sur le serveur. |
 | `tools/generer-inventaire-images.php` | Régénère l'inventaire des visuels depuis le registre. |
@@ -24,6 +25,12 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `robots.txt` | Autorisations d'accès des robots, dont ceux des moteurs de réponse. |
 | `sitemap.xml` | Pages publiques et dates de mise à jour. |
 | `llms.txt` | Fiche factuelle du site destinée aux agents conversationnels. |
+
+## Mise en production
+
+Marche à suivre complète et ordonnée : [`../DEPLOIEMENT.md`](../DEPLOIEMENT.md).
+À suivre dans l'ordre — le fichier de secrets doit exister sur le serveur
+**avant** le téléversement des fichiers.
 
 ## Mise en service sur un serveur
 
