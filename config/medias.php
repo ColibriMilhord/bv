@@ -24,6 +24,7 @@
  */
 
 const MEDIA_LOCAL_DIR  = 'images/decouvrir';
+const MEDIA_CREDITS    = 'images/decouvrir/credits.json';
 const MEDIA_EXTENSIONS = ['webp', 'jpg', 'jpeg', 'png'];
 
 /** Registre : slug => alt, url de repli, statut du visuel. */
@@ -231,4 +232,46 @@ function media_card(string $slug, string $class = 'coup-img'): void
         htmlspecialchars($media['alt'], ENT_QUOTES),
         $style
     );
+}
+
+/**
+ * Crédits photo déposés par tools/unsplash_photos.py.
+ *
+ * L'API Unsplash impose de créditer le photographe et Unsplash, avec des liens
+ * porteurs des paramètres UTM. Le fichier credits.json est produit et tenu à
+ * jour par le script ; sans lui, rien n'est affiché.
+ */
+function media_credits(): array
+{
+    $chemin = __DIR__ . '/../' . MEDIA_CREDITS;
+    if (!is_file($chemin)) return [];
+
+    $donnees = json_decode((string) file_get_contents($chemin), true);
+    return is_array($donnees) ? $donnees : [];
+}
+
+/** Ligne de crédits photo, à placer en pied de page. */
+function media_credits_html(): void
+{
+    $credits = media_credits();
+    if (!$credits) return;
+
+    // Un photographe peut signer plusieurs visuels : on ne le cite qu'une fois.
+    $auteurs = [];
+    foreach ($credits as $c) {
+        if (!empty($c['auteur'])) $auteurs[$c['auteur']] = $c['auteur_url'] ?? 'https://unsplash.com';
+    }
+    if (!$auteurs) return;
+
+    ksort($auteurs);
+    $liens = [];
+    foreach ($auteurs as $nom => $url) {
+        $liens[] = '<a href="' . htmlspecialchars($url, ENT_QUOTES) . '" rel="noopener nofollow" target="_blank">'
+                 . htmlspecialchars($nom, ENT_QUOTES) . '</a>';
+    }
+
+    echo '<p class="credits-photos">Crédits photos d\'illustration : '
+       . implode(', ', $liens)
+       . ' — <a href="https://unsplash.com/?utm_source=bellevue_daveyron&amp;utm_medium=referral"'
+       . ' rel="noopener nofollow" target="_blank">Unsplash</a>.</p>';
 }

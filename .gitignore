@@ -10,3 +10,7 @@ dt_debug.json
 
 # Secrets applicatifs : ne jamais versionner
 config/secrets.php
+
+# Fichiers de travail du script Unsplash
+tools/unsplash_candidates.json
+tools/unsplash_candidates.html

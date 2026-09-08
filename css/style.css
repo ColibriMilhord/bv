@@ -2126,3 +2126,21 @@ img.curator-img {
 .curator-card > img.curator-img {
     background: linear-gradient(135deg, #efe9dc 0%, #e2d8c2 100%);
 }
+
+/* Crédits des photos d'illustration (obligation de l'API Unsplash) */
+.credits-photos {
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .72rem;
+    color: rgba(255, 255, 255, .45);
+    padding: 0 5% 14px;
+}
+
+.credits-photos a {
+    color: rgba(255, 255, 255, .6);
+    text-decoration: none;
+}
+
+.credits-photos a:hover {
+    text-decoration: underline;
+}

@@ -19,6 +19,7 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `config/env.php` | Lecture des secrets : variables d'environnement, puis `config/secrets.php` (non versionné). Aucun mot de passe dans le dépôt. |
 | `config/secrets.example.php` | Modèle à recopier en `config/secrets.php` sur le serveur. |
 | `tools/generer-inventaire-images.php` | Régénère l'inventaire des visuels depuis le registre. |
+| `tools/unsplash_photos.py` | Recherche et télécharge via l'API Unsplash les illustrations des cartes encore dépourvues de photo, et tient à jour les crédits obligatoires. |
 | `robots.txt` | Autorisations d'accès des robots, dont ceux des moteurs de réponse. |
 | `sitemap.xml` | Pages publiques et dates de mise à jour. |
 | `llms.txt` | Fiche factuelle du site destinée aux agents conversationnels. |
@@ -44,7 +45,8 @@ calendrier ni tarifs, l'administration répond 503.
 - **Nouvelle page** → l'ajouter à `sitemap.xml`, à `llms.txt`, appeler
   `seo_head()` et poser un graphe JSON-LD.
 - **Nouvelle photo de lieu** → la déposer dans `images/decouvrir/` au nom du
-  slug (voir l'inventaire) ; aucun code à modifier.
+  slug (voir l'inventaire) ; aucun code à modifier. Faute de photo propre :
+  `python3 tools/unsplash_photos.py search` puis `download`.
 - **Mot de passe changé** → le reporter dans `config/secrets.php` uniquement.
 - **Tous les trimestres** → poser les questions cibles à ChatGPT, Perplexity et
   Google, et vérifier dans les journaux serveur le passage de `GPTBot`,

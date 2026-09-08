@@ -1146,6 +1146,8 @@ $agenda_proches = agenda_events(35, 12);
             <a href="index.php#reservation" class="btn-footer">Réserver maintenant</a>
         </div>
     </div>
+    <?php media_credits_html(); ?>
+
     <div class="footer-bottom">
         <div class="legal-links">
             <span>&copy; 2026 Bellevue d'Aveyron</span>
