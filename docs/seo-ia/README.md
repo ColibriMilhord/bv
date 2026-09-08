@@ -8,6 +8,7 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | [`playbook-geo.md`](playbook-geo.md) | **Point d'entrée.** Méthode générique, principes, parcours d'audit, patrons de code, recette de vérification, et section d'adaptation à artifacile.fr. |
 | [`audit-2026-09-08.md`](audit-2026-09-08.md) | Le cas concret : état des lieux, défauts relevés, correctifs appliqués, contrôles effectués, suites recommandées. |
 | [`inventaire-images.md`](inventaire-images.md) | Feuille de route photo : quelles images remplacer, sous quel nom de fichier les déposer. |
+| [`installer-python-windows.md`](installer-python-windows.md) | Pas à pas complet, de l'installation de Python sur Windows à la mise en ligne des photos. |
 
 ## Où vit le code
 

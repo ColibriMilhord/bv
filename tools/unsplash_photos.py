@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 tools/unsplash_photos.py — Recherche et téléchargement des visuels manquants
 de la page « Découvrir » via l'API Unsplash.
 
@@ -11,26 +11,52 @@ repli d'une carte : ce script automatise ce dépôt.
 
 Prérequis
 ---------
-1. Créer une application sur https://unsplash.com/oauth/applications
+1. Python 3.9 ou plus récent. Sous Windows, l'installateur de python.org avec
+   la case « Add python.exe to PATH » cochée ; la commande est alors « py »
+   (ou « python »), et non « python3 ».
+2. Créer une application sur https://unsplash.com/oauth/applications
    (gratuit ; une application « Demo » suffit, limitée à 50 requêtes/heure).
-2. Exporter la clé « Access Key » :
+3. Déclarer la clé « Access Key » dans l'environnement du terminal.
+   Elle n'est jamais écrite sur le disque par ce script.
 
+   Windows, PowerShell :
+       $env:UNSPLASH_ACCESS_KEY = "votre_access_key"
+
+   Windows, invite de commandes :
+       set UNSPLASH_ACCESS_KEY=votre_access_key
+
+   macOS et Linux :
        export UNSPLASH_ACCESS_KEY="votre_access_key"
 
-   La clé n'est jamais écrite sur le disque par ce script.
+   La variable ne vaut que pour la fenêtre de terminal en cours : elle est à
+   redéclarer si vous fermez puis rouvrez le terminal.
 
 Utilisation
 -----------
-    # 1. Chercher des candidats et produire une planche-contact à ouvrir
-    python3 tools/unsplash_photos.py search
+Se placer à la racine du projet (le dossier qui contient index.php), puis :
 
-    # 2. Regarder tools/unsplash_candidates.html, noter les identifiants voulus
-    # 3. Télécharger (le 1er résultat par défaut, ou un choix explicite)
-    python3 tools/unsplash_photos.py download
-    python3 tools/unsplash_photos.py download --pick au-moulin-d-alexandre=AbC123xyz
+    Windows                                   macOS / Linux
+    py tools\unsplash_photos.py list          python3 tools/unsplash_photos.py list
+    py tools\unsplash_photos.py search        python3 tools/unsplash_photos.py search
+    py tools\unsplash_photos.py download      python3 tools/unsplash_photos.py download
 
-    # Restreindre à quelques cartes
-    python3 tools/unsplash_photos.py search --only jardin-des-betes marches-de-saint-geniez-d-olt
+Déroulé :
+    1. « search » interroge Unsplash et écrit tools/unsplash_candidates.html —
+       à ouvrir dans un navigateur pour choisir les photos à l'œil.
+    2. Noter l'identifiant affiché sous chaque photo retenue.
+    3. « download » dépose les fichiers dans images/decouvrir/.
+
+    # Imposer une photo précise plutôt que le premier résultat
+    py tools\unsplash_photos.py download --pick au-moulin-d-alexandre=AbC123xyz
+
+    # Ne traiter que certaines cartes
+    py tools\unsplash_photos.py search --only jardin-des-betes marches-de-saint-geniez-d-olt
+
+    # Remplacer une photo déjà déposée
+    py tools\unsplash_photos.py download --only jardin-des-betes --force
+
+Les fichiers déposés dans images/decouvrir/ sont ensuite à téléverser sur le
+serveur, dans le même dossier.
 
 Conformité Unsplash
 -------------------

@@ -22,11 +22,22 @@ avec pour chacun le sujet attendu.
 Faute de photos des lieux, le script `tools/unsplash_photos.py` va chercher une
 illustration pertinente pour chacune des 15 cartes concernées :
 
-```bash
-export UNSPLASH_ACCESS_KEY="votre_access_key"   # unsplash.com/oauth/applications
-python3 tools/unsplash_photos.py search         # candidats + planche-contact HTML
-python3 tools/unsplash_photos.py download       # dépôt dans ce dossier
+```powershell
+# Windows (PowerShell), depuis la racine du site
+$env:UNSPLASH_ACCESS_KEY = "votre_access_key"   # unsplash.com/oauth/applications
+py tools\unsplash_photos.py search              # candidats + planche-contact HTML
+py tools\unsplash_photos.py download            # dépôt dans ce dossier
 ```
+
+```bash
+# macOS / Linux
+export UNSPLASH_ACCESS_KEY="votre_access_key"
+python3 tools/unsplash_photos.py search
+python3 tools/unsplash_photos.py download
+```
+
+Installation de Python et pas à pas détaillé :
+[`docs/seo-ia/installer-python-windows.md`](../../docs/seo-ia/installer-python-windows.md).
 
 Le script écrit aussi `credits.json`, qui alimente la ligne de crédits en pied
 de la page Découvrir — l'API Unsplash impose de citer les photographes.
