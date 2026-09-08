@@ -26,6 +26,12 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `sitemap.xml` | Pages publiques et dates de mise à jour. |
 | `llms.txt` | Fiche factuelle du site destinée aux agents conversationnels. |
 
+## Mise en production
+
+Marche à suivre complète et ordonnée : [`../DEPLOIEMENT.md`](../DEPLOIEMENT.md).
+À suivre dans l'ordre — le fichier de secrets doit exister sur le serveur
+**avant** le téléversement des fichiers.
+
 ## Mise en service sur un serveur
 
 ```bash
