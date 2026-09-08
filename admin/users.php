@@ -48,6 +48,7 @@ $users = $pdo->query("SELECT * FROM admins ORDER BY created_at DESC")->fetchAll(
 <head>
     <meta charset="UTF-8">
     <title>Gérer les Utilisateurs</title>
+    <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 </head>

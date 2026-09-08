@@ -1,0 +1,9 @@
+# Journaux applicatifs — peuvent contenir des données personnelles (e-mails clients)
+*.log
+
+# Cache applicatif (agenda Datatourisme)
+cache/*
+!cache/.gitkeep
+
+# Fichiers de debug temporaires
+dt_debug.json

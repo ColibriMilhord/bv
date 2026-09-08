@@ -1,9 +1,15 @@
+<?php require_once __DIR__ . '/config/seo.php'; ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Politique de Confidentialité - Bellevue d'Aveyron</title>
+<?php seo_head([
+        'title'       => "Politique de confidentialité — Bellevue d'Aveyron",
+        'description' => "Données collectées, finalités, durée de conservation, droits RGPD et cookies pour les demandes de réservation du gîte Bellevue d'Aveyron.",
+        'path'        => 'politique.php',
+        'type'        => 'article',
+    ]); ?>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     
     <style>
@@ -81,5 +87,12 @@
         &copy; 2026 Bellevue d'Aveyron - Confidentialité & Respect.
     </footer>
 
+<?php
+seo_jsonld([
+    seo_node_website(),
+    seo_node_webpage('politique.php', "Politique de confidentialité", "Données collectées, finalités, durée de conservation, droits RGPD et cookies pour les demandes de réservation du gîte Bellevue d'Aveyron."),
+    seo_node_breadcrumb([['Accueil', ''], ["Politique de confidentialité", 'politique.php']]),
+]);
+?>
 </body>
 </html>

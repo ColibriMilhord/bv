@@ -15,7 +15,7 @@
         </div>
         <div class="intro-line intro-line-top"></div>
         <div class="intro-title-wrapper">
-            <h1 class="intro-main-title">Bellevue d'Aveyron</h1>
+            <div class="intro-main-title" role="presentation">Bellevue d'Aveyron</div>
             <div class="intro-shimmer"></div>
         </div>
         <div class="intro-line intro-line-bottom"></div>

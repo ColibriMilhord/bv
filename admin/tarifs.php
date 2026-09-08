@@ -71,6 +71,7 @@ $tarifs = $pdo->query("SELECT * FROM tarifs_saison ORDER BY date_debut")->fetchA
 <head>
     <meta charset="UTF-8">
     <title>Gérer les Tarifs</title>
+    <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 </head>
