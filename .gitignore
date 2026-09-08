@@ -14,3 +14,7 @@ config/secrets.php
 # Fichiers de travail du script Unsplash
 tools/unsplash_candidates.json
 tools/unsplash_candidates.html
+
+# Cache Python
+__pycache__/
+*.pyc
