@@ -147,6 +147,7 @@ Trois fichiers, un rôle chacun. La structure vaut pour n'importe quel langage.
 config/seo.php      → identité du site + faits + rendu <head> + nœuds JSON-LD
 config/medias.php   → registre des visuels : alt, repli, substitution locale
 config/agenda.php   → données métier externes : cache, filtrage, normalisation
+config/env.php      → secrets : environnement d'abord, fichier non versionné ensuite
 ```
 
 **Le contrat de `seo.php`** — c'est celui à recopier en premier :
@@ -195,6 +196,13 @@ un fichier local s'il existe (`images/<dossier>/<slug>.webp|jpg|…`), un rendu
 remplacer une photo se fait en déposant un fichier, sans toucher au code — et
 l'inventaire des visuels à remplacer se génère automatiquement depuis le
 registre.
+
+**Le patron `env.php`** — une fonction `secret('CLE')` qui consulte dans
+l'ordre les variables d'environnement, un fichier non versionné, puis une
+valeur par défaut ; un `secrets.example.php` versionné sans aucune valeur
+réelle ; un `.htaccess` interdisant l'accès web au dossier de configuration.
+Corollaire à ne pas oublier : un mot de passe déjà passé dans Git reste
+lisible dans l'historique — sortir le secret du code **et** le changer.
 
 **Le patron `agenda.php`** — vaut pour toute donnée externe affichée :
 cache disque avec TTL, cache négatif après échec, délai réseau plafonné,

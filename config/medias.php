@@ -105,10 +105,11 @@ function media_registry(): array
         'src'    => 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?w=600&auto=format&fit=crop',
         'statut' => 'generique',
     ],
+    // Carte consacrée au gîte lui-même : une vraie photo de la propriété.
     'ping-pong-trampoline-velos-et-piscine' => [
-        'alt'    => "Jeux d'extérieur pour enfants au gîte Bellevue d'Aveyron",
-        'src'    => 'https://images.unsplash.com/photo-1575783970733-1aaedde1db74?w=600&auto=format&fit=crop',
-        'statut' => 'generique',
+        'alt'    => "Piscine chauffée et terrasse du gîte Bellevue d'Aveyron, face à la vallée du Lot",
+        'src'    => 'images/PMR/piscine_accessible.JPG',
+        'statut' => 'reel',
     ],
     'jardin-des-betes' => [
         'alt'    => "Ferme pédagogique — Jardin des Bêtes, animaux de la ferme",
@@ -217,11 +218,14 @@ function media_card(string $slug, string $class = 'coup-img'): void
     }
 
     $style = $media['position']
-        ? ' style="object-position:' . htmlspecialchars($media['position'], ENT_QUOTES) . '"'
+        ? 'object-position:' . htmlspecialchars($media['position'], ENT_QUOTES) . ';'
         : '';
 
+    // Si l'image distante ne répond pas, on masque la balise : le fond doré du
+    // conteneur prend le relais, plutôt qu'une icône d'image cassée.
     printf(
-        '<img class="%s" src="%s" alt="%s"%s loading="lazy" decoding="async" width="600" height="380">',
+        '<img class="%s" src="%s" alt="%s" style="%s" loading="lazy" decoding="async"'
+        . ' width="600" height="380" onerror="this.style.display=&quot;none&quot;">',
         htmlspecialchars($class, ENT_QUOTES),
         htmlspecialchars($media['src'], ENT_QUOTES),
         htmlspecialchars($media['alt'], ENT_QUOTES),

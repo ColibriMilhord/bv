@@ -240,7 +240,7 @@ $agenda_proches = agenda_events(35, 12);
                                 </div>
                                 <div>
                                     <div class="fc-name">Saint-Côme-d'Olt ★</div>
-                                    <div class="fc-km">5 km · 8 min</div>
+                                    <div class="fc-km">25 km · 25 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -271,7 +271,7 @@ $agenda_proches = agenda_events(35, 12);
                                 </div>
                                 <div>
                                     <div class="fc-name">Espalion</div>
-                                    <div class="fc-km">12 km · 15 min</div>
+                                    <div class="fc-km">28 km · 30 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -294,7 +294,7 @@ $agenda_proches = agenda_events(35, 12);
                                 </div>
                                 <div>
                                     <div class="fc-name">Estaing ★</div>
-                                    <div class="fc-km">20 km · 25 min</div>
+                                    <div class="fc-km">38 km · 40 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -340,7 +340,7 @@ $agenda_proches = agenda_events(35, 12);
                                 </div>
                                 <div>
                                     <div class="fc-name">Laguiole</div>
-                                    <div class="fc-km">30 km · 35 min</div>
+                                    <div class="fc-km">40 km · 45 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -371,7 +371,7 @@ $agenda_proches = agenda_events(35, 12);
                                 </div>
                                 <div>
                                     <div class="fc-name">Conques ★</div>
-                                    <div class="fc-km">55 km · 50 min</div>
+                                    <div class="fc-km">70 km · 1h10</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -546,7 +546,7 @@ $agenda_proches = agenda_events(35, 12);
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">30 km</span>
+                        <span class="coup-distance">40 km</span>
                         <span class="coup-badge">★★★ Michelin</span>
                     </div>
                     <h3>Restaurant Bras — Laguiole</h3>
@@ -660,7 +660,7 @@ $agenda_proches = agenda_events(35, 12);
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">2 km</span>
+                        <span class="coup-distance">3 km</span>
                         <span class="coup-badge">Activité nautique</span>
                     </div>
                     <h3>Avenga — Canoë-Kayak sur le Lot</h3>
@@ -807,7 +807,7 @@ $agenda_proches = agenda_events(35, 12);
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">2 km</span>
+                        <span class="coup-distance">3 km</span>
                         <span class="coup-badge">Marché traditionnel</span>
                     </div>
                     <h3>Marchés de Saint-Geniez-d'Olt</h3>
@@ -877,7 +877,7 @@ $agenda_proches = agenda_events(35, 12);
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">~2 km</span>
+                        <span class="coup-distance">~3 km</span>
                         <span class="coup-badge">Nautique</span>
                     </div>
                     <h3>O'Paddle d'Olt — Canoë, Kayak &amp; SUP</h3>
@@ -961,7 +961,7 @@ $agenda_proches = agenda_events(35, 12);
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">55 km</span>
+                        <span class="coup-distance">70 km</span>
                         <span class="coup-badge">Visite guidée</span>
                     </div>
                     <h3>Les Secrets du Trésor de Conques</h3>
@@ -1217,15 +1217,15 @@ seo_jsonld([
         "Distances routières, sites incontournables, activités et agenda local autour de Sainte-Eulalie-d'Olt."),
     seo_node_breadcrumb([['Accueil', ''], ['Découvrir la région', 'decouvrir.php']]),
     seo_node_itemlist('decouvrir.php#distances', "Sites et villages accessibles depuis Bellevue d'Aveyron", [
-        ["Saint-Geniez-d'Olt", "À 2 km (5 min) du gîte : baignade et kayak sur le Lot, marché du jeudi matin, halles médiévales."],
+        ["Saint-Geniez-d'Olt", "À 3 km (5 min) du gîte : baignade et kayak sur le Lot, marché du jeudi matin, halles médiévales."],
         ["Lac de Castelnau", "À 2 km (5 min) : base nautique kayak et paddle, plage aménagée, pêche et sentiers."],
-        ["Saint-Côme-d'Olt", "À 5 km (8 min) : village classé parmi les Plus Beaux Villages de France, sur le chemin de Saint-Jacques."],
-        ["Espalion", "À 12 km (15 min) : Pont Vieux, bords du Lot et marchés."],
-        ["Estaing", "À 20 km (25 min) : village classé et château surplombant le Lot."],
+        ["Saint-Côme-d'Olt", "À 25 km (25 min) : village classé parmi les Plus Beaux Villages de France, sur le chemin de Saint-Jacques."],
+        ["Espalion", "À 28 km (30 min) : Pont Vieux, bords du Lot et marchés."],
+        ["Estaing", "À 38 km (40 min) : village classé et château surplombant le Lot."],
         ["Plateau de l'Aubrac", "À 25 km (30 min) : grands espaces, burons, faune et randonnées."],
-        ["Laguiole", "À 30 km (35 min) : coutellerie, aligot et restaurant Bras."],
+        ["Laguiole", "À 40 km (45 min) : coutellerie, aligot et restaurant Bras."],
         ["Musée Soulages, Rodez", "À 50 km (45 min) : collection Pierre Soulages et expositions temporaires."],
-        ["Conques", "À 55 km (50 min) : abbatiale Sainte-Foy, tympan roman, trésor et illuminations nocturnes."],
+        ["Conques", "À 70 km (1 h 10) : abbatiale Sainte-Foy, tympan roman, trésor et illuminations nocturnes."],
         ["Viaduc de Millau", "À 75 km (1 h) : plus haut pont à haubans du monde, viaduc de Norman Foster."],
     ]),
 ]);

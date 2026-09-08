@@ -16,9 +16,23 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `config/seo.php` | Identité du site, rendu des balises `<head>`, constructeurs de nœuds JSON-LD, questions fréquentes. **Le fichier à recopier en premier sur un autre projet.** |
 | `config/medias.php` | Registre des visuels : texte alternatif, image de repli, substitution par un fichier local. |
 | `config/agenda.php` | Données externes : cache, calcul de distance, filtrage par rayon, socle éditorial de repli. |
+| `config/env.php` | Lecture des secrets : variables d'environnement, puis `config/secrets.php` (non versionné). Aucun mot de passe dans le dépôt. |
+| `config/secrets.example.php` | Modèle à recopier en `config/secrets.php` sur le serveur. |
+| `tools/generer-inventaire-images.php` | Régénère l'inventaire des visuels depuis le registre. |
 | `robots.txt` | Autorisations d'accès des robots, dont ceux des moteurs de réponse. |
 | `sitemap.xml` | Pages publiques et dates de mise à jour. |
 | `llms.txt` | Fiche factuelle du site destinée aux agents conversationnels. |
+
+## Mise en service sur un serveur
+
+```bash
+cp config/secrets.example.php config/secrets.php
+# puis renseigner les valeurs réelles dans config/secrets.php
+```
+
+Sans ce fichier (ou sans les variables d'environnement équivalentes), la base
+et l'envoi d'e-mails ne fonctionnent pas : le site public s'affiche sans
+calendrier ni tarifs, l'administration répond 503.
 
 ## Entretien courant
 
@@ -31,6 +45,7 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
   `seo_head()` et poser un graphe JSON-LD.
 - **Nouvelle photo de lieu** → la déposer dans `images/decouvrir/` au nom du
   slug (voir l'inventaire) ; aucun code à modifier.
+- **Mot de passe changé** → le reporter dans `config/secrets.php` uniquement.
 - **Tous les trimestres** → poser les questions cibles à ChatGPT, Perplexity et
   Google, et vérifier dans les journaux serveur le passage de `GPTBot`,
   `ClaudeBot` et `PerplexityBot`.

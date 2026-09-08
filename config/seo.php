@@ -35,13 +35,14 @@ const SEO_LOCALITY     = "Sainte-Eulalie-d'Olt";
 const SEO_POSTAL       = '12130';
 const SEO_REGION       = 'Occitanie';
 const SEO_COUNTRY      = 'FR';
-// Point de référence du gîte. L'ancienne valeur (44.4844 / 2.8531) tombait
-// une douzaine de kilomètres à l'ouest du village, du côté de Laissac : c'est
-// elle qui faisait remonter des événements de Laissac ou de Réquista dans
-// l'onglet « autour du gîte ». Valeur actuelle = centre de Sainte-Eulalie-d'Olt.
-// À remplacer par les coordonnées exactes de la villa si elles sont connues.
-const SEO_LAT          = 44.4739;
-const SEO_LNG          = 2.9986;
+// Position exacte de la villa, communiquée par les propriétaires :
+// N 44° 27' 27" / E 2° 57' 29". L'ancienne valeur (44.4844 / 2.8531) tombait
+// une douzaine de kilomètres à l'ouest, du côté de Laissac : c'est elle qui
+// faisait remonter des événements de Laissac ou de Réquista dans l'onglet
+// « autour du gîte ». Ces deux nombres pilotent le balisage géographique, les
+// widgets touristiques et le tri de l'agenda : ne les modifier qu'ici.
+const SEO_LAT          = 44.4575;
+const SEO_LNG          = 2.9581;
 const SEO_RATING_VALUE = 5.0;   // note Google affichée sur la page
 const SEO_RATING_COUNT = 102;   // nombre d'avis Google affiché sur la page
 const SEO_DEFAULT_IMG  = 'images/accueil.jpg';
@@ -174,7 +175,7 @@ function seo_faq(): array {
         ],
         [
             'Où se situe exactement Bellevue d\'Aveyron ?',
-            'La villa se trouve à Sainte-Eulalie-d\'Olt (12130), dans l\'Aveyron en Occitanie, classé parmi les Plus Beaux Villages de France, sur les hauteurs de la vallée du Lot. Saint-Geniez-d\'Olt est à 2 km, Espalion à 12 km.',
+            'La villa se trouve à Sainte-Eulalie-d\'Olt (12130), dans l\'Aveyron en Occitanie, village classé parmi les Plus Beaux Villages de France, sur les hauteurs de la vallée du Lot. Saint-Geniez-d\'Olt est à 3 km, le plateau de l\'Aubrac à 25 km, Rodez et son musée Soulages à 50 km.',
         ],
         [
             'La piscine est-elle chauffée et sécurisée ?',

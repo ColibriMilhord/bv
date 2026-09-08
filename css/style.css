@@ -2119,3 +2119,10 @@ img.curator-img {
     max-width: 1300px;
     margin: 0 auto 34px;
 }
+
+/* Fond de repli des vignettes : visible si une image distante ne charge pas */
+.coup-img-wrap,
+.curator-card .curator-img,
+.curator-card > img.curator-img {
+    background: linear-gradient(135deg, #efe9dc 0%, #e2d8c2 100%);
+}

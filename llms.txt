@@ -17,7 +17,7 @@ en JSON-LD (schema.org) sur les pages correspondantes.
 - Type : location de vacances / meublé de tourisme 5 étoiles (VacationRental)
 - Propriétaires : Véronique et Daniel Lacan
 - Adresse : 12130 Sainte-Eulalie-d'Olt, Aveyron, Occitanie, France
-- Coordonnées GPS : 44.4844, 2.8531
+- Coordonnées GPS : 44.4575, 2.9581 (N 44° 27' 27" / E 2° 57' 29")
 - Téléphone : +33 6 80 90 71 07
 - E-mail : accueil@bellevuedaveyron.com
 - SIRET : 414 548 776 00023
@@ -48,15 +48,15 @@ en JSON-LD (schema.org) sur les pages correspondantes.
 
 ## Situation et distances routières
 
-- Saint-Geniez-d'Olt : 2 km (5 min)
+- Saint-Geniez-d'Olt : 3 km (5 min)
 - Lac de Castelnau : 2 km (5 min)
-- Saint-Côme-d'Olt : 5 km (8 min)
-- Espalion : 12 km (15 min)
-- Estaing : 20 km (25 min)
+- Saint-Côme-d'Olt : 25 km (25 min)
+- Espalion : 28 km (30 min)
+- Estaing : 38 km (40 min)
 - Plateau de l'Aubrac : 25 km (30 min)
-- Laguiole : 30 km (35 min)
+- Laguiole : 40 km (45 min)
 - Musée Soulages, Rodez : 50 km (45 min)
-- Conques : 55 km (50 min)
+- Conques : 70 km (1 h 10)
 - Viaduc de Millau : 75 km (1 h)
 
 ## Pages du site

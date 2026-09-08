@@ -46,7 +46,7 @@ que lit un moteur de recherche.
 | `de-faire-et-de-savoir` | Atelier d'artisanat local — De Faire et de Savoir | **générique** | banque d’images |
 | `eulalie-d-art-ateliers-et-creations` | Atelier de céramique — Eulalie d'Art, Sainte-Eulalie-d'Olt | **générique** | banque d’images |
 | `marches-de-saint-geniez-d-olt` | Marché hebdomadaire de Saint-Geniez-d'Olt, à 2 km du gîte | **générique** | banque d’images |
-| `ping-pong-trampoline-velos-et-piscine` | Jeux d'extérieur pour enfants au gîte Bellevue d'Aveyron | **générique** | banque d’images |
+| `ping-pong-trampoline-velos-et-piscine` | Piscine chauffée et terrasse du gîte Bellevue d'Aveyron, face à la vallée du Lot | réel | **photo du gîte** |
 | `jardin-des-betes` | Ferme pédagogique — Jardin des Bêtes, animaux de la ferme | **générique** | banque d’images |
 | `o-paddle-d-olt-canoe-kayak-et-sup` | Canoë, kayak et paddle sur le Lot avec O'Paddle d'Olt | **générique** | banque d’images |
 | `maison-de-la-chouette-sainte-eulalie-d-o` | Chouette — Maison de la Chouette à Sainte-Eulalie-d'Olt | **générique** | banque d’images |
@@ -59,9 +59,12 @@ que lit un moteur de recherche.
 | `theme-conques-patrimoine` | Le village de Conques et son abbatiale Sainte-Foy, à 55 km du gîte | réel | Wikimedia Commons |
 | `theme-tables-gastronomie` | Aligot de l'Aubrac, spécialité des tables aveyronnaises | réel | Wikimedia Commons |
 
-**16 visuels sur 27** sont des photos d’illustration à remplacer par de vraies photos des lieux.
+**15 visuels sur 27** sont encore des photos d’illustration, à remplacer par de vraies photos des lieux.
 
-Deux visuels ont déjà été remis en cohérence lors de l'audit : le Festival en
-Vallée d'Olt (illustré à tort par la nef de l'abbatiale de Conques, à 50 km) et
-le Trésor de Conques (qui reçoit cette nef, où le trésor est effectivement
-conservé).
+Déjà traité :
+
+- La carte « Ping-Pong, Trampoline, Vélos & Piscine », qui parle du gîte, utilise
+  désormais une vraie photo de la propriété (piscine et terrasse face à la vallée).
+- Le Festival en Vallée d'Olt était illustré par la nef de l'abbatiale de Conques,
+  à 70 km : il montre maintenant le village de Sainte-Eulalie-d'Olt.
+- Le Trésor de Conques reçoit cette nef, où le trésor est effectivement conservé.

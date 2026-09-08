@@ -7,3 +7,6 @@ cache/*
 
 # Fichiers de debug temporaires
 dt_debug.json
+
+# Secrets applicatifs : ne jamais versionner
+config/secrets.php

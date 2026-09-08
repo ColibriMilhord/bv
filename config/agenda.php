@@ -62,6 +62,11 @@ function agenda_distance_label(?float $km): string
 /**
  * Rendez-vous locaux permanents ou saisonniers, vérifiés par les propriétaires.
  * Sert de socle affiché et de repli si le flux Datatourisme est indisponible.
+ *
+ * 'lat'/'lng' localisent l'événement pour le balisage schema.org ;
+ * 'distance_km' est la distance routière déclarée, celle qui est affichée, afin
+ * de rester cohérente avec le tableau des distances de la page. Sans
+ * 'distance_km', la distance à vol d'oiseau est calculée automatiquement.
  */
 function agenda_curated_events(): array
 {
@@ -70,7 +75,7 @@ function agenda_curated_events(): array
             'titre'       => "Marché nocturne et festif de Sainte-Eulalie-d'Olt",
             'quand'       => "Tous les mercredis de l'été",
             'commune'     => "Sainte-Eulalie-d'Olt",
-            'lat' => 44.4739, 'lng' => 2.9986,
+            'lat' => SEO_LAT, 'lng' => SEO_LNG, 'distance_km' => 0.0,
             'description' => "Producteurs locaux, artisanat et repas partagé sur la grande place du village, à quelques minutes à pied du gîte.",
             'type'        => 'fete',
         ],
@@ -78,7 +83,7 @@ function agenda_curated_events(): array
             'titre'       => "Marché traditionnel de Saint-Geniez-d'Olt",
             'quand'       => 'Le jeudi matin, toute l\'année',
             'commune'     => "Saint-Geniez-d'Olt-et-d'Aubrac",
-            'lat' => 44.4661, 'lng' => 3.0089,
+            'lat' => 44.4661, 'lng' => 3.0089, 'distance_km' => 3.0,
             'description' => "Fromages de l'Aubrac, aligot, tripous et charcuteries de producteurs, sous les halles et dans la vieille ville.",
             'type'        => 'fete',
         ],
@@ -86,7 +91,7 @@ function agenda_curated_events(): array
             'titre'       => "Eulalie d'Art — parcours d'artistes et ateliers",
             'quand'       => 'De juin à septembre',
             'commune'     => "Sainte-Eulalie-d'Olt",
-            'lat' => 44.4739, 'lng' => 2.9986,
+            'lat' => SEO_LAT, 'lng' => SEO_LNG, 'distance_km' => 0.0,
             'description' => "Expositions dans les ruelles médiévales et initiation à la céramique avec les artisans du village.",
             'type'        => 'culture',
         ],
@@ -94,7 +99,7 @@ function agenda_curated_events(): array
             'titre'       => "Festival en Vallée d'Olt",
             'quand'       => "L'été, en soirée",
             'commune'     => "Sainte-Eulalie-d'Olt",
-            'lat' => 44.4739, 'lng' => 2.9986,
+            'lat' => SEO_LAT, 'lng' => SEO_LNG, 'distance_km' => 0.0,
             'description' => "Concerts et spectacles dans le cadre du village classé parmi les Plus Beaux Villages de France.",
             'type'        => 'culture',
         ],
@@ -102,7 +107,7 @@ function agenda_curated_events(): array
             'titre'       => 'Baignade, canoë et paddle sur le Lot',
             'quand'       => 'De mai à septembre',
             'commune'     => "Saint-Geniez-d'Olt-et-d'Aubrac",
-            'lat' => 44.4661, 'lng' => 3.0089,
+            'lat' => 44.4661, 'lng' => 3.0089, 'distance_km' => 3.0,
             'description' => "Base nautique du lac de Castelnau et descentes de la rivière avec O'Paddle d'Olt et Avenga.",
             'type'        => 'nature',
         ],
@@ -110,7 +115,7 @@ function agenda_curated_events(): array
             'titre'       => 'Musée Marcel Boudou et expositions estivales',
             'quand'       => "L'été",
             'commune'     => "Sainte-Eulalie-d'Olt",
-            'lat' => 44.4739, 'lng' => 2.9986,
+            'lat' => SEO_LAT, 'lng' => SEO_LNG, 'distance_km' => 0.0,
             'description' => "Collections et expositions temporaires au cœur du village médiéval.",
             'type'        => 'culture',
         ],
@@ -118,7 +123,7 @@ function agenda_curated_events(): array
             'titre'       => 'Marchés et brocante d\'Espalion',
             'quand'       => 'Le mardi et le vendredi',
             'commune'     => 'Espalion',
-            'lat' => 44.5211, 'lng' => 2.7644,
+            'lat' => 44.5211, 'lng' => 2.7644, 'distance_km' => 28.0,
             'description' => "Marché au bord du Lot, au pied du Pont Vieux classé au patrimoine mondial de l'UNESCO.",
             'type'        => 'fete',
         ],
@@ -126,7 +131,7 @@ function agenda_curated_events(): array
             'titre'       => "Aligot et burons du plateau de l'Aubrac",
             'quand'       => 'De mai à octobre',
             'commune'     => 'Aubrac',
-            'lat' => 44.6300, 'lng' => 2.9800,
+            'lat' => 44.6272, 'lng' => 2.8817, 'distance_km' => 25.0,
             'description' => "Anciennes cabanes de bergers transformées en tables d'altitude : aligot servi face aux estives.",
             'type'        => 'restaurant',
         ],
@@ -317,7 +322,7 @@ function agenda_events(int $radiusKm = AGENDA_DEFAULT_KM, int $limit = 12): arra
 {
     $curated = [];
     foreach (agenda_curated_events() as $ev) {
-        $ev['distance_km'] = agenda_distance_km($ev['lat'], $ev['lng']);
+        $ev['distance_km'] = $ev['distance_km'] ?? agenda_distance_km($ev['lat'], $ev['lng']);
         $ev['source']      = 'local';
         if ($ev['distance_km'] <= $radiusKm) $curated[] = $ev;
     }

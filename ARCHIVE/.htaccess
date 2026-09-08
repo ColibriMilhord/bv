@@ -1,0 +1,10 @@
+# Sauvegardes d'anciennes versions du site : ne doivent jamais être servies.
+# Ce dossier contient du code PHP obsolète ; il devrait être sorti de la
+# racine web (voir docs/seo-ia/audit-2026-09-08.md).
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
