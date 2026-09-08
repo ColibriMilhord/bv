@@ -19,6 +19,7 @@ $iframe_url = "$protocol://$host$path/iframe_calendar.php";
 <head>
     <meta charset="UTF-8">
     <title>Intégration Site - Administration</title>
+    <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

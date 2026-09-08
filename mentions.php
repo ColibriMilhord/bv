@@ -1,9 +1,15 @@
+<?php require_once __DIR__ . '/config/seo.php'; ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mentions Légales - Bellevue d'Aveyron</title>
+<?php seo_head([
+        'title'       => "Mentions légales — Bellevue d'Aveyron, gîte 5 étoiles à Sainte-Eulalie-d'Olt",
+        'description' => "Éditeur, propriétaire, SIRET, hébergeur et propriété intellectuelle du site du gîte Bellevue d'Aveyron (Sainte-Eulalie-d'Olt, 12130).",
+        'path'        => 'mentions.php',
+        'type'        => 'article',
+    ]); ?>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
     
     <style>
@@ -74,7 +80,7 @@
 
         <h2>1. Édition du site</h2>
         <p>
-            En vertu de l'article 6 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique, il est précisé aux utilisateurs du site internet <strong>https://bellevuedaveyron.com</strong> l'identité des différents intervenants dans le cadre de sa réalisation et de son suivi :
+            En vertu de l'article 6 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique, il est précisé aux utilisateurs du site internet <strong>https://bellevuedaveyron.fr</strong> l'identité des différents intervenants dans le cadre de sa réalisation et de son suivi :
         </p>
         <p>
             <strong>Propriétaire du site :</strong> BELLEVUE D'AVEYRON, Véronique & Daniel LACAN<br>
@@ -109,5 +115,12 @@
         &copy; 2026 Bellevue d'Aveyron - Tous droits réservés.
     </footer>
 
+<?php
+seo_jsonld([
+    seo_node_website(),
+    seo_node_webpage('mentions.php', "Mentions légales", "Éditeur, propriétaire, SIRET, hébergeur et propriété intellectuelle du site du gîte Bellevue d'Aveyron (Sainte-Eulalie-d'Olt, 12130)."),
+    seo_node_breadcrumb([['Accueil', ''], ["Mentions légales", 'mentions.php']]),
+]);
+?>
 </body>
 </html>

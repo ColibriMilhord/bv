@@ -1,1 +1,9 @@
-Deny from all
+# Le dossier config/ ne doit jamais être servi par le web :
+# il contient la configuration et, le cas échéant, config/secrets.php.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

@@ -3,10 +3,20 @@ session_start();
 
 require_once 'config/mail_config.php';
 require_once 'config/mail_smtp.php';
+require_once 'config/seo.php';
     
 // ── Visualisation des logs : index.php?show_log=1 ──
+// Réservée à un administrateur connecté : le journal contient les adresses
+// e-mail des clients (donnée personnelle).
 if (isset($_GET['show_log'])) {
+    if (!isset($_SESSION['admin_id'])) {
+        header('HTTP/1.1 403 Forbidden');
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo "Accès refusé.";
+        die();
+    }
     header('Content-Type: text/plain; charset=UTF-8');
+    header('X-Robots-Tag: noindex, nofollow');
     echo file_exists('bellevue_debug_mail.log')
         ? "LOGS :\n" . file_get_contents('bellevue_debug_mail.log')
         : "Aucun log pour l'instant.";
@@ -136,7 +146,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // ── Envoi aux propriétaires — un mail par destinataire ──
         $mailSent    = false;
-        $admin_list  = ["reservation@bellevuedaveyron.fr", "milhord@gmail.com", "accueil@bellevuedaveyron.fr"];
+        // Destinataires des demandes du formulaire (un envoi par destinataire).
+        $admin_list  = ["milhord@gmail.com", "accueil@bellevuedaveyron.com"];
         $mail_errors = [];
 
         foreach ($admin_list as $admin) {
@@ -194,8 +205,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bellevue d'Aveyron — Villa 5 Étoiles Luxe | Sainte-Eulalie-d'Olt</title>
-    <meta name="description" content="Gîte de luxe 5 étoiles en Aveyron à Sainte-Eulalie-d'Olt. Piscine chauffée, vue panoramique sur la vallée du Lot, villa familiale d'exception. Réservez votre séjour.">
+<?php seo_head([
+        'title'       => "Bellevue d'Aveyron — Villa 5 étoiles avec piscine, Sainte-Eulalie-d'Olt",
+        'description' => "Gîte 5 étoiles à Sainte-Eulalie-d'Olt (Aveyron) : 200 m², 5 chambres, 10 personnes, piscine chauffée, parc de 5 000 m², accès PMR de plain-pied. Réservation en direct, 5,0/5 sur 102 avis Google.",
+        'path'        => '',
+        'type'        => 'website',
+    ]); ?>
     <link rel="icon" type="image/x-icon" href="images/BELLEVUE/logo.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -241,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </div>
         <div class="intro-line intro-line-top"></div>
         <div class="intro-title-wrapper">
-            <h1 class="intro-main-title">Bellevue d'Aveyron</h1>
+            <div class="intro-main-title" role="presentation">Bellevue d'Aveyron</div>
             <div class="intro-shimmer"></div>
         </div>
         <div class="intro-line intro-line-bottom"></div>
@@ -297,7 +312,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </div>
         <h1>L'Art de Vivre<br>en Aveyron</h1>
         <p style="color:rgba(255,255,255,0.9);font-size:1.2rem;margin-bottom:30px;">
-            Une villa d'exception avec piscine chauffée et vue panoramique sur la vallée du Lot.
+            <strong>Bellevue d'Aveyron</strong> est un gîte de luxe 5 étoiles à Sainte-Eulalie-d'Olt (12130), en Aveyron :
+            200 m², 5 chambres, jusqu'à 10 personnes, piscine chauffée et vue panoramique sur la vallée du Lot.
         </p>
         <a href="#reservation" class="btn-gold">Planifier votre séjour</a>
     </div>
@@ -343,12 +359,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <?php if (!empty($famille_images)): ?>
                 <div class="family-slideshow" id="familySlideshow">
                     <?php foreach ($famille_images as $i => $img): ?>
-                        <img src="<?php echo $img; ?>" alt="La Villa Bellevue" class="family-slide <?php echo $i===0?'active':''; ?>">
+                        <img src="<?php echo $img; ?>" alt="Villa Bellevue d'Aveyron à Sainte-Eulalie-d'Olt — photo <?php echo $i+1; ?>" loading="lazy" class="family-slide <?php echo $i===0?'active':''; ?>">
                     <?php endforeach; ?>
                     <div class="pmr-frame-overlay"></div>
                 </div>
             <?php else: ?>
-                <img src="images/accueil.jpg" alt="Bellevue d'Aveyron">
+                <img src="images/accueil.jpg" alt="Vue panoramique sur la vallée du Lot depuis la villa Bellevue d'Aveyron et sa piscine chauffée" loading="lazy">
             <?php endif; ?>
         </div>
     </div>
@@ -370,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <?php if (!empty($pmr_images)): ?>
                 <div class="pmr-slideshow" id="pmrSlideshow">
                     <?php foreach ($pmr_images as $i => $img): ?>
-                        <img src="<?php echo $img; ?>" alt="Accessibilité PMR" class="pmr-slide <?php echo $i===0?'active':''; ?>">
+                        <img src="<?php echo $img; ?>" alt="Espaces de plain-pied accessibles PMR du gîte Bellevue d'Aveyron — photo <?php echo $i+1; ?>" loading="lazy" class="pmr-slide <?php echo $i===0?'active':''; ?>">
                     <?php endforeach; ?>
                     <div class="pmr-frame-overlay"></div>
                 </div>
@@ -589,6 +605,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     </div>
 </section>
 
+<!-- ══ FAQ (questions fréquentes — balisées en FAQPage) ══ -->
+
+<section id="faq" class="faq-section">
+    <div class="section-header">
+        <span class="subtitle">Bon à savoir</span>
+        <h2>Questions Fréquentes</h2>
+    </div>
+    <div class="faq-grid">
+        <?php foreach (seo_faq() as [$question, $reponse]): ?>
+        <article class="faq-item">
+            <h3 class="faq-question"><?php echo seo_e($question); ?></h3>
+            <p class="faq-answer"><?php echo seo_e($reponse); ?></p>
+        </article>
+        <?php endforeach; ?>
+    </div>
+    <p class="faq-contact">
+        Une question qui n'est pas dans cette liste ?
+        <a href="tel:<?php echo SEO_PHONE; ?>"><?php echo SEO_PHONE_HUMAN; ?></a>
+        &nbsp;•&nbsp;
+        <a href="#reservation">Nous écrire</a>
+    </p>
+</section>
+
 <!-- ══ FOOTER ══ -->
 
 <footer id="footer-luxe">
@@ -609,6 +648,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <li><a href="#tarifs">Tarifs</a></li>
                 <li><a href="#accessibilite">Accessibilité (PMR)</a></li>
                 <li><a href="#temoignages">Livre d'Or</a></li>
+                <li><a href="#faq">Questions fréquentes</a></li>
                 <li><a href="decouvrir.php">Visiter l'Aveyron</a></li>
             </ul>
         </div>
@@ -693,11 +733,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <span class="contact-row-arrow">›</span>
         </a>
 
-        <a href="mailto:accueil@bellevuedaveyron.fr" class="contact-row" aria-label="Envoyer un email">
+        <a href="mailto:accueil@bellevuedaveyron.com" class="contact-row" aria-label="Envoyer un email">
             <div class="contact-row-icon">✉️</div>
             <div class="contact-row-text">
                 <strong>Par Email</strong>
-                <span>accueil@bellevuedaveyron.fr</span>
+                <span>accueil@bellevuedaveyron.com</span>
             </div>
             <span class="contact-row-arrow">›</span>
         </a>
@@ -735,6 +775,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <script>const bookedDates = <?php echo $json_booked_dates ?: '[]'; ?>;</script>
 
+<?php
+// ── Données structurées JSON-LD (Google, ChatGPT, Perplexity, Gemini…) ──
+seo_jsonld([
+    seo_node_website(),
+    seo_node_lodging($tarifs_display),
+    seo_node_webpage('', "Bellevue d'Aveyron — Villa 5 étoiles avec piscine, Sainte-Eulalie-d'Olt",
+        "Gîte de luxe 5 étoiles à Sainte-Eulalie-d'Olt en Aveyron : 200 m², 5 chambres, 10 personnes, piscine chauffée, parc de 5 000 m², accès PMR."),
+    seo_node_breadcrumb([['Accueil', '']]),
+    seo_node_faq(seo_faq()),
+]);
+?>
 <script src="js/script.js"></script>
 
 

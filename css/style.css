@@ -1959,4 +1959,188 @@ footer {
     .day-cell {
         font-size: 0.8rem;
     }
-}
+}
+/* --- FAQ (section #faq — contenu structuré FAQPage) --- */
+.faq-section {
+    background-color: var(--cream);
+    max-width: none;
+}
+
+.faq-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px 45px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.faq-item {
+    border-top: 1px solid rgba(197, 160, 89, .35);
+    padding-top: 22px;
+}
+
+.faq-question {
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: 1px;
+    color: var(--navy-deep);
+    margin-bottom: 12px;
+}
+
+.faq-answer {
+    font-family: 'Montserrat', sans-serif;
+    font-size: .95rem;
+    line-height: 1.75;
+    color: #555;
+}
+
+.faq-contact {
+    text-align: center;
+    margin-top: 55px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .95rem;
+    color: #666;
+}
+
+.faq-contact a {
+    color: var(--gold-dark);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.faq-contact a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .faq-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+}
+
+/* --- Cartes « Découvrir » : images passées de background-image à <img> --- */
+/* (nécessaire pour porter un texte alternatif lisible par Google Images et
+   par les agents IA — le rendu visuel est identique)                        */
+img.curator-img,
+img.coup-img {
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+img.curator-img {
+    height: 210px;
+}
+
+/* --- Agenda de proximité (rendu serveur, trié par distance réelle) --- */
+.proximite-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 18px;
+    max-width: 1300px;
+    margin: 0 auto 26px;
+}
+
+.proximite-card {
+    background: #fff;
+    border: 1px solid #e8e2d6;
+    border-radius: 6px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s, box-shadow .3s;
+}
+
+.proximite-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .09);
+}
+
+.proximite-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.proximite-km {
+    font-family: 'Cinzel', serif;
+    font-size: .58rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    background: rgba(201, 168, 76, .1);
+    border: 1px solid rgba(201, 168, 76, .28);
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.proximite-quand {
+    font-family: 'Montserrat', sans-serif;
+    font-size: .68rem;
+    color: #999;
+    text-align: right;
+}
+
+.proximite-card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: .92rem;
+    line-height: 1.4;
+    color: var(--navy-dark);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.proximite-lieu {
+    font-family: 'Montserrat', sans-serif;
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    margin-bottom: 10px;
+}
+
+.proximite-desc {
+    font-family: 'Montserrat', sans-serif;
+    font-size: .82rem;
+    line-height: 1.7;
+    color: #6a6258;
+}
+
+.proximite-note {
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .76rem;
+    color: #999;
+    max-width: 1300px;
+    margin: 0 auto 34px;
+}
+
+/* Fond de repli des vignettes : visible si une image distante ne charge pas */
+.coup-img-wrap,
+.curator-card .curator-img,
+.curator-card > img.curator-img {
+    background: linear-gradient(135deg, #efe9dc 0%, #e2d8c2 100%);
+}
+
+/* Crédits des photos d'illustration (obligation de l'API Unsplash) */
+.credits-photos {
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .72rem;
+    color: rgba(255, 255, 255, .45);
+    padding: 0 5% 14px;
+}
+
+.credits-photos a {
+    color: rgba(255, 255, 255, .6);
+    text-decoration: none;
+}
+
+.credits-photos a:hover {
+    text-decoration: underline;
+}

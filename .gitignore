@@ -1,0 +1,20 @@
+# Journaux applicatifs — peuvent contenir des données personnelles (e-mails clients)
+*.log
+
+# Cache applicatif (agenda Datatourisme)
+cache/*
+!cache/.gitkeep
+
+# Fichiers de debug temporaires
+dt_debug.json
+
+# Secrets applicatifs : ne jamais versionner
+config/secrets.php
+
+# Fichiers de travail du script Unsplash
+tools/unsplash_candidates.json
+tools/unsplash_candidates.html
+
+# Cache Python
+__pycache__/
+*.pyc

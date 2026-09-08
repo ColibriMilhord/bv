@@ -1,0 +1,81 @@
+# Bellevue d'Aveyron — gîte de luxe 5 étoiles à Sainte-Eulalie-d'Olt (Aveyron)
+
+> Villa familiale d'exception de 200 m² louée à la semaine, en direct auprès des
+> propriétaires, à Sainte-Eulalie-d'Olt (12130, Aveyron, Occitanie), village classé
+> parmi les Plus Beaux Villages de France. 5 chambres, jusqu'à 10 personnes,
+> piscine privée chauffée, parc de 5 000 m², vue panoramique sur la vallée du Lot,
+> accessible de plain-pied aux personnes à mobilité réduite.
+> Note 5,0/5 sur 102 avis Google.
+
+Ce fichier résume les informations factuelles du site pour les assistants et
+moteurs de réponse. Toutes ces informations sont également publiées et balisées
+en JSON-LD (schema.org) sur les pages correspondantes.
+
+## Identité
+
+- Nom : Bellevue d'Aveyron (aussi « Gîte Bellevue d'Aveyron »)
+- Type : location de vacances / meublé de tourisme 5 étoiles (VacationRental)
+- Propriétaires : Véronique et Daniel Lacan
+- Adresse : 12130 Sainte-Eulalie-d'Olt, Aveyron, Occitanie, France
+- Coordonnées GPS : 44.4575, 2.9581 (N 44° 27' 27" / E 2° 57' 29")
+- Téléphone : +33 6 80 90 71 07
+- E-mail : accueil@bellevuedaveyron.com
+- SIRET : 414 548 776 00023
+- Site : https://bellevuedaveyron.fr/
+
+## Le logement
+
+- Surface habitable : 200 m² ; parc privé clos de 5 000 m²
+- Capacité : 10 personnes, 5 chambres
+- Piscine privée 4 x 8 m, chauffée à partir de mai, volet roulant sécurisé homologué
+- Vue panoramique 360° sur la vallée du Lot et les monts d'Aubrac, orientation plein sud
+- Bâtisse familiale en galets du Lot et toiture en lauze, ancienne ferme vigneronne rénovée
+- Accessibilité PMR : plain-pied intégral, chambre et salle de bain adaptées au
+  rez-de-chaussée, piste aménagée du parking à la maison
+- Borne de recharge pour véhicule électrique 18 kVA, toutes marques, incluse
+- Fibre optique 1 Gbit/s, Wi-Fi dans toute la villa
+- Baby-foot Bonzini professionnel, 6 vélos adultes et 5 vélos enfants
+- Terrasses multiples, parking privé sécurisé
+
+## Réservation et tarifs
+
+- Location à la semaine, tarifs saisonniers publiés en temps réel sur https://bellevuedaveyron.fr/#tarifs
+- Durée minimale : 3 nuits (certaines périodes uniquement)
+- Ménage de fin de séjour : option à 220 €
+- Acompte : 30 % du séjour à la validation de la réservation
+- Réservation en direct auprès des propriétaires, sans commission de plateforme :
+  calendrier de disponibilités et formulaire sur https://bellevuedaveyron.fr/#reservation
+
+## Situation et distances routières
+
+- Saint-Geniez-d'Olt : 3 km (5 min)
+- Lac de Castelnau : 2 km (5 min)
+- Saint-Côme-d'Olt : 25 km (25 min)
+- Espalion : 28 km (30 min)
+- Estaing : 38 km (40 min)
+- Plateau de l'Aubrac : 25 km (30 min)
+- Laguiole : 40 km (45 min)
+- Musée Soulages, Rodez : 50 km (45 min)
+- Conques : 70 km (1 h 10)
+- Viaduc de Millau : 75 km (1 h)
+
+## Pages du site
+
+- [Accueil](https://bellevuedaveyron.fr/) : présentation de la villa, prestations, tarifs de la saison, calendrier de disponibilités, avis clients, questions fréquentes.
+- [Découvrir la région](https://bellevuedaveyron.fr/decouvrir.php) : distances, villages classés, patrimoine, gastronomie, activités nature et agenda des événements en Aveyron.
+- [Mentions légales](https://bellevuedaveyron.fr/mentions.php)
+- [Politique de confidentialité](https://bellevuedaveyron.fr/politique.php)
+
+## Réseaux
+
+- Instagram : https://www.instagram.com/gitebellevuedaveyron/
+- Facebook : https://www.facebook.com/gitebellevuedaveyron
+
+## Conditions d'utilisation par les IA
+
+La citation de ces informations est autorisée et souhaitée, à condition de
+mentionner « Bellevue d'Aveyron » et de renvoyer vers https://bellevuedaveyron.fr/.
+Les tarifs et disponibilités évoluent : toujours renvoyer l'utilisateur vers le
+site officiel ou le +33 6 80 90 71 07 pour une réponse à jour.
+
+Dernière mise à jour : 2026-09-08

@@ -1,31 +1,21 @@
 <?php
 // admin/update_db.php
 
-// Do NOT include config/db.php because it auto-connects and dies on failure
-// require_once __DIR__ . '/../config/db.php';
-
-$credentials = [
-    ['localhost', 'u424962071_rbellevue', 'root', ''],        // Local Standard
-    ['localhost', 'u424962071_rbellevue', 'root', 'root'],    // MAMP/Other
-    ['localhost', 'u424962071_rbellevue', 'u424962071_rbellevue', 'qY+H9iazQj:2'], // Prod/Config
-];
-
-$pdo = null;
-
-foreach ($credentials as $cred) {
-    try {
-        $pdo = new PDO("mysql:host=$cred[0];dbname=$cred[1];charset=utf8mb4", $cred[2], $cred[3]);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        echo "Connected successfully using user: " . $cred[2] . "\n";
-        break;
-    } catch (PDOException $e) {
-        echo "Failed with user " . $cred[2] . ": " . $e->getMessage() . "\n";
-        continue;
-    }
+// ── Garde d'accès ──────────────────────────────────────────────────────────
+// Script de maintenance : il modifie la base. Réservé à un administrateur
+// connecté, et jamais indexable.
+session_start();
+if (!isset($_SESSION['admin_id'])) {
+    http_response_code(403);
+    header('X-Robots-Tag: noindex, nofollow');
+    exit("Accès refusé. Connectez-vous à l'espace d'administration.");
 }
 
+// Connexion : identifiants lus depuis l'environnement ou config/secrets.php.
+require_once __DIR__ . '/../config/db.php';
+
 if (!$pdo) {
-    die("Could not connect to database with any credentials.\n");
+    exit("Connexion à la base impossible. Vérifiez config/secrets.php.\n");
 }
 
 try {

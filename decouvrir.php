@@ -2,16 +2,26 @@
 /**
  * decouvrir.php — Page "Découvrir la Région" — Bellevue d'Aveyron ★★★★★
  * Version 5 — Architecture séparée CSS / JS / PHP
- * Coordonnées Sainte-Eulalie-d'Olt : lat=44.4844 / lng=2.8531
+ * Point de référence du gîte : constantes SEO_LAT / SEO_LNG (config/seo.php).
  */
+require_once __DIR__ . '/config/seo.php';
+require_once __DIR__ . '/config/medias.php';
+require_once __DIR__ . '/config/agenda.php';
+
+// Agenda de proximité : rayon de 35 km autour du gîte, trié par distance.
+$agenda_proches = agenda_events(35, 12);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Découvrir la Région | Bellevue d'Aveyron — Villa 5 Étoiles</title>
-    <meta name="description" content="Explorez l'Aveyron depuis votre villa 5 étoiles à Sainte-Eulalie-d'Olt : agenda des événements, randonnées, gastronomie, patrimoine. Réservez votre séjour d'exception.">
+<?php seo_head([
+        'title'       => "Que faire en Aveyron ? Distances et incontournables depuis Sainte-Eulalie-d'Olt",
+        'description' => "Conques à 55 km, Viaduc de Millau à 75 km, Aubrac à 25 km, musée Soulages à 50 km : distances réelles, agenda local, activités et bonnes tables autour du gîte Bellevue d'Aveyron.",
+        'path'        => 'decouvrir.php',
+        'type'        => 'article',
+    ]); ?>
     <link rel="icon" type="image/x-icon" href="images/BELLEVUE/logo.ico">
 
     <!-- Fonts Google — chargement non bloquant -->
@@ -111,7 +121,7 @@
 
         <!-- Nature & Activités — Plateau de l'Aubrac -->
         <a href="#agenda" onclick="activateTab('activites', null); return true;" class="curator-card">
-            <div class="curator-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Plateau_de_l%27Aubrac.JPG/1280px-Plateau_de_l%27Aubrac.JPG'); background-position: center 40%;"></div>
+            <?php media_card('theme-nature-activites', 'curator-img'); ?>
             <div class="curator-body">
                 <h3>Nature &amp; Activités</h3>
                 <p>De l'immensité volcanique de l'Aubrac aux berges boisées du Lot — VTT depuis le gîte, kayak, paddle, randonnées balisées. Nature grandeur nature.</p>
@@ -121,7 +131,7 @@
 
         <!-- Agenda & Événements — Sainte-Eulalie-d'Olt vue du château -->
         <a href="#agenda" onclick="activateTab('autour', null); return true;" class="curator-card">
-            <div class="curator-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG/1280px-Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG'); background-position: center 60%;"></div>
+            <?php media_card('theme-agenda-evenements', 'curator-img'); ?>
             <div class="curator-body">
                 <h3>Agenda &amp; Événements</h3>
                 <p>Marchés nocturnes à Sainte-Eulalie, fêtes de l'Aubrac, concerts de Conques, Trail Aubrac… Le calendrier de votre territoire ne s'arrête jamais.</p>
@@ -131,7 +141,7 @@
 
         <!-- Conques & Patrimoine — Village de Conques -->
         <a href="#agenda" onclick="activateTab('conques', null); return true;" class="curator-card">
-            <div class="curator-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Village_de_Conques_%28Aveyron%29.JPG/1280px-Village_de_Conques_%28Aveyron%29.JPG'); background-position: center center;"></div>
+            <?php media_card('theme-conques-patrimoine', 'curator-img'); ?>
             <div class="curator-body">
                 <h3>Conques &amp; Patrimoine</h3>
                 <p>Abbatiale romane, trésor médiéval, village classé parmi les Plus Beaux de France — Conques-en-Rouergue à 55 km, incontournable de tout séjour aveyronnais.</p>
@@ -141,7 +151,7 @@
 
         <!-- Tables & Gastronomie — Aligot traditionnel -->
         <a href="#agenda" onclick="activateTab('restaurants', null); return true;" class="curator-card">
-            <div class="curator-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Aligot.jpg/1280px-Aligot.jpg'); background-position: center center;"></div>
+            <?php media_card('theme-tables-gastronomie', 'curator-img'); ?>
             <div class="curator-body">
                 <h3>Tables &amp; Gastronomie</h3>
                 <p>Aligot en buron d'Aubrac, bœuf Aubrac, tomme, roquefort, marchés de producteurs en été — les meilleures tables autour de votre villa.</p>
@@ -230,7 +240,7 @@
                                 </div>
                                 <div>
                                     <div class="fc-name">Saint-Côme-d'Olt ★</div>
-                                    <div class="fc-km">5 km · 8 min</div>
+                                    <div class="fc-km">25 km · 25 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -261,7 +271,7 @@
                                 </div>
                                 <div>
                                     <div class="fc-name">Espalion</div>
-                                    <div class="fc-km">12 km · 15 min</div>
+                                    <div class="fc-km">28 km · 30 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -284,7 +294,7 @@
                                 </div>
                                 <div>
                                     <div class="fc-name">Estaing ★</div>
-                                    <div class="fc-km">20 km · 25 min</div>
+                                    <div class="fc-km">38 km · 40 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -330,7 +340,7 @@
                                 </div>
                                 <div>
                                     <div class="fc-name">Laguiole</div>
-                                    <div class="fc-km">30 km · 35 min</div>
+                                    <div class="fc-km">40 km · 45 min</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -361,7 +371,7 @@
                                 </div>
                                 <div>
                                     <div class="fc-name">Conques ★</div>
-                                    <div class="fc-km">55 km · 50 min</div>
+                                    <div class="fc-km">70 km · 1h10</div>
                                 </div>
                             </div>
                             <div class="flip-card-back">
@@ -472,7 +482,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('au-moulin-d-alexandre'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -492,7 +502,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1559339352-11d035aa65de?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('maison-de-severac'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -512,7 +522,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Aligot.jpg/640px-Aligot.jpg');"></div>
+                    <?php media_card('les-burons-de-l-aubrac'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -532,11 +542,11 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('restaurant-bras-laguiole'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">30 km</span>
+                        <span class="coup-distance">40 km</span>
                         <span class="coup-badge">★★★ Michelin</span>
                     </div>
                     <h3>Restaurant Bras — Laguiole</h3>
@@ -559,7 +569,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Abbatiale_Sainte-Foy_de_Conques_%28Aveyron%2C_France%29_-_int%C3%A9rieur%2C_nef.jpg/640px-Abbatiale_Sainte-Foy_de_Conques_%28Aveyron%2C_France%29_-_int%C3%A9rieur%2C_nef.jpg');"></div>
+                    <?php media_card('festival-en-vallee-d-olt'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -579,7 +589,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('eulalie-d-art'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -599,7 +609,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG/640px-Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG');"></div>
+                    <?php media_card('musee-marcel-boudou-et-expos-estivales'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -619,7 +629,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('maison-de-severac-art-et-gastronomie'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -646,11 +656,11 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('avenga-canoe-kayak-sur-le-lot'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">2 km</span>
+                        <span class="coup-distance">3 km</span>
                         <span class="coup-badge">Activité nautique</span>
                     </div>
                     <h3>Avenga — Canoë-Kayak sur le Lot</h3>
@@ -666,7 +676,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1517400508447-f8dd518b86db?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('o-paddle-d-olt'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -686,7 +696,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG/640px-Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG'); background-position: center 30%;"></div>
+                    <?php media_card('balades-au-bord-du-lot-et-village'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -706,7 +716,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Plateau_de_l%27Aubrac.JPG/640px-Plateau_de_l%27Aubrac.JPG');"></div>
+                    <?php media_card('l-aubrac-grands-espaces-et-faune'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -733,7 +743,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('marche-estival-de-sainte-eulalie-d-olt'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -753,7 +763,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('de-faire-et-de-savoir'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -773,7 +783,7 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('eulalie-d-art-ateliers-et-creations'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -793,11 +803,11 @@
 
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1590779033100-9f60a05a013d?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('marches-de-saint-geniez-d-olt'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">2 km</span>
+                        <span class="coup-distance">3 km</span>
                         <span class="coup-badge">Marché traditionnel</span>
                     </div>
                     <h3>Marchés de Saint-Geniez-d'Olt</h3>
@@ -821,7 +831,7 @@
             <!-- 1. Espace jeux du gîte -->
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1575783970733-1aaedde1db74?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('ping-pong-trampoline-velos-et-piscine'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -842,7 +852,7 @@
             <!-- 2. Jardin des bêtes -->
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('jardin-des-betes'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -863,11 +873,11 @@
             <!-- 3. O'Paddle d'Olt -->
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('o-paddle-d-olt-canoe-kayak-et-sup'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">~2 km</span>
+                        <span class="coup-distance">~3 km</span>
                         <span class="coup-badge">Nautique</span>
                     </div>
                     <h3>O'Paddle d'Olt — Canoë, Kayak &amp; SUP</h3>
@@ -884,7 +894,7 @@
             <!-- 4. Maison de la Chouette -->
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('maison-de-la-chouette-sainte-eulalie-d-o'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -905,7 +915,7 @@
             <!-- 5. Air Globe Fun e-bike -->
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=600&auto=format&fit=crop');"></div>
+                    <?php media_card('air-globe-fun-e-bike'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -926,7 +936,7 @@
             <!-- 6. Bozouls et son Canyon -->
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Bozouls_canyon.jpg/640px-Bozouls_canyon.jpg');"></div>
+                    <?php media_card('bozouls-et-son-canyon-emblematique'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
@@ -947,11 +957,11 @@
             <!-- 7. Les Secrets du Trésor de Conques -->
             <div class="coup-card">
                 <div class="coup-img-wrap">
-                    <div class="coup-img" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Village_de_Conques_%28Aveyron%29.JPG/640px-Village_de_Conques_%28Aveyron%29.JPG');"></div>
+                    <?php media_card('les-secrets-du-tresor-de-conques'); ?>
                 </div>
                 <div class="coup-body">
                     <div class="coup-meta">
-                        <span class="coup-distance">55 km</span>
+                        <span class="coup-distance">70 km</span>
                         <span class="coup-badge">Visite guidée</span>
                     </div>
                     <h3>Les Secrets du Trésor de Conques</h3>
@@ -973,7 +983,7 @@
 
 <!-- ══════════════════════════════════════════════════════════════════════
      SECTION AGENDA — Widget HIT Aveyron via iframes Laetis
-     Triés par proximité depuis Sainte-Eulalie-d'Olt (lat=44.4844 / lng=2.8531)
+     Point de référence unique : SEO_LAT / SEO_LNG (config/seo.php)
      ══════════════════════════════════════════════════════════════════════ -->
 <section class="agenda-section" id="agenda">
 
@@ -1015,11 +1025,31 @@
     <div class="widget-zone">
 
         <div class="tab-panel active" id="panel-autour" role="tabpanel">
+            <?php if (!empty($agenda_proches)): ?>
+            <div class="proximite-grid">
+                <?php foreach ($agenda_proches as $ev): ?>
+                <article class="proximite-card">
+                    <div class="proximite-head">
+                        <span class="proximite-km"><?php echo seo_e(agenda_distance_label($ev['distance_km'])); ?></span>
+                        <span class="proximite-quand"><?php echo seo_e($ev['quand']); ?></span>
+                    </div>
+                    <h3><?php echo seo_e($ev['titre']); ?></h3>
+                    <p class="proximite-lieu"><?php echo seo_e($ev['commune']); ?></p>
+                    <p class="proximite-desc"><?php echo seo_e($ev['description']); ?></p>
+                </article>
+                <?php endforeach; ?>
+            </div>
+            <p class="proximite-note">
+                Rendez-vous situés à moins de 35 km du gîte, du plus proche au plus lointain.
+                Horaires et dates à confirmer auprès des organisateurs.
+            </p>
+            <?php endif; ?>
+
             <div class="iframe-wrapper">
                 <div class="iframe-skeleton" id="skel-autour"></div>
-                <iframe title="Agenda autour de Sainte-Eulalie-d'Olt et Vallée du Lot"
-                    src="https://widget.laetis.fr/tourisme-aveyron/wagenda?ordre=proximite&lat=44.4844&lng=2.8531&auto=0&nb=12&bgc=%23FFFFFF&txtc=%23050914&thc=%23A07828&mode=diaporama"
-                    loading="eager" onload="hideSkeleton('skel-autour')" allowfullscreen></iframe>
+                <iframe title="Agenda officiel HIT Aveyron — vallée du Lot"
+                    src="https://widget.laetis.fr/tourisme-aveyron/wagenda?ordre=proximite&lat=<?php echo SEO_LAT; ?>&lng=<?php echo SEO_LNG; ?>&auto=0&nb=12&bgc=%23FFFFFF&txtc=%23050914&thc=%23A07828&mode=diaporama"
+                    loading="lazy" onload="hideSkeleton('skel-autour')" allowfullscreen></iframe>
             </div>
         </div>
 
@@ -1027,7 +1057,7 @@
             <div class="iframe-wrapper">
                 <div class="iframe-skeleton" id="skel-activites"></div>
                 <iframe title="Activités et loisirs en Aubrac et Vallée du Lot"
-                    src="https://widget.laetis.fr/tourisme-aveyron/wactivites-loisirs?sem_local=aubrac&ordre=proximite&lat=44.4844&lng=2.8531&auto=0&nb=12&bgc=%23FFFFFF&txtc=%23050914&thc=%23A07828&mode=diaporama"
+                    src="https://widget.laetis.fr/tourisme-aveyron/wactivites-loisirs?sem_local=aubrac&ordre=proximite&lat=<?php echo SEO_LAT; ?>&lng=<?php echo SEO_LNG; ?>&auto=0&nb=12&bgc=%23FFFFFF&txtc=%23050914&thc=%23A07828&mode=diaporama"
                     loading="lazy" onload="hideSkeleton('skel-activites')" allowfullscreen></iframe>
             </div>
         </div>
@@ -1045,7 +1075,7 @@
             <div class="iframe-wrapper">
                 <div class="iframe-skeleton" id="skel-restaurants"></div>
                 <iframe title="Restaurants et gastronomie — Vallée du Lot et Aubrac"
-                    src="https://widget.laetis.fr/tourisme-aveyron/wrestaurants?sem_local=aubrac&ordre=proximite&lat=44.4844&lng=2.8531&auto=0&nb=12&bgc=%23FFFFFF&txtc=%23050914&thc=%23A07828&mode=diaporama"
+                    src="https://widget.laetis.fr/tourisme-aveyron/wrestaurants?sem_local=aubrac&ordre=proximite&lat=<?php echo SEO_LAT; ?>&lng=<?php echo SEO_LNG; ?>&auto=0&nb=12&bgc=%23FFFFFF&txtc=%23050914&thc=%23A07828&mode=diaporama"
                     loading="lazy" onload="hideSkeleton('skel-restaurants')" allowfullscreen></iframe>
             </div>
         </div>
@@ -1116,6 +1146,8 @@
             <a href="index.php#reservation" class="btn-footer">Réserver maintenant</a>
         </div>
     </div>
+    <?php media_credits_html(); ?>
+
     <div class="footer-bottom">
         <div class="legal-links">
             <span>&copy; 2026 Bellevue d'Aveyron</span>
@@ -1178,4 +1210,32 @@
         }
     })();
     </script>
+<?php
+// ── Données structurées : distances et attractions, matière première des
+//    réponses générées (« que visiter près de Sainte-Eulalie-d'Olt ? »). ──
+seo_jsonld([
+    seo_node_website(),
+    seo_node_webpage('decouvrir.php', "Découvrir l'Aveyron depuis Bellevue d'Aveyron",
+        "Distances routières, sites incontournables, activités et agenda local autour de Sainte-Eulalie-d'Olt."),
+    seo_node_breadcrumb([['Accueil', ''], ['Découvrir la région', 'decouvrir.php']]),
+    seo_node_itemlist('decouvrir.php#distances', "Sites et villages accessibles depuis Bellevue d'Aveyron", [
+        ["Saint-Geniez-d'Olt", "À 3 km (5 min) du gîte : baignade et kayak sur le Lot, marché du jeudi matin, halles médiévales."],
+        ["Lac de Castelnau", "À 2 km (5 min) : base nautique kayak et paddle, plage aménagée, pêche et sentiers."],
+        ["Saint-Côme-d'Olt", "À 25 km (25 min) : village classé parmi les Plus Beaux Villages de France, sur le chemin de Saint-Jacques."],
+        ["Espalion", "À 28 km (30 min) : Pont Vieux, bords du Lot et marchés."],
+        ["Estaing", "À 38 km (40 min) : village classé et château surplombant le Lot."],
+        ["Plateau de l'Aubrac", "À 25 km (30 min) : grands espaces, burons, faune et randonnées."],
+        ["Laguiole", "À 40 km (45 min) : coutellerie, aligot et restaurant Bras."],
+        ["Musée Soulages, Rodez", "À 50 km (45 min) : collection Pierre Soulages et expositions temporaires."],
+        ["Conques", "À 70 km (1 h 10) : abbatiale Sainte-Foy, tympan roman, trésor et illuminations nocturnes."],
+        ["Viaduc de Millau", "À 75 km (1 h) : plus haut pont à haubans du monde, viaduc de Norman Foster."],
+    ]),
+]);
+
+// Les rendez-vous de proximité, balisés un par un.
+if (!empty($agenda_proches)) {
+    seo_jsonld(array_map('agenda_node_event', $agenda_proches));
+}
+?>
+</body>
 </html>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mettre à jour <lastmod> à chaque modification de contenu. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://bellevuedaveyron.fr/</loc>
+        <lastmod>2026-09-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://bellevuedaveyron.fr/decouvrir.php</loc>
+        <lastmod>2026-09-08</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://bellevuedaveyron.fr/mentions.php</loc>
+        <lastmod>2026-09-08</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.2</priority>
+    </url>
+    <url>
+        <loc>https://bellevuedaveyron.fr/politique.php</loc>
+        <lastmod>2026-09-08</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.2</priority>
+    </url>
+</urlset>
