@@ -1,0 +1,58 @@
+[2026-03-31 20:21:30] Envoi vers: contact@bellevuedaveyron.fr, accueil@bellevuedaveyron.com, milhord@gmail.com
+Résultat: ÉCHEC
+Erreur PHP: Aucune spécifiée
+Sendmail Path: /usr/sbin/hsendmail -t
+SMTP Server: localhost
+[2026-03-31 20:38:34] To: milhord@gmail.com | Statut: FAIL
+Erreur: Inconnue | Sendmail: /usr/sbin/hsendmail -t
+[2026-03-31 20:47:19] Res: FAIL
+[20:50:50] Tentative vers reservation@bellevuedaveyron.fr : FAIL
+[20:50:50] Tentative vers milhord@gmail.com : FAIL
+[2026-03-31 20:50:50] Res: FAIL
+[20:52:27] Tentative vers reservation@bellevuedaveyron.fr : FAIL
+[20:52:27] Tentative vers milhord@gmail.com : FAIL
+[2026-03-31 20:52:27] Res: FAIL
+[20:55:25] Final try vers reservation@bellevuedaveyron.fr : FAIL
+[20:55:25] Final try vers milhord@gmail.com : FAIL
+[2026-03-31 20:55:25] Res: FAIL
+[20:56:10] Final try vers reservation@bellevuedaveyron.fr : FAIL
+[20:56:10] Final try vers milhord@gmail.com : FAIL
+[2026-03-31 20:56:10] Res: FAIL
+[21:04:45] Final try vers reservation@bellevuedaveyron.fr : FAIL
+[21:04:46] Final try vers milhord@gmail.com : FAIL
+[2026-03-31 21:04:46] Res: FAIL
+[2026-04-01 04:35:57] Envoi vers reservation@bellevuedaveyron.fr : FAIL
+[2026-04-01 04:35:58] Envoi vers milhord@gmail.com : FAIL
+[2026-04-01 04:57:51] -> reservation@bellevuedaveyron.fr : FAIL
+[2026-04-01 04:57:51] -> milhord@gmail.com : FAIL
+[2026-04-01 04:58:12] -> reservation@bellevuedaveyron.fr : FAIL
+[2026-04-01 04:58:12] -> milhord@gmail.com : FAIL
+[2026-04-06 06:02:38] -> reservation@bellevuedaveyron.fr : FAIL
+[2026-04-06 06:02:38] -> milhord@gmail.com : FAIL
+[2026-04-08 14:39:39] SMTP FAIL : Authentification SMTP échouée : 535 5.7.8 Error: authentication failed: (reason unavailable)
+[2026-04-08 14:44:38] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:44:39] ACK client -> miloud.mestari@gmail.com : OK
+[2026-04-08 14:53:55] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:53:56] ACK client -> mestari.marie@gmail.com : OK
+[2026-04-08 14:54:49] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:54:49] ACK client -> mestari.marie@gmail.com : OK
+[2026-04-08 14:56:21] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:56:22] ACK client -> Milhord@gmail.com : OK
+[2026-04-08 14:56:59] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:57:00] ACK client -> mestari.marie@gmail.com : OK
+[2026-04-08 14:57:26] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:57:26] ACK client -> Colibrietcompagnie@gmail.com : OK
+[2026-04-08 14:58:32] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:58:33] ACK client -> Colibrietcompagnie@gmail.com : OK
+[2026-04-08 14:59:51] SMTP OK -> reservation@bellevuedaveyron.fr,milhord@gmail.com
+[2026-04-08 14:59:51] ACK client -> milhord@glail.com : OK
+[2026-04-08 15:55:17] SMTP OK -> reservation@bellevuedaveyron.fr
+[2026-04-08 15:56:25] SMTP OK -> reservation@bellevuedaveyron.fr
+[2026-04-08 15:56:25] SMTP OK -> milhord@gmail.com
+[2026-04-08 15:56:34] ACK client -> miloud.mestari@gmail.com : OK
+[2026-04-08 15:58:12] SMTP OK -> reservation@bellevuedaveyron.fr
+[2026-04-08 15:58:13] SMTP OK -> milhord@gmail.com
+[2026-04-08 15:58:13] ACK client -> miloud.mestari@gmail.com : OK
+[2026-04-08 15:58:46] SMTP OK -> reservation@bellevuedaveyron.fr
+[2026-04-08 15:58:46] SMTP OK -> milhord@gmail.com
+[2026-04-08 15:58:47] ACK client -> miloud.mestari@gmail.com : OK

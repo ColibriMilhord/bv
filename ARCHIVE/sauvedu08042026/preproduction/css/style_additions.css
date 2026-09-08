@@ -1,0 +1,280 @@
+/* ================================================================
+   ADDITIONS AU style.css — Animations & Dynamisme
+   À ajouter à la fin de css/style.css
+================================================================ */
+
+/* ── 1. NAVIGATION : Lien "La Région" ──────────────────────────── */
+.nav-links li a[href="decouvrir.php"],
+.nav-links li a.nav-region {
+    color: var(--gold-text);
+    position: relative;
+}
+.nav-links li a[href="decouvrir.php"]::after,
+.nav-links li a.nav-region::after {
+    content: '★';
+    font-size: 0.55rem;
+    position: absolute;
+    top: 2px;
+    right: -10px;
+    color: var(--gold-text);
+    animation: starPulse 2s ease-in-out infinite;
+}
+@keyframes starPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* ── 2. SCROLL REVEAL (Intersection Observer) ──────────────────── */
+.reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.reveal-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal-left.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+.reveal-right {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* ── 3. FLIP CARDS (Prestations) ───────────────────────────────── */
+.amenity-box {
+    perspective: 1000px;
+    cursor: pointer;
+}
+.amenity-box-inner {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+}
+.amenity-box:hover .amenity-box-inner,
+.amenity-box:focus .amenity-box-inner {
+    transform: rotateY(180deg);
+}
+.amenity-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+.amenity-face.amenity-back {
+    transform: rotateY(180deg);
+    background: var(--navy-deep);
+    border-color: var(--gold-text);
+}
+.amenity-face.amenity-back h3 {
+    color: var(--gold-text);
+    margin-bottom: 12px;
+}
+.amenity-face.amenity-back p {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.88rem;
+    text-align: center;
+    line-height: 1.65;
+}
+
+/* ── 4. STATS COUNTER ANIMATION ────────────────────────────────── */
+.stat-item h4 {
+    display: inline-block;
+}
+.stat-number {
+    font-family: 'Cinzel', serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--navy-deep);
+    line-height: 1;
+}
+
+/* ── 5. SECTION SÉPARATEUR DORÉ ────────────────────────────────── */
+.gold-divider {
+    width: 80px;
+    height: 2px;
+    background: var(--gold-gradient);
+    margin: 0 auto 20px;
+    border: none;
+    border-radius: 1px;
+}
+
+/* ── 6. TÉMOIGNAGES : Carousel auto ───────────────────────────── */
+.reviews-grid {
+    transition: opacity 0.5s;
+}
+
+/* ── 7. PARALLAX SUBTIL sur la Hero ───────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+    .hero .hero-content {
+        will-change: transform;
+    }
+}
+
+/* ── 8. BADGE FLOTTANT "Nouveau" sur la nav région ────────────── */
+.nav-region-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: var(--gold-gradient);
+    color: var(--navy-deep);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+    animation: badgePop 0.5s 1.5s both;
+}
+@keyframes badgePop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
+
+/* ── 9. CARTE MÉTÉO / SAISON dans l'hero ──────────────────────── */
+.hero-season-strip {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 30px;
+    z-index: 4;
+    opacity: 0;
+    animation: fadeUp 0.8s 1.2s forwards;
+    white-space: nowrap;
+}
+.hero-season-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+}
+.hero-season-item span.sicon { font-size: 1.2rem; }
+@media (max-width: 600px) {
+    .hero-season-strip { display: none; }
+}
+
+/* ── 10. SCROLL INDICATOR (hero) ──────────────────────────────── */
+.scroll-indicator {
+    position: absolute;
+    bottom: 28px;
+    right: 40px;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    animation: fadeIn 0.8s 2s forwards;
+    cursor: pointer;
+}
+@keyframes fadeIn { to { opacity: 1; } }
+.scroll-indicator .si-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, rgba(197,160,89,0.7));
+    position: relative;
+    overflow: hidden;
+}
+.scroll-indicator .si-line::after {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--gold-text);
+    animation: siDrop 1.5s ease-in-out infinite;
+}
+@keyframes siDrop {
+    0%   { top: -100%; }
+    100% { top: 100%;  }
+}
+.scroll-indicator .si-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+@media (max-width: 768px) { .scroll-indicator { display: none; } }
+
+/* ── 11. HOVER GOLD GLOW sur btn-gold ─────────────────────────── */
+.btn-gold {
+    position: relative;
+    overflow: hidden;
+}
+.btn-gold::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -75%;
+    width: 50%;
+    height: 200%;
+    background: rgba(255,255,255,0.2);
+    transform: skewX(-20deg);
+    transition: left 0.5s ease;
+    pointer-events: none;
+}
+.btn-gold:hover::before {
+    left: 150%;
+}
+
+/* ── 12. SECTION RÉGION — CTA sticky sur mobile ───────────────── */
+.region-sticky-cta {
+    display: none;
+}
+@media (max-width: 768px) {
+    .region-sticky-cta {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 900;
+        background: var(--navy-deep);
+        border-top: 1px solid rgba(197,160,89,0.3);
+        padding: 12px 20px;
+        text-align: center;
+    }
+    .region-sticky-cta a {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--gold-text);
+        text-decoration: none;
+    }
+}
