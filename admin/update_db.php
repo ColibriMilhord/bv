@@ -30,4 +30,12 @@ try {
 } catch (PDOException $e) {
     echo "Error updating table: " . $e->getMessage() . "\n";
 }
+
+// Destinataires du formulaire, réglables dans « Paramètres du Gîte ».
+require_once __DIR__ . '/../config/notifications.php';
+if (notifications_migrer($pdo)) {
+    echo "Colonne 'gite_settings.emails_destinataires' en place.\n";
+} else {
+    echo "Colonne 'gite_settings.emails_destinataires' : échec, voir le journal serveur.\n";
+}
 ?>

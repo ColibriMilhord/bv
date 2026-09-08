@@ -4,6 +4,7 @@ session_start();
 require_once 'config/mail_config.php';
 require_once 'config/mail_smtp.php';
 require_once 'config/seo.php';
+require_once 'config/notifications.php';
     
 // ── Visualisation des logs : index.php?show_log=1 ──
 // Réservée à un administrateur connecté : le journal contient les adresses
@@ -146,8 +147,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // ── Envoi aux propriétaires — un mail par destinataire ──
         $mailSent    = false;
-        // Destinataires des demandes du formulaire (un envoi par destinataire).
-        $admin_list  = ["milhord@gmail.com", "accueil@bellevuedaveyron.com"];
+        // Destinataires réglables depuis l'administration (Paramètres du Gîte).
+        // Un envoi par destinataire ; repli sur les adresses par défaut si le
+        // réglage est vide. L'expéditeur reste la boîte SMTP reservation@.
+        $admin_list  = notifications_destinataires($settings);
         $mail_errors = [];
 
         foreach ($admin_list as $admin) {

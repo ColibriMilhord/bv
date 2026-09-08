@@ -17,6 +17,7 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `config/seo.php` | Identité du site, rendu des balises `<head>`, constructeurs de nœuds JSON-LD, questions fréquentes. **Le fichier à recopier en premier sur un autre projet.** |
 | `config/medias.php` | Registre des visuels : texte alternatif, image de repli, substitution par un fichier local. |
 | `config/agenda.php` | Données externes : cache, calcul de distance, filtrage par rayon, socle éditorial de repli. |
+| `config/notifications.php` | Destinataires des demandes du formulaire, réglables dans « Paramètres du Gîte ». Expéditeur non modifiable. |
 | `config/env.php` | Lecture des secrets : variables d'environnement, puis `config/secrets.php` (non versionné). Aucun mot de passe dans le dépôt. |
 | `config/secrets.example.php` | Modèle à recopier en `config/secrets.php` sur le serveur. |
 | `tools/generer-inventaire-images.php` | Régénère l'inventaire des visuels depuis le registre. |

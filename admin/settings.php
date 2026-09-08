@@ -2,13 +2,19 @@
 // admin/settings.php
 session_start();
 require_once '../config/db.php';
+require_once '../config/mail_config.php';
+require_once '../config/notifications.php';
 
 if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
     exit;
 }
 
-$message = '';
+// Crée la colonne des destinataires si le site tourne encore sur l'ancien schéma.
+$colonne_destinataires = notifications_migrer($pdo);
+
+$message      = '';
+$avertissement = '';
 
 // Handle Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -17,11 +23,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $check_in = $_POST['check_in'];
     $check_out = $_POST['check_out'];
 
-    $stmt = $pdo->prepare("UPDATE gite_settings SET frais_menage = ?, acompte_pourcentage = ?, check_in = ?, check_out = ? WHERE id = 1");
-    if ($stmt->execute([$frais_menage, $acompte, $check_in, $check_out])) {
+    [$destinataires, $rejets] = notifications_parser($_POST['emails_destinataires'] ?? '');
+
+    if ($colonne_destinataires) {
+        $stmt = $pdo->prepare("UPDATE gite_settings SET frais_menage = ?, acompte_pourcentage = ?, check_in = ?, check_out = ?, emails_destinataires = ? WHERE id = 1");
+        $ok = $stmt->execute([$frais_menage, $acompte, $check_in, $check_out, notifications_format($destinataires)]);
+    } else {
+        $stmt = $pdo->prepare("UPDATE gite_settings SET frais_menage = ?, acompte_pourcentage = ?, check_in = ?, check_out = ? WHERE id = 1");
+        $ok = $stmt->execute([$frais_menage, $acompte, $check_in, $check_out]);
+        $avertissement = "Les montants sont enregistrés, mais la liste des destinataires n'a pas pu être sauvegardée : la colonne est absente de la base.";
+    }
+
+    if ($ok) {
         $message = "Paramètres mis à jour avec succès.";
     } else {
         $message = "Erreur lors de la mise à jour.";
+    }
+
+    if ($rejets) {
+        $avertissement .= ($avertissement ? ' ' : '')
+            . "Adresse(s) ignorée(s) car invalide(s) : " . implode(', ', $rejets) . ".";
+    }
+    if ($colonne_destinataires && !$destinataires) {
+        $avertissement .= ($avertissement ? ' ' : '')
+            . "Aucun destinataire valide : les demandes partiront vers les adresses par défaut ("
+            . implode(', ', notifications_defaut()) . ").";
     }
 }
 
@@ -59,6 +85,11 @@ $settings = $stmt->fetch();
         <?php if ($message): ?>
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
                 <?php echo htmlspecialchars($message); ?>
+            </div>
+        <?php endif; ?>
+        <?php if ($avertissement): ?>
+            <div class="bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded mb-6">
+                <?php echo htmlspecialchars($avertissement); ?>
             </div>
         <?php endif; ?>
 
@@ -105,6 +136,44 @@ $settings = $stmt->fetch();
                                 value="<?php echo htmlspecialchars($settings['check_out']); ?>"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
                         </div>
+                    </div>
+
+                    <hr class="border-gray-200">
+
+                    <div>
+                        <label for="emails_destinataires" class="block text-sm font-medium text-gray-700">
+                            Destinataires des demandes du formulaire
+                        </label>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Adresses qui reçoivent les demandes de réservation et d'information
+                            envoyées depuis le site. Une par ligne (la virgule et le point-virgule
+                            sont acceptés aussi), <?php echo NOTIF_MAX_DESTINATAIRES; ?> au maximum.
+                        </p>
+                        <textarea name="emails_destinataires" id="emails_destinataires" rows="4"
+                            placeholder="<?php echo htmlspecialchars(notifications_format(notifications_defaut())); ?>"
+                            class="mt-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border font-mono"><?php
+                                echo htmlspecialchars(notifications_format(notifications_destinataires($settings)));
+                            ?></textarea>
+                        <p class="mt-2 text-sm text-gray-500">
+                            <span class="font-medium text-gray-700">Expéditeur :</span>
+                            <span class="font-mono"><?php
+                                echo SMTP_FROM !== ''
+                                    ? htmlspecialchars(SMTP_FROM)
+                                    : 'boîte reservation@ (non configurée sur ce serveur)';
+                            ?></span> —
+                            non modifiable. C'est le compte authentifié auprès du serveur d'envoi :
+                            expédier depuis une autre adresse ferait classer les messages en indésirables.
+                        </p>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Le client, lui, reçoit toujours son accusé de réception, et les réponses
+                            à ces messages partent vers son adresse.
+                        </p>
+                        <?php if (!$colonne_destinataires): ?>
+                            <p class="mt-2 text-sm text-amber-700">
+                                La base de données n'expose pas encore ce réglage : les demandes
+                                partent vers les adresses par défaut.
+                            </p>
+                        <?php endif; ?>
                     </div>
 
                     <div class="pt-5">
