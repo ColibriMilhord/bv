@@ -343,9 +343,19 @@ function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
     $offers = [];
     foreach ($tarifs as $t) {
         if (!isset($t['prix_semaine'])) continue;
+        // La saison figure dans le nom de l'offre : c'est ce qui permet à un
+        // moteur de réponse de dire « en haute saison, la semaine est à … ».
+        $saison = '';
+        if (function_exists('tarifs_categorie') && function_exists('tarifs_saisons')) {
+            $tous   = array_map(function ($x) { return (float) ($x['prix_semaine'] ?? 0); }, $tarifs);
+            $cat    = tarifs_categorie($t, min($tous), max($tous));
+            $saison = tarifs_saisons()[$cat]['nom'] ?? '';
+        }
+
         $offers[] = array_filter([
             '@type'            => 'Offer',
-            'name'             => 'Location à la semaine — ' . ($t['nom_saison'] ?? 'Saison'),
+            'name'             => 'Location à la semaine — ' . ($t['nom_saison'] ?? 'Saison')
+                                . ($saison !== '' ? ' (' . $saison . ')' : ''),
             'availability'     => 'https://schema.org/InStock',
             'priceCurrency'    => 'EUR',
             'price'            => (string) (int) $t['prix_semaine'],

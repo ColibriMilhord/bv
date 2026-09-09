@@ -8,6 +8,7 @@ require_once 'config/notifications.php';
 require_once 'config/avis.php';
 require_once 'config/annonces.php';
 require_once 'config/stats.php';
+require_once 'config/tarifs.php';
 
 // Avis Google : note, compteur et trois derniers avis (cache 12 h, repli
 // éditorial). Un incident sur ce bloc — réseau, cache en lecture seule,
@@ -78,6 +79,16 @@ if ($pdo) {
     try {
         $tarifs_display = $pdo->query("SELECT * FROM tarifs_saison ORDER BY prix_semaine ASC")->fetchAll();
     } catch (Exception $e) {}
+}
+
+// ── Grille tarifaire regroupée par saison ──
+$tarifs_grille   = tarifs_grille($tarifs_display);
+$tarif_mini      = tarifs_a_partir_de($tarifs_display);
+$tarifs_settings = [];
+if ($pdo) {
+    try {
+        $tarifs_settings = $pdo->query("SELECT * FROM gite_settings WHERE id = 1")->fetch() ?: [];
+    } catch (Throwable $e) {}
 }
 
 // ── Traitement du formulaire de réservation ──
@@ -484,48 +495,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <section id="tarifs">
     <div class="section-header">
-        <span class="subtitle">Saison 2026</span>
-        <h2>Tarifs Hebdomadaires</h2>
-    </div>
-    <div class="pricing-container">
-        <?php if (empty($tarifs_display)): ?>
-            <div class="pricing-row">
-                <div class="season-info"><h3>Tarifs indisponibles</h3></div>
-                <div class="price-block"><div class="price">- €</div></div>
-            </div>
-        <?php else: ?>
-            <?php foreach ($tarifs_display as $t):
-                $isHigh = $t['prix_semaine'] > 2000;
-                $d1 = new DateTime($t['date_debut']); $d2 = new DateTime($t['date_fin']);
-                // L'extension intl n'est pas activée partout : sans elle, on
-                // formate les dates à la main plutôt que de faire tomber la page.
-                $fmtDate = function (DateTime $date) {
-                    if (class_exists('IntlDateFormatter')) {
-                        $fmt = new IntlDateFormatter('fr_FR', IntlDateFormatter::NONE, IntlDateFormatter::NONE);
-                        $fmt->setPattern('d MMMM');
-                        return $fmt->format($date);
-                    }
-                    $mois = [1 => 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-                             'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-                    return $date->format('j') . ' ' . $mois[(int) $date->format('n')];
-                };
-            ?>
-            <div class="<?php echo $isHigh ? 'pricing-row featured' : 'pricing-row'; ?>">
-                <div class="season-info">
-                    <h3 style="<?php echo $isHigh ? 'color:var(--gold-text);' : ''; ?>"><?php echo htmlspecialchars($t['nom_saison']); ?></h3>
-                    <div style="font-size:.9rem;<?php echo $isHigh ? 'color:rgba(255,255,255,.7);' : 'color:#777;'; ?>">
-                        Du <?php echo $fmtDate($d1); ?> au <?php echo $fmtDate($d2); ?>
-                    </div>
-                </div>
-                <div class="price-block">
-                    <div class="price" style="<?php echo $isHigh ? 'color:var(--gold-text);' : ''; ?>">
-                        <?php echo number_format($t['prix_semaine'], 0, ',', ' '); ?> €
-                    </div>
-                </div>
-            </div>
-            <?php endforeach; ?>
+        <span class="subtitle">Location à la semaine</span>
+        <h2>Nos Tarifs par Saison</h2>
+        <?php if ($tarif_mini > 0): ?>
+            <p class="tarifs-accroche">
+                La villa entière, pour votre seul groupe, à partir de
+                <strong><?php echo number_format($tarif_mini, 0, ',', ' '); ?> €</strong> la semaine.
+            </p>
         <?php endif; ?>
     </div>
+
+    <?php if (empty($tarifs_grille)): ?>
+        <p class="tarifs-vide">
+            La grille tarifaire est en cours de mise à jour.
+            Écrivez-nous ou appelez le <a href="tel:<?php echo SEO_PHONE; ?>"><?php echo SEO_PHONE_HUMAN; ?></a>,
+            nous vous répondons sous 24 heures.
+        </p>
+    <?php else: ?>
+
+    <div class="tarifs-saisons">
+        <?php foreach ($tarifs_grille as $cle => $saison): ?>
+        <article class="saison saison--<?php echo seo_e($cle); ?>">
+            <div class="saison-tete">
+                <h3><?php echo seo_e($saison['nom']); ?></h3>
+                <p class="saison-resume"><?php echo seo_e($saison['resume']); ?></p>
+            </div>
+
+            <ul class="saison-lignes">
+                <?php foreach ($saison['lignes'] as $l): ?>
+                <li class="saison-ligne">
+                    <div class="ligne-periode">
+                        <span class="ligne-nom"><?php echo seo_e($l['nom']); ?></span>
+                        <span class="ligne-dates"><?php echo seo_e($l['periode']); ?></span>
+                    </div>
+                    <div class="ligne-prix">
+                        <span class="prix-semaine"><?php echo number_format($l['semaine'], 0, ',', ' '); ?> €</span>
+                        <span class="prix-unite">la semaine</span>
+                        <?php if ($l['par_nuit'] > 0): ?>
+                            <span class="prix-nuit">soit <?php echo number_format($l['par_nuit'], 0, ',', ' '); ?> € la nuit</span>
+                        <?php endif; ?>
+                    </div>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+
+            <p class="saison-conseil"><?php echo seo_e($saison['conseil']); ?></p>
+        </article>
+        <?php endforeach; ?>
+    </div>
+
+    <div class="tarifs-conditions">
+        <h3>Ce qu'il faut savoir avant de réserver</h3>
+        <dl>
+            <?php foreach (tarifs_conditions($tarifs_settings) as [$titre, $detail]): ?>
+                <div class="condition">
+                    <dt><?php echo seo_e($titre); ?></dt>
+                    <dd><?php echo seo_e($detail); ?></dd>
+                </div>
+            <?php endforeach; ?>
+        </dl>
+        <a href="#reservation" class="btn-gold">Vérifier les disponibilités</a>
+    </div>
+
+    <?php endif; ?>
 </section>
 
 <!-- ══ RÉSERVATION ══ -->

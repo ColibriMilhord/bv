@@ -6,7 +6,7 @@
 define('SMTP_HOST', 'smtp.hostinger.com');
 define('SMTP_PORT', 465);
 define('SMTP_USER', 'reservation@bellevuedaveyron.fr');
-define('SMTP_PASS', 'CIEL9e12!'); // Mettez votre mot de passe ici
+define('SMTP_PASS', 'MOT_DE_PASSE_RETIRE'); // Mettez votre mot de passe ici
 define('SMTP_FROM', 'reservation@bellevuedaveyron.fr');
 define('SMTP_FROM_NAME', 'Bellevue d\'Aveyron');
 ?>
