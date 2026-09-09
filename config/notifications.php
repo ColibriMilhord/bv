@@ -64,7 +64,7 @@ function notifications_destinataires(?array $settings = null): array
     $brut = is_array($settings) ? ($settings['emails_destinataires'] ?? '') : '';
 
     if (is_string($brut) && trim($brut) !== '') {
-        [$valides] = notifications_parser($brut);
+        list($valides) = notifications_parser($brut);
         if ($valides) return $valides;
     }
 

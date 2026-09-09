@@ -36,7 +36,7 @@ if ($category !== 'all') {
     $acceptes = $groupes[$category] ?? [$category];
     $events   = array_values(array_filter(
         $events,
-        fn($ev) => in_array($ev['type'], $acceptes, true)
+        function ($ev) use ($acceptes) { return in_array($ev['type'], $acceptes, true); }
     ));
 }
 

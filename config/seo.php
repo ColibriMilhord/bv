@@ -322,7 +322,7 @@ function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
                     'unitCode' => 'WEE',
                 ],
             ],
-        ], fn($v) => $v !== null);
+        ], function ($v) { return $v !== null; });
     }
 
     return array_filter([
@@ -385,7 +385,7 @@ function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
             '@type' => 'AdministrativeArea',
             'name'  => 'Aveyron, Occitanie, France',
         ],
-    ], fn($v) => $v !== null);
+    ], function ($v) { return $v !== null; });
 }
 
 /** Lieux touristiques cités sur la page « Découvrir » (ItemList). */

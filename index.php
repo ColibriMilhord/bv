@@ -7,8 +7,15 @@ require_once 'config/seo.php';
 require_once 'config/notifications.php';
 require_once 'config/avis.php';
 
-// Avis Google : note, compteur et trois derniers avis (cache 12 h, repli éditorial).
-$avis_google = avis_donnees();
+// Avis Google : note, compteur et trois derniers avis (cache 12 h, repli
+// éditorial). Un incident sur ce bloc — réseau, cache en lecture seule,
+// extension manquante — ne doit jamais empêcher la page de s'afficher.
+$avis_google = ['note' => 5.0, 'total' => 0, 'avis' => [], 'maj' => time(), 'source' => 'secours'];
+try {
+    $avis_google = avis_donnees();
+} catch (Throwable $e) {
+    error_log('[bellevue] avis indisponibles : ' . $e->getMessage());
+}
     
 // ── Visualisation des logs : index.php?show_log=1 ──
 // Réservée à un administrateur connecté : le journal contient les adresses

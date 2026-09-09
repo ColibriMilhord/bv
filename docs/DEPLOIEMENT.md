@@ -149,10 +149,28 @@ une valeur est erronée. C'est la cause dans la quasi-totalité des cas.
 
 ---
 
-## En cas de problème
+## En cas de problème — erreur 500 ou page blanche
 
-Restaurer l'archive `.zip` de l'étape 2, et me décrire le message d'erreur
-exact. Le fichier `config/secrets.php` créé à l'étape 1, lui, peut rester en
+**Ouvrir d'abord `https://bellevuedaveyron.fr/diagnostic.php`.** Cette page
+vérifie la version de PHP, les extensions, la présence et la **syntaxe** de
+chaque fichier de configuration, la connexion à la base, les droits sur
+`cache/`, et affiche les dernières erreurs PHP du serveur. Elle n'affiche
+aucun mot de passe. **La supprimer une fois le problème réglé.**
+
+Une erreur 500 vient presque toujours de l'une de ces trois causes :
+
+| Cause | Signe dans le diagnostic |
+|---|---|
+| Erreur de frappe dans `config/secrets.php` (virgule ou guillemet manquant) | ligne `config/secrets.php` en rouge, avec le message de syntaxe |
+| Fichier non téléversé | ligne « fichier absent » en rouge |
+| Version de PHP trop ancienne | ligne « Version de PHP » en rouge |
+
+Si le diagnostic lui-même ne s'ouvre pas, le journal d'erreurs se consulte
+dans hPanel → **Avancé → Journaux d'erreurs PHP** : la dernière ligne
+« Fatal error » donne le fichier et le numéro de ligne exacts.
+
+En dernier recours, restaurer l'archive `.zip` de l'étape 2, et me décrire le
+message d'erreur exact. Le fichier `config/secrets.php` créé à l'étape 1, lui, peut rester en
 place : il n'est utilisé que par la nouvelle version.
 
 ---

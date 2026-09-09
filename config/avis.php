@@ -156,7 +156,9 @@ function avis_interroger_google(): ?array
 
     // Du plus récent au plus ancien : c'est la demande, et c'est ce qui
     // rassure un visiteur. Google ne garantit aucun ordre dans sa réponse.
-    usort($donnees['avis'], fn($a, $b) => ($b['horodatage'] ?? 0) <=> ($a['horodatage'] ?? 0));
+    usort($donnees['avis'], function ($a, $b) {
+        return ($b['horodatage'] ?? 0) <=> ($a['horodatage'] ?? 0);
+    });
     $donnees['avis'] = array_slice($donnees['avis'], 0, AVIS_NOMBRE);
 
     return $donnees;
