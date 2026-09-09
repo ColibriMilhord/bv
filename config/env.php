@@ -35,9 +35,31 @@ function secret(string $cle, $defaut = null)
 
     // 2. Fichier config/secrets.php (chargé une seule fois)
     if ($fichier === null) {
+        $fichier = [];
         $chemin  = __DIR__ . '/secrets.php';
-        $charge  = is_file($chemin) ? require $chemin : [];
-        $fichier = is_array($charge) ? $charge : [];
+
+        if (is_file($chemin)) {
+            // Ce fichier est saisi à la main sur le serveur. Une faute de frappe
+            // — le grand classique étant une apostrophe dans une chaîne entre
+            // apostrophes — ne doit pas faire tomber tout le site avec une
+            // erreur 500 muette. On contrôle donc la syntaxe avant d'inclure.
+            $syntaxeValide = true;
+
+            if (function_exists('token_get_all') && defined('TOKEN_PARSE')) {
+                try {
+                    token_get_all((string) file_get_contents($chemin), TOKEN_PARSE);
+                } catch (Throwable $e) {
+                    $syntaxeValide = false;
+                    error_log('[bellevue] config/secrets.php contient une erreur de syntaxe : '
+                        . $e->getMessage());
+                }
+            }
+
+            if ($syntaxeValide) {
+                $charge  = require $chemin;
+                $fichier = is_array($charge) ? $charge : [];
+            }
+        }
     }
     if (array_key_exists($cle, $fichier) && $fichier[$cle] !== '') {
         return $fichier[$cle];

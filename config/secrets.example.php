@@ -2,6 +2,12 @@
 /**
  * config/secrets.example.php — Modèle à recopier, JAMAIS de vraie valeur ici.
  *
+ * ⚠ Piège classique : une valeur contenant une apostrophe doit être entre
+ *   GUILLEMETS DOUBLES, sinon PHP s'arrête et le site renvoie une erreur 500.
+ *       'SMTP_FROM_NAME' => 'Bellevue d'Aveyron',   ← CASSE TOUT
+ *       'SMTP_FROM_NAME' => "Bellevue d'Aveyron",   ← correct
+ *   Et chaque ligne doit se terminer par une virgule.
+ *
  * Sur le serveur :
  *   cp config/secrets.example.php config/secrets.php
  *   puis renseigner les valeurs réelles dans config/secrets.php.
