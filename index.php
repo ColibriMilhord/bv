@@ -5,6 +5,10 @@ require_once 'config/mail_config.php';
 require_once 'config/mail_smtp.php';
 require_once 'config/seo.php';
 require_once 'config/notifications.php';
+require_once 'config/avis.php';
+
+// Avis Google : note, compteur et trois derniers avis (cache 12 h, repli éditorial).
+$avis_google = avis_donnees();
     
 // ── Visualisation des logs : index.php?show_log=1 ──
 // Réservée à un administrateur connecté : le journal contient les adresses
@@ -210,7 +214,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <?php seo_head([
         'title'       => "Bellevue d'Aveyron — Villa 5 étoiles avec piscine, Sainte-Eulalie-d'Olt",
-        'description' => "Gîte 5 étoiles à Sainte-Eulalie-d'Olt (Aveyron) : 200 m², 5 chambres, 10 personnes, piscine chauffée, parc de 5 000 m², accès PMR de plain-pied. Réservation en direct, 5,0/5 sur 102 avis Google.",
+        'description' => "Gîte 5 étoiles à Sainte-Eulalie-d'Olt (Aveyron) : 200 m², 5 chambres, 10 personnes, piscine chauffée, parc de 5 000 m², accès PMR de plain-pied. Réservation en direct, "
+            . number_format($avis_google['note'], 1, ',', '') . "/5 sur " . (int) $avis_google['total'] . " avis Google.",
         'path'        => '',
         'type'        => 'website',
     ]); ?>
@@ -307,16 +312,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <div class="htb-right">
                 <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.16v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.16C1.43 8.55 1 10.22 1 12s.43 3.45 1.16 4.93l3.68-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.16 7.07l3.68 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 <div class="htb-score-wrap">
-                    <span class="htb-score">5,0</span>
+                    <span class="htb-score"><?php echo number_format($avis_google['note'], 1, ',', ''); ?></span>
                     <span class="htb-stars-yellow">★★★★★</span>
-                    <span class="htb-count">102 avis Google</span>
+                    <span class="htb-count"><?php echo (int) $avis_google['total']; ?> avis Google</span>
                 </div>
             </div>
         </div>
         <h1>L'Art de Vivre<br>en Aveyron</h1>
-        <p style="color:rgba(255,255,255,0.9);font-size:1.2rem;margin-bottom:30px;">
-            <strong>Bellevue d'Aveyron</strong> est un gîte de luxe 5 étoiles à Sainte-Eulalie-d'Olt (12130), en Aveyron :
-            200 m², 5 chambres, jusqu'à 10 personnes, piscine chauffée et vue panoramique sur la vallée du Lot.
+        <p class="hero-baseline">
+            Une villa d'exception avec piscine chauffée et vue panoramique sur la vallée du Lot.
+        </p>
+        <p class="hero-facts">
+            Gîte de luxe 5 étoiles à Sainte-Eulalie-d'Olt (12130), en Aveyron —
+            200 m², 5 chambres, jusqu'à 10 personnes, parc privé de 5 000 m².
         </p>
         <a href="#reservation" class="btn-gold">Planifier votre séjour</a>
     </div>
@@ -559,16 +567,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
             </div>
             <div class="ti-header-right">
-                <div><div class="ti-rating-score">5</div><div class="ti-stars">★★★★★</div></div>
-                <div class="ti-review-count"><span class="ti-review-count-num">102</span>avis Google</div>
+                <div><div class="ti-rating-score"><?php echo number_format($avis_google['note'], 1, ',', ''); ?></div><div class="ti-stars">★★★★★</div></div>
+                <div class="ti-review-count"><span class="ti-review-count-num"><?php echo (int) $avis_google['total']; ?></span>avis Google</div>
             </div>
         </div>
         <div class="ti-controls">
             <div class="ti-subtitle">
                 <h3>Derniers témoignages</h3>
                 <div class="ti-meta">
-                    Dernière mise à jour : <?php echo date('d/m/Y H:i'); ?>
-                    <span class="ti-badge">SOURCE: CACHE</span>
+                    <?php echo seo_e(avis_libelle_source($avis_google)); ?>
+                    <span class="ti-badge"><?php echo $avis_google['source'] === 'google' ? 'GOOGLE' : 'SÉLECTION'; ?></span>
                 </div>
             </div>
             <div class="ti-actions">
@@ -583,24 +591,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
         </div>
         <div class="ti-cards">
+            <?php foreach ($avis_google['avis'] as $avis): ?>
             <div class="ti-card">
                 <div class="ti-quote-icon">"</div>
-                <div class="ti-card-header"><div class="ti-avatar">A</div><div><div class="ti-author-name">Ansar A.</div><div class="ti-author-date">Il y a environ 1 an et 7 mois</div></div></div>
-                <div class="ti-card-stars">★★★★★</div>
-                <div class="ti-card-text">"... et Daniel ne me pardonneraient jamais - cela devrait être partagé !!!"</div>
+                <div class="ti-card-header">
+                    <div class="ti-avatar"><?php echo seo_e($avis['initiale']); ?></div>
+                    <div>
+                        <div class="ti-author-name"><?php echo seo_e($avis['auteur']); ?></div>
+                        <div class="ti-author-date"><?php echo seo_e($avis['date']); ?></div>
+                    </div>
+                </div>
+                <div class="ti-card-stars"><?php echo str_repeat('★', (int) $avis['note']); ?></div>
+                <div class="ti-card-text">"<?php echo seo_e($avis['texte']); ?>"</div>
             </div>
-            <div class="ti-card">
-                <div class="ti-quote-icon">"</div>
-                <div class="ti-card-header"><div class="ti-avatar">R</div><div><div class="ti-author-name">Rob B.</div><div class="ti-author-date">Il y a environ 7 ans et 6 mois</div></div></div>
-                <div class="ti-card-stars">★★★★★</div>
-                <div class="ti-card-text">"L'une des plus belles vues de France. Rien ne peut vous préparer aux plus belles vues, les photos ne leur rendent pas justice. Il y a tout ce que vous pourriez souhaiter dans une maison de vacances et tout est de la plus haute qualité..."</div>
-            </div>
-            <div class="ti-card">
-                <div class="ti-quote-icon">"</div>
-                <div class="ti-card-header"><div class="ti-avatar">M</div><div><div class="ti-author-name">Marielle V.</div><div class="ti-author-date">Il y a environ 3 ans</div></div></div>
-                <div class="ti-card-stars">★★★★★</div>
-                <div class="ti-card-text">"Simplement un paradis... cuisine ouverte où vous n'avez besoin de rien... les chambres sont magnifiques avec une clarté et des nuits douces merveilleuses..."</div>
-            </div>
+            <?php endforeach; ?>
         </div>
         <div style="text-align:center;margin-top:20px;">
             <a href="https://g.page/r/CVWZLGkfDaptEAE/review" target="_blank" class="btn-gold-outline">Lire tous les avis sur Google</a>
@@ -782,7 +786,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // ── Données structurées JSON-LD (Google, ChatGPT, Perplexity, Gemini…) ──
 seo_jsonld([
     seo_node_website(),
-    seo_node_lodging($tarifs_display),
+    seo_node_lodging($tarifs_display, $avis_google),
     seo_node_webpage('', "Bellevue d'Aveyron — Villa 5 étoiles avec piscine, Sainte-Eulalie-d'Olt",
         "Gîte de luxe 5 étoiles à Sainte-Eulalie-d'Olt en Aveyron : 200 m², 5 chambres, 10 personnes, piscine chauffée, parc de 5 000 m², accès PMR."),
     seo_node_breadcrumb([['Accueil', '']]),

@@ -2144,3 +2144,41 @@ img.curator-img {
 .credits-photos a:hover {
     text-decoration: underline;
 }
+
+/* --- Héro : accroche et ligne de faits --- */
+/* La ligne de faits reste lisible par les moteurs de réponse, mais cesse de
+   barrer l'écran de bord à bord : largeur contenue, corps réduit, contraste
+   volontairement discret.                                                    */
+.hero-baseline {
+    max-width: 620px;
+    margin: 0 auto 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, .9);
+    text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
+}
+
+.hero-facts {
+    max-width: 560px;
+    margin: 0 auto 34px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .82rem;
+    font-weight: 300;
+    line-height: 1.7;
+    letter-spacing: .02em;
+    color: rgba(255, 255, 255, .62);
+    text-shadow: 0 1px 10px rgba(0, 0, 0, .4);
+}
+
+@media (max-width: 768px) {
+    .hero-baseline {
+        font-size: .98rem;
+        margin-bottom: 12px;
+    }
+
+    .hero-facts {
+        font-size: .76rem;
+        margin-bottom: 26px;
+    }
+}

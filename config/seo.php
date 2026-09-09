@@ -43,8 +43,9 @@ const SEO_COUNTRY      = 'FR';
 // widgets touristiques et le tri de l'agenda : ne les modifier qu'ici.
 const SEO_LAT          = 44.4575;
 const SEO_LNG          = 2.9581;
-const SEO_RATING_VALUE = 5.0;   // note Google affichée sur la page
-const SEO_RATING_COUNT = 102;   // nombre d'avis Google affiché sur la page
+// Repli si config/avis.php ne renvoie rien ; la valeur réelle vient de Google.
+const SEO_RATING_VALUE = 5.0;
+const SEO_RATING_COUNT = 102;
 const SEO_DEFAULT_IMG  = 'images/accueil.jpg';
 
 /** Profils officiels — consolident l'entité pour les moteurs et les LLM. */
@@ -278,10 +279,17 @@ function seo_node_faq(array $qa): array {
 /**
  * L'hébergement lui-même : nœud central cité par les moteurs de réponse.
  *
- * @param array $tarifs Lignes de tarifs_saison (nom_saison, date_debut,
- *                      date_fin, prix_semaine) pour générer les offres.
+ * @param array      $tarifs Lignes de tarifs_saison (nom_saison, date_debut,
+ *                           date_fin, prix_semaine) pour générer les offres.
+ * @param array|null $avis   Données de config/avis.php. La note balisée est
+ *                           alors exactement celle affichée sur la page —
+ *                           condition de validité du balisage.
  */
-function seo_node_lodging(array $tarifs = []): array {
+function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
+    // Note et nombre d'avis : exactement ceux affichés sur la page.
+    $note   = (float) ($avis['note'] ?? SEO_RATING_VALUE);
+    $nbAvis = (int) ($avis['total'] ?? SEO_RATING_COUNT);
+
     $amenities = [];
     foreach (seo_amenities() as [$label, $value]) {
         $amenities[] = [
@@ -343,13 +351,13 @@ function seo_node_lodging(array $tarifs = []): array {
         ],
         'hasMap' => 'https://www.google.com/maps/search/?api=1&query=' . SEO_LAT . ',' . SEO_LNG,
         'starRating' => ['@type' => 'Rating', 'ratingValue' => 5, 'bestRating' => 5],
-        'aggregateRating' => [
+        'aggregateRating' => ($note > 0 && $nbAvis > 0) ? [
             '@type'       => 'AggregateRating',
-            'ratingValue' => SEO_RATING_VALUE,
-            'reviewCount' => SEO_RATING_COUNT,
+            'ratingValue' => $note,
+            'reviewCount' => $nbAvis,
             'bestRating'  => 5,
             'worstRating' => 1,
-        ],
+        ] : null,
         'numberOfRooms'    => 5,
         'numberOfBedrooms' => 5,
         'occupancy' => [
