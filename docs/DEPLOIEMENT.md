@@ -66,10 +66,12 @@ encore en ligne : `config/db.php` (variable `$password`) et
 `config/mail_config.php` (constante `SMTP_PASS`). **Lisez-les avant de
 téléverser quoi que ce soit**, puisque le téléversement va les remplacer.
 
-> **Profitez-en pour changer ces deux mots de passe.** Ils ont circulé en clair
-> dans le dépôt Git et restent lisibles dans son historique : les sortir du
-> code ne suffit pas à les rendre sûrs. Changez-les dans hPanel (base de
-> données et boîte e-mail), puis saisissez les nouvelles valeurs ici.
+> **Changez ces deux mots de passe — ce n'est plus facultatif.** Ils ont
+> circulé en clair dans un dépôt Git public et sont à l'origine de la
+> suspension de la boîte d'envoi par Hostinger. Changez-les dans hPanel (base
+> de données, puis Emails → Comptes e-mail), et saisissez ici les nouvelles
+> valeurs. Le détail de l'incident et la marche à suivre complète figurent dans
+> `docs/securite-mail.md`.
 
 ---
 
@@ -145,7 +147,8 @@ Dans l'ordre, en notant tout ce qui cloche :
 | Administration → **Audience du site** | Les tuiles s'affichent ; la carte se charge depuis un service externe |
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
-| Formulaire de réservation du site | **Faire un envoi de test** : le mail arrive bien aux destinataires réglés |
+| Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
+| Formulaire de réservation du site | **Faire un envoi de test** : le mail arrive bien aux destinataires réglés. Prenez plus de trois secondes à le remplir, sans quoi la protection anti-robots l'écarte |
 
 Si les tarifs n'apparaissent pas ou si l'administration répond « Service
 temporairement indisponible » : `config/secrets.php` est absent, mal nommé, ou
@@ -215,9 +218,16 @@ place : il n'est utilisé que par la nouvelle version.
   limitrophes, pages vues. Les tables se créent seules à la première
   ouverture de l'écran.
 - Annonces : bandeau d'information publiable depuis l'administration.
-- Mots de passe sortis du code ; `?show_log=1` et les deux scripts de
-  maintenance de l'administration désormais réservés aux administrateurs
-  connectés.
+- Tarifs présentés par saison (haute, moyenne, basse), avec équivalent par
+  nuit et conditions de location explicites.
+- Formulaire de réservation protégé : champ piège, délai minimal, limitation
+  par réseau, contrôle du contenu, validation des destinataires et des
+  en-têtes. C'est la réponse à la suspension de la boîte d'envoi — voir
+  `docs/securite-mail.md`.
+- Mots de passe sortis du code ; les deux scripts de maintenance de
+  l'administration désormais réservés aux administrateurs connectés.
+- `index.php?show_log=1` et le fichier `bellevue_debug_mail.log` supprimés :
+  ce journal siégeait à la racine du site avec les adresses de vos clients.
 
 **Prérequis serveur** : PHP 7.4 ou plus récent (Hostinger propose 8.x par
 défaut ; vérifiable dans hPanel → Avancé → Configuration PHP).

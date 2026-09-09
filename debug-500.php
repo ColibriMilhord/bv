@@ -109,6 +109,10 @@ etape_chargement($etape, 'config/notifications.php');
 etape_chargement($etape, 'config/avis-secours.php', false);
 etape_chargement($etape, 'config/avis.php');
 etape_chargement($etape, 'config/agenda.php');
+etape_chargement($etape, 'config/stats.php');
+etape_chargement($etape, 'config/annonces.php');
+etape_chargement($etape, 'config/tarifs.php');
+etape_chargement($etape, 'config/antispam.php');
 
 // ── Connexion à la base ────────────────────────────────────────────────────
 $etape = 'connexion à la base de données';

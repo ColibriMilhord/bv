@@ -9,6 +9,7 @@ require_once 'config/avis.php';
 require_once 'config/annonces.php';
 require_once 'config/stats.php';
 require_once 'config/tarifs.php';
+require_once 'config/antispam.php';
 
 // Avis Google : note, compteur et trois derniers avis (cache 12 h, repli
 // éditorial). Un incident sur ce bloc — réseau, cache en lecture seule,
@@ -20,23 +21,11 @@ try {
     error_log('[bellevue] avis indisponibles : ' . $e->getMessage());
 }
     
-// ── Visualisation des logs : index.php?show_log=1 ──
-// Réservée à un administrateur connecté : le journal contient les adresses
-// e-mail des clients (donnée personnelle).
-if (isset($_GET['show_log'])) {
-    if (!isset($_SESSION['admin_id'])) {
-        header('HTTP/1.1 403 Forbidden');
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo "Accès refusé.";
-        die();
-    }
-    header('Content-Type: text/plain; charset=UTF-8');
-    header('X-Robots-Tag: noindex, nofollow');
-    echo file_exists('bellevue_debug_mail.log')
-        ? "LOGS :\n" . file_get_contents('bellevue_debug_mail.log')
-        : "Aucun log pour l'instant.";
-    die();
-}
+// Le journal d'envois « bellevue_debug_mail.log » n'existe plus : il était
+// écrit à la racine du site, contenait les adresses e-mail des clients, et se
+// consultait par « index.php?show_log=1 ». Les envois sont désormais consignés
+// dans le journal d'erreurs de PHP, hors du dossier public. Le fichier restant
+// éventuellement sur le serveur est à supprimer (voir docs/DEPLOIEMENT.md).
 
 // ── Connexion BDD ──
 if (file_exists('config/db.php')) {
@@ -96,15 +85,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     try {
         if (!$pdo) throw new Exception("Erreur de connexion à la base de données.");
 
+        // ── Contrôle anti-abus, avant toute écriture et tout envoi ──
+        // Chaque soumission déclenche deux mails depuis la boîte du gîte, dont
+        // un vers une adresse choisie par le visiteur : sans garde-fou, le
+        // formulaire sert de relais à spam et la boîte finit suspendue.
+        antispam_migrer($pdo);
+        list($antispam_ok, $antispam_motif) = antispam_verifier($pdo, $_POST);
+        antispam_journaliser($pdo, $antispam_ok, $antispam_motif);
+
+        if (!$antispam_ok) {
+            error_log('[bellevue] demande refusée — ' . $antispam_motif);
+            throw new Exception(antispam_message_refus($antispam_motif));
+        }
+
         $settings = $pdo->query("SELECT * FROM gite_settings WHERE id = 1")->fetch() ?: [];
 
-        // Valeurs brutes pour les emails (pas d'entités HTML)
-        $raw_nom       = trim($_POST['customer_name']);
-        $raw_tel       = trim($_POST['customer_phone']);
-        $raw_note      = trim($_POST['customer_message'] ?? '');
+        // Valeurs brutes pour les emails : débarrassées des retours à la ligne,
+        // qui sont ce qui permet d'ajouter des destinataires dans un en-tête.
+        $raw_nom       = antispam_nettoyer(trim((string) ($_POST['customer_name'] ?? '')));
+        $raw_tel       = antispam_nettoyer(trim((string) ($_POST['customer_phone'] ?? '')), 40);
+        $raw_note      = trim((string) ($_POST['customer_message'] ?? ''));
         // Valeurs encodées pour l'affichage HTML (page web)
         $client_nom    = htmlspecialchars($raw_nom);
-        $client_email  = filter_var(trim($_POST['customer_email']), FILTER_SANITIZE_EMAIL);
+        // Adresse déjà validée par antispam_verifier() : on reprend la même
+        // règle, et non un simple nettoyage, qui laisse passer « a@b\r\nBcc: ».
+        $client_email  = filter_var(trim((string) ($_POST['customer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
         $client_tel    = htmlspecialchars($raw_tel);
         $client_note   = htmlspecialchars($raw_note);
         $date_debut    = !empty($_POST['check_in'])  ? $_POST['check_in']  : null;
@@ -130,8 +135,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // Insertion BDD
         try {
-            $pdo->prepare("INSERT INTO reservations (client_nom, client_email, client_tel, date_debut, date_fin, prix_total, acompte_montant, option_menage, client_message, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'attente', NOW())")
-                ->execute([$client_nom, $client_email, $client_tel, $date_debut, $date_fin, $prix_total, $acompte_montant, $option_menage, $client_note]);
+            // Horodatage calculé en PHP plutôt que par NOW() : la requête reste
+            // ainsi vérifiable hors MySQL, comme le reste des modules.
+            $pdo->prepare("INSERT INTO reservations (client_nom, client_email, client_tel, date_debut, date_fin, prix_total, acompte_montant, option_menage, client_message, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'attente', ?)")
+                ->execute([$client_nom, $client_email, $client_tel, $date_debut, $date_fin, $prix_total, $acompte_montant, $option_menage, $client_note, date('Y-m-d H:i:s')]);
             $bookingData = ['nuits' => $nuits, 'total' => $prix_total];
         } catch (Exception $e) {}
 
@@ -186,12 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         foreach ($admin_list as $admin) {
             $r = send_smtp_mail($admin, $subject, $body, $client_email);
             if ($r === true) {
-                @file_put_contents('bellevue_debug_mail.log',
-                    date('[Y-m-d H:i:s]') . " SMTP OK -> $admin\n", FILE_APPEND);
                 $mailSent = true;
             } else {
-                @file_put_contents('bellevue_debug_mail.log',
-                    date('[Y-m-d H:i:s]') . " SMTP FAIL -> $admin : $r\n", FILE_APPEND);
+                // Journal du serveur, et non un fichier à la racine du site :
+                // celui-ci se téléchargeait, avec les adresses des clients.
+                error_log('[bellevue] envoi propriétaire en échec — ' . $r);
                 $mail_errors[] = $admin . " : " . $r;
             }
         }
@@ -211,12 +217,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $ack_body .= "Nous reviendrons vers vous dans les meilleurs délais.\n\n";
         $ack_body .= "Cordialement,\nL'equipe Bellevue d'Aveyron\nhttps://bellevuedaveyron.fr\nTel : 06 80 90 71 07";
 
-        $ack_result = send_smtp_mail($client_email,
-            "Confirmation de réception - Bellevue d'Aveyron", $ack_body);
+        // L'accusé part vers une adresse fournie par le visiteur : c'est le
+        // seul envoi détournable. On ne l'émet que si la demande a bien été
+        // reçue par les propriétaires — un robot n'obtient donc rien d'un
+        // formulaire dont l'envoi principal a échoué.
+        if ($mailSent) {
+            $ack_result = send_smtp_mail($client_email,
+                "Confirmation de réception - Bellevue d'Aveyron", $ack_body);
 
-        @file_put_contents('bellevue_debug_mail.log',
-            date('[Y-m-d H:i:s]') . " ACK client -> $client_email : " .
-            ($ack_result === true ? "OK" : $ack_result) . "\n", FILE_APPEND);
+            if ($ack_result !== true) {
+                error_log('[bellevue] accusé de réception en échec — ' . $ack_result);
+            }
+        }
 
         if (!$mailSent) {
             $errorMsg = "Erreur lors de l'envoi de l'email. Merci de nous contacter par téléphone.";
@@ -598,6 +610,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <input type="hidden" name="action" value="book">
             <input type="hidden" name="check_in" id="input_check_in">
             <input type="hidden" name="check_out" id="input_check_out">
+            <?php echo antispam_champs(); ?>
             <div style="position:relative;margin-bottom:15px;">
                 <input type="text" name="customer_name" class="lux-input" placeholder="Nom Complet *" required>
             </div>

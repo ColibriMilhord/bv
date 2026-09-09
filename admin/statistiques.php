@@ -4,6 +4,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../config/stats.php';
+require_once '../config/antispam.php';
 
 if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
@@ -28,6 +29,7 @@ $sept   = stats_synthese($pdo, 7);
 $courant = stats_synthese($pdo, $periode);
 
 $parJour     = stats_par_jour($pdo, min($periode, 90));
+$formulaire  = antispam_bilan($pdo, $periode);
 $parPays     = stats_par_pays($pdo, $periode);
 $pages       = stats_classement($pdo, 'page', $periode);
 $referents   = stats_classement($pdo, 'referent', $periode);
@@ -267,6 +269,39 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
+        </div>
+
+        <!-- ── Formulaire de réservation ────────────────────────────────── -->
+        <div class="bg-white shadow rounded-lg p-5 mt-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-1">Demandes reçues par le formulaire</h2>
+            <p class="text-sm text-gray-500 mb-4">
+                Sur <?php echo (int) $periode; ?> jours. Les demandes écartées n'ont déclenché
+                aucun envoi : elles ne consomment pas la boîte d'envoi du gîte.
+            </p>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div class="rounded-md bg-gray-50 p-4">
+                    <p class="text-2xl font-semibold text-gray-900"><?php echo number_format($formulaire['acceptes'], 0, ',', ' '); ?></p>
+                    <p class="text-sm text-gray-600">demandes transmises</p>
+                </div>
+                <div class="rounded-md bg-gray-50 p-4">
+                    <p class="text-2xl font-semibold text-gray-900"><?php echo number_format($formulaire['refuses'], 0, ',', ' '); ?></p>
+                    <p class="text-sm text-gray-600">écartées automatiquement</p>
+                </div>
+            </div>
+            <?php if ($formulaire['motifs']): ?>
+                <table class="w-full text-sm mt-4">
+                    <tbody class="divide-y divide-gray-100">
+                        <?php foreach ($formulaire['motifs'] as $motif): ?>
+                            <tr>
+                                <td class="py-2 text-gray-800"><?php echo $e(ucfirst((string) $motif['motif'])); ?></td>
+                                <td class="py-2 text-right text-gray-500"><?php echo number_format((int) $motif['n'], 0, ',', ' '); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php elseif (!$formulaire['refuses']): ?>
+                <p class="text-sm text-gray-500 mt-4">Aucune tentative écartée sur la période.</p>
+            <?php endif; ?>
         </div>
 
         <p class="mt-8 text-xs text-gray-400 leading-relaxed">

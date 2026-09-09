@@ -30,6 +30,33 @@ function send_smtp_mail($to, $subject, $message_content, $reply_to = '')
 {
     $timeout = 15;
 
+    // ── Barrage aux injections d'en-tête ───────────────────────────────────
+    // Une adresse contenant un retour à la ligne permettrait d'ajouter des
+    // destinataires cachés, voire des commandes SMTP : le formulaire
+    // deviendrait un relais à spam. Chaque adresse est donc validée, et toute
+    // valeur douteuse fait échouer l'envoi plutôt que de partir malgré tout.
+    $destinataires = [];
+    foreach (explode(',', (string) $to) as $adresse) {
+        $adresse = trim($adresse);
+        if ($adresse === '') continue;
+        if (!filter_var($adresse, FILTER_VALIDATE_EMAIL)) {
+            error_log('[bellevue] envoi refusé : destinataire invalide');
+            return "Destinataire invalide.";
+        }
+        $destinataires[] = $adresse;
+    }
+    if (!$destinataires) return "Aucun destinataire valide.";
+
+    if ($reply_to !== '' && !filter_var($reply_to, FILTER_VALIDATE_EMAIL)) {
+        $reply_to = '';   // adresse douteuse : on l'ignore, l'envoi continue
+    }
+
+    // Le sujet part encodé en base64, mais un retour à la ligne resterait
+    // interprété : on les remplace par une espace.
+    $subject = str_replace(["\r", "\n"], ' ', (string) $subject);
+
+    $to = implode(', ', $destinataires);
+
     $socket = @fsockopen('ssl://' . SMTP_HOST, SMTP_PORT, $errno, $errstr, $timeout);
     if (!$socket) {
         return "Connexion impossible à " . SMTP_HOST . ":" . SMTP_PORT . " — $errstr ($errno)";
@@ -57,8 +84,8 @@ function send_smtp_mail($to, $subject, $message_content, $reply_to = '')
     fputs($socket, "MAIL FROM: <" . SMTP_USER . ">\r\n");
     smtp_read($socket);
 
-    foreach (explode(',', $to) as $recipient) {
-        fputs($socket, "RCPT TO: <" . trim($recipient) . ">\r\n");
+    foreach ($destinataires as $recipient) {
+        fputs($socket, "RCPT TO: <" . $recipient . ">\r\n");
         smtp_read($socket);
     }
 
