@@ -475,14 +475,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <?php foreach ($tarifs_display as $t):
                 $isHigh = $t['prix_semaine'] > 2000;
                 $d1 = new DateTime($t['date_debut']); $d2 = new DateTime($t['date_fin']);
-                $fmt = new IntlDateFormatter('fr_FR', IntlDateFormatter::NONE, IntlDateFormatter::NONE);
-                $fmt->setPattern('d MMMM');
+                // L'extension intl n'est pas activée partout : sans elle, on
+                // formate les dates à la main plutôt que de faire tomber la page.
+                $fmtDate = function (DateTime $date) {
+                    if (class_exists('IntlDateFormatter')) {
+                        $fmt = new IntlDateFormatter('fr_FR', IntlDateFormatter::NONE, IntlDateFormatter::NONE);
+                        $fmt->setPattern('d MMMM');
+                        return $fmt->format($date);
+                    }
+                    $mois = [1 => 'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+                             'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+                    return $date->format('j') . ' ' . $mois[(int) $date->format('n')];
+                };
             ?>
             <div class="<?php echo $isHigh ? 'pricing-row featured' : 'pricing-row'; ?>">
                 <div class="season-info">
                     <h3 style="<?php echo $isHigh ? 'color:var(--gold-text);' : ''; ?>"><?php echo htmlspecialchars($t['nom_saison']); ?></h3>
                     <div style="font-size:.9rem;<?php echo $isHigh ? 'color:rgba(255,255,255,.7);' : 'color:#777;'; ?>">
-                        Du <?php echo $fmt->format($d1); ?> au <?php echo $fmt->format($d2); ?>
+                        Du <?php echo $fmtDate($d1); ?> au <?php echo $fmtDate($d2); ?>
                     </div>
                 </div>
                 <div class="price-block">
