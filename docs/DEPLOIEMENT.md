@@ -44,6 +44,18 @@ return [
 ];
 ```
 
+> **Le piège de l'apostrophe.** Une valeur contenant une apostrophe doit être
+> entre **guillemets doubles**, faute de quoi PHP s'arrête et le site renvoie
+> une erreur 500 muette :
+>
+> ```php
+> 'SMTP_FROM_NAME' => 'Bellevue d'Aveyron',   // ← casse tout
+> 'SMTP_FROM_NAME' => "Bellevue d'Aveyron",   // ← correct
+> ```
+>
+> Vérifier aussi qu'une **virgule** termine chaque ligne. Un oubli fait
+> apparaître l'erreur sur la ligne *suivante*, ce qui égare la recherche.
+
 Deux clés facultatives peuvent s'ajouter à cette liste pour synchroniser les
 avis Google (note, compteur, trois derniers avis) — voir
 `docs/seo-ia/avis-google.md`. Sans elles, le site affiche la sélection d'avis
@@ -161,7 +173,7 @@ Une erreur 500 vient presque toujours de l'une de ces trois causes :
 
 | Cause | Signe dans le diagnostic |
 |---|---|
-| Erreur de frappe dans `config/secrets.php` (virgule ou guillemet manquant) | ligne `config/secrets.php` en rouge, avec le message de syntaxe |
+| Erreur de frappe dans `config/secrets.php` (apostrophe dans une chaîne, virgule oubliée) | ligne `config/secrets.php` en rouge, avec le message de syntaxe |
 | Fichier non téléversé | ligne « fichier absent » en rouge |
 | Version de PHP trop ancienne | ligne « Version de PHP » en rouge |
 
