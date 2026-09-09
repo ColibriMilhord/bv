@@ -2452,3 +2452,168 @@ img, video, iframe, table { max-width: 100%; }
 /* Lien de rebond vers la page « Découvrir » sous les questions fréquentes */
 .faq-contact a { border-bottom: 1px solid rgba(160, 120, 40, .35); }
 .faq-contact-secondaire { margin-top: 14px; padding-top: 0; border-top: 0; font-size: .85rem; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BANDEAU D'ANNONCE — publié depuis l'administration
+   Carte discrète en bas d'écran : elle informe sans jamais couvrir le
+   contenu ni retarder la découverte de la villa.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.annonce {
+    position: fixed;
+    right: 26px;
+    bottom: 26px;
+    z-index: 900;
+    max-width: 430px;
+    background: #fffdf8;
+    border: 1px solid rgba(197, 160, 89, .38);
+    border-radius: 4px;
+    box-shadow: 0 22px 60px rgba(5, 9, 20, .22);
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity .5s ease, transform .5s cubic-bezier(.22, .8, .3, 1);
+}
+
+/* Un filet doré à gauche : la signature visuelle du site, en discret. */
+.annonce::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 3px;
+    background: var(--gold-gradient);
+    border-radius: 4px 0 0 4px;
+}
+
+.annonce--visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.annonce--vue {
+    opacity: 0;
+    transform: translateY(14px) scale(.985);
+}
+
+.annonce-inner {
+    padding: 22px 26px 20px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.annonce-etiquette {
+    font-family: 'Cinzel', serif;
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    border: 1px solid rgba(197, 160, 89, .4);
+    border-radius: 20px;
+    padding: 4px 12px;
+}
+
+.annonce-texte {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .86rem;
+    line-height: 1.7;
+    color: #4a463f;
+}
+
+.annonce-texte strong {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: .95rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--navy-deep);
+    margin-bottom: 5px;
+}
+
+.annonce-lien {
+    font-family: 'Cinzel', serif;
+    font-size: .68rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--navy-deep);
+    text-decoration: none;
+    background: var(--gold-gradient);
+    padding: 10px 20px;
+    border-radius: 3px;
+    transition: filter .3s ease;
+}
+
+.annonce-lien:hover { filter: brightness(1.06); }
+
+/* Le « J'ai vu » : une case à cocher qui se coche vraiment au clic. */
+.annonce-ok {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 2px;
+    padding: 6px 2px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .76rem;
+    color: #8a8172;
+    transition: color .25s ease;
+}
+
+.annonce-ok:hover { color: var(--navy-deep); }
+
+.annonce-coche {
+    width: 17px;
+    height: 17px;
+    border: 1px solid rgba(160, 120, 40, .55);
+    border-radius: 3px;
+    position: relative;
+    transition: background .25s ease, border-color .25s ease;
+}
+
+.annonce-coche::after {
+    content: '';
+    position: absolute;
+    left: 5px; top: 1px;
+    width: 4px; height: 9px;
+    border: solid var(--navy-deep);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform .2s ease;
+}
+
+.annonce-ok:hover .annonce-coche,
+.annonce--vue .annonce-coche {
+    background: rgba(197, 160, 89, .18);
+    border-color: var(--gold-dark);
+}
+
+.annonce--vue .annonce-coche::after { transform: rotate(45deg) scale(1); }
+
+/* Nuances selon le ton choisi dans l'administration */
+.annonce--promo .annonce-etiquette  { color: #8a6a1f; background: rgba(197, 160, 89, .12); }
+.annonce--dispo .annonce-etiquette  { color: #1d6b45; border-color: rgba(29, 107, 69, .38); }
+.annonce--urgent .annonce-etiquette { color: #8f3620; border-color: rgba(143, 54, 32, .38); }
+
+/* Sur mobile, le bandeau prend toute la largeur, au ras du bas d'écran. */
+@media (max-width: 620px) {
+    .annonce {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        max-width: none;
+    }
+
+    .annonce-inner { padding: 18px 20px 16px 22px; gap: 10px; }
+    .annonce-texte { font-size: .82rem; }
+    .annonce-lien  { width: 100%; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .annonce { transition: opacity .01ms; transform: none; }
+    .annonce--vue { transform: none; }
+}

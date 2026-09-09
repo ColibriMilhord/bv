@@ -19,6 +19,8 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `config/medias.php` | Registre des visuels : texte alternatif, image de repli, substitution par un fichier local. |
 | `config/agenda.php` | Données externes : cache, calcul de distance, filtrage par rayon, socle éditorial de repli. |
 | `config/notifications.php` | Destinataires des demandes du formulaire, réglables dans « Paramètres du Gîte ». Expéditeur non modifiable. |
+| `config/stats.php` | Mesure d'audience interne, sans cookie : enregistrement des visites, résolution du pays, restitution. |
+| `config/annonces.php` | Bandeau d'information publié depuis l'administration, avec fenêtre de dates. |
 | `config/avis.php` | Avis Google : note, compteur et trois derniers avis, avec cache 12 h et repli sur `config/avis-secours.php`. |
 | `config/env.php` | Lecture des secrets : variables d'environnement, puis `config/secrets.php` (non versionné). Aucun mot de passe dans le dépôt. |
 | `config/secrets.example.php` | Modèle à recopier en `config/secrets.php` sur le serveur. |

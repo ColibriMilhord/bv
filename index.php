@@ -6,6 +6,8 @@ require_once 'config/mail_smtp.php';
 require_once 'config/seo.php';
 require_once 'config/notifications.php';
 require_once 'config/avis.php';
+require_once 'config/annonces.php';
+require_once 'config/stats.php';
 
 // Avis Google : note, compteur et trois derniers avis (cache 12 h, repli
 // éditorial). Un incident sur ce bloc — réseau, cache en lecture seule,
@@ -63,6 +65,12 @@ if ($pdo) {
     } catch (Exception $e) {}
 }
 $json_booked_dates = json_encode($booked_dates);
+
+// ── Mesure d'audience interne et bandeau d'annonce ──
+// Sans cookie ni traceur tiers : l'enregistrement est silencieux et ne peut
+// pas empêcher la page de s'afficher.
+stats_enregistrer($pdo, '/');
+$annonce = annonce_active($pdo);
 
 // ── Tarifs ──
 $tarifs_display = [];
@@ -827,6 +835,8 @@ seo_jsonld([
     seo_node_faq(seo_faq()),
 ]);
 ?>
+<?php annonce_bandeau($annonce); ?>
+
 <script src="<?php echo seo_asset('js/script.js'); ?>"></script>
 
 
