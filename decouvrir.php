@@ -39,7 +39,7 @@ try {
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     </noscript>
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="<?php echo seo_asset('css/style.css'); ?>">
 </head>
 <body class="page-decouvrir">
 
@@ -468,6 +468,9 @@ try {
         <button class="coups-tab-btn active" data-target="coups-tables" role="tab">
             <span class="tab-em">🍽</span> Tables &amp; Saveurs
         </button>
+        <button class="coups-tab-btn" data-target="coups-sites" role="tab">
+            <span class="tab-em">🏛</span> Grands Sites d'Aveyron
+        </button>
         <button class="coups-tab-btn" data-target="coups-culture" role="tab">
             <span class="tab-em">🎶</span> Culture &amp; Concerts
         </button>
@@ -570,6 +573,113 @@ try {
     </div>
 
     <!-- ══ CULTURE & CONCERTS ══ -->
+    <!-- ══ GRANDS SITES D'AVEYRON ══ -->
+    <div class="coups-panel" id="coups-sites">
+        <div class="coups-grid">
+
+            <div class="coup-card">
+                <div class="coup-img-wrap">
+                    <?php media_card('conques-village-et-abbatiale'); ?>
+                </div>
+                <div class="coup-body">
+                    <div class="coup-meta">
+                        <span class="coup-distance">70 km · 1h10</span>
+                        <span class="coup-badge">UNESCO</span>
+                    </div>
+                    <h3>Conques &amp; l'Abbatiale Sainte-Foy</h3>
+                    <p>L'un des plus beaux villages de France, blotti dans un cirque de forêts. Son abbatiale romane du XI<sup>e</sup> siècle, étape majeure des chemins de Saint-Jacques classée à l'UNESCO, abrite le tympan du Jugement dernier et les vitraux de Pierre Soulages. Le trésor médiéval y est l'un des plus riches d'Europe, et les illuminations nocturnes de l'été valent à elles seules le déplacement.</p>
+                    <div class="coup-tags">
+                        <span class="coup-tag">Art roman</span>
+                        <span class="coup-tag">Soulages</span>
+                        <span class="coup-tag">Illuminations</span>
+                    </div>
+                    <div class="coup-season">Toute l'année · Illuminations de mai à septembre</div>
+                </div>
+            </div>
+
+            <div class="coup-card">
+                <div class="coup-img-wrap">
+                    <?php media_card('musee-soulages-rodez'); ?>
+                </div>
+                <div class="coup-body">
+                    <div class="coup-meta">
+                        <span class="coup-distance">50 km · 45 min</span>
+                        <span class="coup-badge">Musée</span>
+                    </div>
+                    <h3>Musée Soulages — Rodez</h3>
+                    <p>Le plus grand ensemble d'œuvres de Pierre Soulages au monde, donné par l'artiste à sa ville natale et installé dans un bâtiment d'acier corten signé RCR Arquitectes, prix Pritzker. Peintures, brous de noix, esquisses des vitraux de Conques, et des expositions temporaires de premier plan. Une demi-journée qui marque, à combiner avec la cathédrale de Rodez et le musée Fenaille.</p>
+                    <div class="coup-tags">
+                        <span class="coup-tag">Art contemporain</span>
+                        <span class="coup-tag">Outrenoir</span>
+                        <span class="coup-tag">Architecture</span>
+                    </div>
+                    <div class="coup-season">Toute l'année · Fermé le lundi</div>
+                </div>
+            </div>
+
+            <div class="coup-card">
+                <div class="coup-img-wrap">
+                    <?php media_card('viaduc-de-millau'); ?>
+                </div>
+                <div class="coup-body">
+                    <div class="coup-meta">
+                        <span class="coup-distance">75 km · 1h</span>
+                        <span class="coup-badge">Monument</span>
+                    </div>
+                    <h3>Le Viaduc de Millau</h3>
+                    <p>Le plus haut pont à haubans du monde : 343 mètres au sommet du pylône, 2 460 mètres de tablier suspendus au-dessus de la vallée du Tarn. Une prouesse de Michel Virlogeux et Norman Foster, spectaculaire vue d'en bas depuis l'aire du viaduc comme traversée au volant. À prolonger par les caves de Roquefort et les gorges du Tarn, à quelques minutes de là.</p>
+                    <div class="coup-tags">
+                        <span class="coup-tag">Panorama</span>
+                        <span class="coup-tag">Ingénierie</span>
+                        <span class="coup-tag">Roquefort</span>
+                    </div>
+                    <div class="coup-season">Toute l'année · Aire de vision en accès libre</div>
+                </div>
+            </div>
+
+            <div class="coup-card">
+                <div class="coup-img-wrap">
+                    <?php media_card('bozouls-et-son-canyon-emblematique'); ?>
+                </div>
+                <div class="coup-body">
+                    <div class="coup-meta">
+                        <span class="coup-distance">~35 km</span>
+                        <span class="coup-badge">Site naturel</span>
+                    </div>
+                    <h3>Bozouls &amp; son Canyon</h3>
+                    <p>Le « trou de Bozouls » est l'une des curiosités géologiques les plus spectaculaires d'Aveyron : un canyon circulaire de 400 mètres de diamètre creusé par le Dourdou. Le village médiéval, perché en presqu'île au-dessus du gouffre, se découvre depuis un belvédère en accès libre.</p>
+                    <div class="coup-tags">
+                        <span class="coup-tag">Géologie</span>
+                        <span class="coup-tag">Spectaculaire</span>
+                        <span class="coup-tag">Accès libre</span>
+                    </div>
+                    <div class="coup-season">Permanent · Toute l'année</div>
+                </div>
+            </div>
+
+            <div class="coup-card">
+                <div class="coup-img-wrap">
+                    <?php media_card('villages-classes-vallee-du-lot'); ?>
+                </div>
+                <div class="coup-body">
+                    <div class="coup-meta">
+                        <span class="coup-distance">0 à 38 km</span>
+                        <span class="coup-badge">Villages classés</span>
+                    </div>
+                    <h3>Les Plus Beaux Villages de la Vallée du Lot</h3>
+                    <p>Trois villages classés se suivent le long de la rivière : <strong>Sainte-Eulalie-d'Olt</strong>, où se trouve le gîte, avec ses ruelles médiévales et son moulin ; <strong>Saint-Côme-d'Olt</strong> et son clocher flammé, à 25 km ; <strong>Estaing</strong> et son château dominant le Lot, à 38 km. Une journée de route sans autoroute, entre halles, ponts anciens et bords de rivière.</p>
+                    <div class="coup-tags">
+                        <span class="coup-tag">Patrimoine</span>
+                        <span class="coup-tag">Saint-Jacques</span>
+                        <span class="coup-tag">Sans voiture</span>
+                    </div>
+                    <div class="coup-season">Toute l'année</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <div class="coups-panel" id="coups-culture">
         <div class="coups-grid">
 
@@ -1196,7 +1306,7 @@ try {
         </div>
     </div>
 
-    <script src="js/script.js"></script>
+    <script src="<?php echo seo_asset('js/script.js'); ?>"></script>
     <script>
     // Extension du hash mapping pour l'onglet Jeunesse
     (function() {
