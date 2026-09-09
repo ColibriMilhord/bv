@@ -72,9 +72,29 @@ Recharger la page d'accueil. Sous les avis, la mention doit passer de
 « Sélection publiée par les propriétaires » à « Google — synchronisé le … »,
 et le badge de `SÉLECTION` à `GOOGLE`.
 
-Si rien ne change : le dossier `cache/` doit exister à la racine du site et
-être accessible en écriture. Les échecs sont consignés dans le journal
-d'erreurs PHP du serveur, avec le code HTTP renvoyé par Google.
+## Si le badge reste sur « SÉLECTION »
+
+Téléverser **`diagnostic-avis.php`** à la racine du site et l'ouvrir :
+`https://bellevuedaveyron.fr/diagnostic-avis.php`. Il affiche les deux
+réglages tels qu'ils sont lus, l'état du cache, puis **interroge réellement
+Google et montre sa réponse**, message d'erreur compris, avec la marche à
+suivre correspondante. La clé n'y apparaît jamais en entier. À supprimer
+ensuite.
+
+Les trois causes habituelles :
+
+| Cause | Ce que montre le diagnostic |
+|---|---|
+| Les deux clés sont écrites en dehors du `return [ … ];` de `config/secrets.php` | « ABSENTE » / « ABSENT » |
+| API non activée, clé restreinte à d'autres adresses, facturation absente | le message de refus de Google, traduit en clair |
+| Dossier `cache/` en lecture seule | signalé dans la section Cache |
+
+**Un échec est mémorisé une heure** pour ne pas rappeler Google à chaque
+visite : après avoir corrigé un réglage, utiliser le bouton « Vider le cache
+et retester » du diagnostic, sinon l'ancien état persiste jusqu'à une heure.
+
+Les échecs sont également consignés dans le journal d'erreurs PHP du serveur,
+avec le code HTTP et le message renvoyés par Google.
 
 ---
 
