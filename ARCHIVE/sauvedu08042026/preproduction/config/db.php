@@ -4,7 +4,7 @@
 $host = 'localhost';
 $dbname = 'u424962071_rbellevue';
 $username = 'u424962071_rbellevue';
-$password = 'qY+H9iazQj:2'; // Le mot de passe reste vide en local ou à définir selon l'environnement
+$password = 'MOT_DE_PASSE_RETIRE'; // Le mot de passe reste vide en local ou à définir selon l'environnement
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

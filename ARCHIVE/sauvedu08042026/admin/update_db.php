@@ -6,8 +6,8 @@
 
 $credentials = [
     ['localhost', 'u424962071_rbellevue', 'root', ''],        // Local Standard
-    ['localhost', 'u424962071_rbellevue', 'root', 'root'],    // MAMP/Other
-    ['localhost', 'u424962071_rbellevue', 'u424962071_rbellevue', 'qY+H9iazQj:2'], // Prod/Config
+    ['localhost', 'u424962071_rbellevue', 'root', 'MOT_DE_PASSE_RETIRE'],    // MAMP/Other
+    ['localhost', 'u424962071_rbellevue', 'u424962071_rbellevue', 'MOT_DE_PASSE_RETIRE'], // Prod/Config
 ];
 
 $pdo = null;

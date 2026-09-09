@@ -2,11 +2,15 @@
 // admin/tarifs.php
 session_start();
 require_once '../config/db.php';
+require_once '../config/tarifs.php';
 
 if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
     exit;
 }
+
+// La colonne « categorie » se crée d'elle-même au premier passage.
+$colonne_saison = tarifs_migrer($pdo);
 
 // Delete Action
 if (isset($_GET['delete'])) {
@@ -18,6 +22,7 @@ if (isset($_GET['delete'])) {
 
 // Init Form Variables
 $edit_mode = false;
+$categorie_edit = '';
 $id_edit = null;
 $nom_edit = '';
 $debut_edit = '';
@@ -37,6 +42,7 @@ if (isset($_GET['edit'])) {
         $debut_edit = $tarif_edit['date_debut'];
         $fin_edit = $tarif_edit['date_fin'];
         $prix_edit = $tarif_edit['prix_semaine'];
+        $categorie_edit = $tarif_edit['categorie'] ?? '';
     }
 }
 
@@ -47,15 +53,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fin = $_POST['date_fin'];
     $prix = floatval($_POST['prix_semaine']);
 
+    // Saison : vide = classement automatique d'après le prix.
+    $categorie = (string) ($_POST['categorie'] ?? '');
+    if (!isset(tarifs_saisons()[$categorie])) $categorie = null;
+
     if (!empty($_POST['id'])) {
         // UPDATE
         $id = intval($_POST['id']);
-        $stmt = $pdo->prepare("UPDATE tarifs_saison SET nom_saison=?, date_debut=?, date_fin=?, prix_semaine=? WHERE id=?");
-        $stmt->execute([$nom, $debut, $fin, $prix, $id]);
+        if ($colonne_saison) {
+            $stmt = $pdo->prepare("UPDATE tarifs_saison SET nom_saison=?, date_debut=?, date_fin=?, prix_semaine=?, categorie=? WHERE id=?");
+            $stmt->execute([$nom, $debut, $fin, $prix, $categorie, $id]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE tarifs_saison SET nom_saison=?, date_debut=?, date_fin=?, prix_semaine=? WHERE id=?");
+            $stmt->execute([$nom, $debut, $fin, $prix, $id]);
+        }
     } else {
         // INSERT
-        $stmt = $pdo->prepare("INSERT INTO tarifs_saison (nom_saison, date_debut, date_fin, prix_semaine) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$nom, $debut, $fin, $prix]);
+        if ($colonne_saison) {
+            $stmt = $pdo->prepare("INSERT INTO tarifs_saison (nom_saison, date_debut, date_fin, prix_semaine, categorie) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$nom, $debut, $fin, $prix, $categorie]);
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO tarifs_saison (nom_saison, date_debut, date_fin, prix_semaine) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$nom, $debut, $fin, $prix]);
+        }
     }
 
     header('Location: tarifs.php');
@@ -115,8 +135,21 @@ $tarifs = $pdo->query("SELECT * FROM tarifs_saison ORDER BY date_debut")->fetchA
                                         <?php echo substr($t['nom_saison'], 0, 1); ?>
                                     </div>
                                     <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            <?php echo htmlspecialchars($t['nom_saison']); ?></div>
+                                        <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                            <?php echo htmlspecialchars($t['nom_saison']); ?>
+                                            <?php
+                                            $prixTous = array_map(function ($x) { return (float) $x['prix_semaine']; }, $tarifs);
+                                            $cat = tarifs_categorie($t, min($prixTous), max($prixTous));
+                                            $auto = empty($t['categorie']);
+                                            $couleurs = ['haute' => 'bg-amber-100 text-amber-800',
+                                                         'moyenne' => 'bg-emerald-100 text-emerald-800',
+                                                         'basse' => 'bg-sky-100 text-sky-800'];
+                                            ?>
+                                            <span class="text-xs px-2 py-0.5 rounded-full <?php echo $couleurs[$cat]; ?>"
+                                                  title="<?php echo $auto ? 'Classement automatique d\'après le prix' : 'Saison choisie'; ?>">
+                                                <?php echo htmlspecialchars(tarifs_saisons()[$cat]['nom']); ?><?php echo $auto ? ' ·auto' : ''; ?>
+                                            </span>
+                                        </div>
                                         <div class="text-sm text-gray-500">
                                             Du <strong><?php echo date('d/m/Y', strtotime($t['date_debut'])); ?></strong>
                                             au <strong><?php echo date('d/m/Y', strtotime($t['date_fin'])); ?></strong>
@@ -172,6 +205,25 @@ $tarifs = $pdo->query("SELECT * FROM tarifs_saison ORDER BY date_debut")->fetchA
                             <input type="text" name="nom_saison" value="<?php echo htmlspecialchars($nom_edit); ?>"
                                 class="w-full rounded-md border-gray-300 border p-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Ex: Été 2026" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Saison</label>
+                            <select name="categorie"
+                                class="w-full rounded-md border-gray-300 border p-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Automatique (d'après le prix)</option>
+                                <?php foreach (tarifs_saisons() as $cle => $s): ?>
+                                    <option value="<?php echo htmlspecialchars($cle); ?>"
+                                        <?php echo $categorie_edit === $cle ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($s['nom']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Détermine le bloc dans lequel la période apparaît sur le site.
+                                Laissé sur « Automatique », le classement suit le prix : les plus
+                                élevés en haute saison, les plus bas en basse saison.
+                            </p>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
