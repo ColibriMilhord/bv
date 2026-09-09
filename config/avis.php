@@ -165,7 +165,7 @@ function avis_interroger_google(): ?array
 }
 
 /** Places API (New) — places.googleapis.com. */
-function avis_api_nouvelle(string $cle, string $place): ?array
+function avis_api_nouvelle(string $cle, string $place, ?array &$trace = null): ?array
 {
     $url = 'https://places.googleapis.com/v1/places/' . rawurlencode($place)
          . '?languageCode=fr&regionCode=FR';
@@ -173,7 +173,7 @@ function avis_api_nouvelle(string $cle, string $place): ?array
     $reponse = avis_http($url, [
         'X-Goog-Api-Key: ' . $cle,
         'X-Goog-FieldMask: rating,userRatingCount,reviews',
-    ]);
+    ], $trace);
     if (!is_array($reponse) || !isset($reponse['userRatingCount'])) return null;
 
     $avis = [];
@@ -201,7 +201,7 @@ function avis_api_nouvelle(string $cle, string $place): ?array
 }
 
 /** Place Details, ancienne API — utile si la clé n'est pas migrée. */
-function avis_api_ancienne(string $cle, string $place): ?array
+function avis_api_ancienne(string $cle, string $place, ?array &$trace = null): ?array
 {
     $url = 'https://maps.googleapis.com/maps/api/place/details/json?'
          . http_build_query([
@@ -211,7 +211,7 @@ function avis_api_ancienne(string $cle, string $place): ?array
              'key'      => $cle,
          ]);
 
-    $reponse = avis_http($url);
+    $reponse = avis_http($url, [], $trace);
     if (!is_array($reponse) || ($reponse['status'] ?? '') !== 'OK') return null;
 
     $resultat = $reponse['result'] ?? [];
@@ -268,10 +268,22 @@ function avis_normaliser(string $auteur, string $texte, int $note, ?int $horodat
     ];
 }
 
-/** Requête HTTP JSON, silencieuse en cas d'échec. */
-function avis_http(string $url, array $entetes = []): ?array
+/**
+ * Requête HTTP JSON, silencieuse en cas d'échec côté page publique.
+ *
+ * @param array|null $trace Rempli avec le détail de l'échange (code HTTP,
+ *                          message d'erreur renvoyé par Google, corps brut) :
+ *                          c'est ce que lit diagnostic-avis.php.
+ */
+function avis_http(string $url, array $entetes = [], ?array &$trace = null): ?array
 {
-    if (!function_exists('curl_init')) return null;
+    $trace = ['url' => preg_replace('/key=[^&]+/', 'key=…', $url), 'code' => 0, 'erreur' => '', 'corps' => ''];
+
+    if (!function_exists('curl_init')) {
+        $trace['erreur'] = "L'extension cURL n'est pas activée sur ce serveur.";
+        error_log('[bellevue] avis Google : extension cURL absente');
+        return null;
+    }
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [
@@ -281,15 +293,38 @@ function avis_http(string $url, array $entetes = []): ?array
         CURLOPT_HTTPHEADER     => array_merge(['Accept: application/json'], $entetes),
         CURLOPT_USERAGENT      => 'BellevueAveyron-App/2.0 (+https://bellevuedaveyron.fr/)',
     ]);
-    $corps = curl_exec($ch);
-    $code  = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $corps      = curl_exec($ch);
+    $code       = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $erreurCurl = curl_error($ch);
     curl_close($ch);
 
-    if ($code !== 200 || !is_string($corps) || $corps === '') {
-        error_log('[bellevue] avis Google : réponse HTTP ' . $code);
+    $trace['code']  = $code;
+    $trace['corps'] = is_string($corps) ? substr($corps, 0, 1200) : '';
+
+    $json = is_string($corps) && $corps !== '' ? json_decode($corps, true) : null;
+
+    // Google explique toujours son refus dans le corps de la réponse : ce
+    // message est la seule information réellement utile en cas d'échec.
+    $message = '';
+    if (is_array($json)) {
+        $message = $json['error']['message']           // Places API (New)
+                ?? $json['error_message']              // ancienne API
+                ?? (isset($json['status']) && $json['status'] !== 'OK' ? (string) $json['status'] : '');
+    }
+    if ($message === '' && $erreurCurl !== '') $message = $erreurCurl;
+
+    if ($code !== 200 || !is_array($json)) {
+        $trace['erreur'] = $message !== '' ? $message : 'réponse HTTP ' . $code;
+        error_log('[bellevue] avis Google : HTTP ' . $code . ' — ' . $trace['erreur']);
         return null;
     }
 
-    $json = json_decode($corps, true);
-    return is_array($json) ? $json : null;
+    // Réponse 200 mais refus applicatif (ancienne API : status REQUEST_DENIED).
+    if ($message !== '' && isset($json['status']) && $json['status'] !== 'OK') {
+        $trace['erreur'] = $message;
+        error_log('[bellevue] avis Google : ' . $message);
+        return null;
+    }
+
+    return $json;
 }

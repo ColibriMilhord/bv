@@ -14,6 +14,7 @@ Disallow: /ARCHIVE/
 Disallow: /tools/
 Disallow: /diagnostic.php
 Disallow: /debug-500.php
+Disallow: /diagnostic-avis.php
 Disallow: /fetch_datatourisme.php
 Disallow: /ajax_agenda.php
 Disallow: /*.log$
