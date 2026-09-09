@@ -275,7 +275,7 @@ function agenda_remote_events(int $radiusKm, int $limit): array
         ];
     }
 
-    usort($events, fn($a, $b) => $a['distance_km'] <=> $b['distance_km']);
+    usort($events, function ($a, $b) { return $a['distance_km'] <=> $b['distance_km']; });
 
     return array_slice($events, 0, $limit);
 }
@@ -338,7 +338,7 @@ function agenda_events(int $radiusKm = AGENDA_DEFAULT_KM, int $limit = 12): arra
         return true;
     });
 
-    usort($events, fn($a, $b) => $a['distance_km'] <=> $b['distance_km']);
+    usort($events, function ($a, $b) { return $a['distance_km'] <=> $b['distance_km']; });
 
     return array_slice(array_values($events), 0, $limit);
 }
@@ -371,5 +371,5 @@ function agenda_node_event(array $ev): array
             ],
         ],
         'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
-    ], fn($v) => $v !== null);
+    ], function ($v) { return $v !== null; });
 }

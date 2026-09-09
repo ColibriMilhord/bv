@@ -12,7 +12,7 @@ Disallow: /config/
 Disallow: /phpmailer/
 Disallow: /ARCHIVE/
 Disallow: /tools/
-Disallow: /check_db.php
+Disallow: /diagnostic.php
 Disallow: /fetch_datatourisme.php
 Disallow: /ajax_agenda.php
 Disallow: /*.log$

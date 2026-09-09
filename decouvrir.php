@@ -9,7 +9,13 @@ require_once __DIR__ . '/config/medias.php';
 require_once __DIR__ . '/config/agenda.php';
 
 // Agenda de proximité : rayon de 35 km autour du gîte, trié par distance.
-$agenda_proches = agenda_events(35, 12);
+// Le bloc est facultatif : en cas d'incident, la page s'affiche sans lui.
+$agenda_proches = [];
+try {
+    $agenda_proches = agenda_events(35, 12);
+} catch (Throwable $e) {
+    error_log('[bellevue] agenda indisponible : ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
