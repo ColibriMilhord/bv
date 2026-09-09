@@ -25,4 +25,12 @@ return [
     'SMTP_PASS'      => 'mot_de_passe_de_la_boite',
     'SMTP_FROM'      => 'reservation@exemple.fr',
     'SMTP_FROM_NAME' => "Nom affiché de l'expéditeur",
+
+    // ── Avis Google (facultatif) ──
+    // Sans ces deux valeurs, le site affiche la sélection d'avis de
+    // config/avis-secours.php. Avec elles, la note, le compteur et les trois
+    // derniers avis sont repris automatiquement de Google.
+    // Voir docs/seo-ia/avis-google.md
+    'GOOGLE_PLACES_API_KEY' => '',
+    'GOOGLE_PLACE_ID'       => '',
 ];

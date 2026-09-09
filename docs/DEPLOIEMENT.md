@@ -44,6 +44,11 @@ return [
 ];
 ```
 
+Deux clés facultatives peuvent s'ajouter à cette liste pour synchroniser les
+avis Google (note, compteur, trois derniers avis) — voir
+`docs/seo-ia/avis-google.md`. Sans elles, le site affiche la sélection d'avis
+de `config/avis-secours.php`.
+
 Les valeurs actuelles se retrouvent, si besoin, dans les anciens fichiers
 encore en ligne : `config/db.php` (variable `$password`) et
 `config/mail_config.php` (constante `SMTP_PASS`). **Lisez-les avant de
@@ -160,6 +165,8 @@ place : il n'est utilisé que par la nouvelle version.
 - Coordonnées GPS corrigées et distances routières rectifiées.
 - Agenda trié par proximité réelle, rendu côté serveur.
 - Destinataires du formulaire réglables dans l'administration.
+- Avis Google : note, compteur et trois derniers avis synchronisés
+  automatiquement (facultatif, voir `docs/seo-ia/avis-google.md`).
 - Mots de passe sortis du code ; `?show_log=1` et les deux scripts de
   maintenance de l'administration désormais réservés aux administrateurs
   connectés.

@@ -8,6 +8,7 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | [`playbook-geo.md`](playbook-geo.md) | **Point d'entrée.** Méthode générique, principes, parcours d'audit, patrons de code, recette de vérification, et section d'adaptation à artifacile.fr. |
 | [`audit-2026-09-08.md`](audit-2026-09-08.md) | Le cas concret : état des lieux, défauts relevés, correctifs appliqués, contrôles effectués, suites recommandées. |
 | [`inventaire-images.md`](inventaire-images.md) | Feuille de route photo : quelles images remplacer, sous quel nom de fichier les déposer. |
+| [`avis-google.md`](avis-google.md) | Brancher la note, le compteur et les trois derniers avis sur l'API Google Places. |
 | [`installer-python-windows.md`](installer-python-windows.md) | Pas à pas complet, de l'installation de Python sur Windows à la mise en ligne des photos. |
 
 ## Où vit le code
@@ -18,6 +19,7 @@ bellevuedaveyron.fr, **consignés pour être réutilisés sur artifacile.fr**.
 | `config/medias.php` | Registre des visuels : texte alternatif, image de repli, substitution par un fichier local. |
 | `config/agenda.php` | Données externes : cache, calcul de distance, filtrage par rayon, socle éditorial de repli. |
 | `config/notifications.php` | Destinataires des demandes du formulaire, réglables dans « Paramètres du Gîte ». Expéditeur non modifiable. |
+| `config/avis.php` | Avis Google : note, compteur et trois derniers avis, avec cache 12 h et repli sur `config/avis-secours.php`. |
 | `config/env.php` | Lecture des secrets : variables d'environnement, puis `config/secrets.php` (non versionné). Aucun mot de passe dans le dépôt. |
 | `config/secrets.example.php` | Modèle à recopier en `config/secrets.php` sur le serveur. |
 | `tools/generer-inventaire-images.php` | Régénère l'inventaire des visuels depuis le registre. |
