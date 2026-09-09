@@ -66,12 +66,13 @@ encore en ligne : `config/db.php` (variable `$password`) et
 `config/mail_config.php` (constante `SMTP_PASS`). **Lisez-les avant de
 téléverser quoi que ce soit**, puisque le téléversement va les remplacer.
 
-> **Changez ces deux mots de passe — ce n'est plus facultatif.** Ils ont
-> circulé en clair dans un dépôt Git public et sont à l'origine de la
-> suspension de la boîte d'envoi par Hostinger. Changez-les dans hPanel (base
-> de données, puis Emails → Comptes e-mail), et saisissez ici les nouvelles
-> valeurs. Le détail de l'incident et la marche à suivre complète figurent dans
-> `docs/securite-mail.md`.
+> **Changez ces deux mots de passe.** Ils figuraient en clair dans le code, et
+> restent lisibles dans l'historique du dépôt comme dans toute copie locale de
+> celui-ci. Après la suspension de la boîte d'envoi par Hostinger, c'est une
+> précaution qui referme d'un coup toutes les hypothèses d'accès direct.
+> Changez-les dans hPanel (base de données, puis Emails → Comptes e-mail), et
+> saisissez ici les nouvelles valeurs. Le détail de l'incident et la marche à
+> suivre complète figurent dans `docs/securite-mail.md`.
 
 ---
 

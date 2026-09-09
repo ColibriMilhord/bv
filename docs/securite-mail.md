@@ -10,32 +10,22 @@ suffit pas.
 
 ## Ce qui s'est passé, en une phrase
 
-Le mot de passe de la boîte d'envoi a circulé en clair dans un dépôt GitHub
-**public**, et le formulaire de réservation permettait par ailleurs d'envoyer
-des messages en série vers des adresses choisies par le visiteur. Deux portes
-ouvertes, chacune suffisante pour expliquer la suspension.
+Le formulaire de réservation permettait d'envoyer des messages en série, depuis
+la boîte du gîte, vers des adresses choisies par celui qui remplissait le
+formulaire. C'est la seule anomalie établie, et elle suffit à expliquer la
+suspension.
 
-## Les trois causes, par ordre de gravité
+> **Une hypothèse écartée.** J'avais d'abord conclu que le dépôt GitHub était
+> public et que le mot de passe SMTP y avait été moissonné. **C'est faux : le
+> dépôt est privé.** Ma vérification était mal faite — la requête passait par
+> un proxy authentifié, qui renvoie « accès autorisé » pour un dépôt privé
+> comme pour un dépôt public. Le champ `visibility` du dépôt vaut bien
+> `private`. Le mot de passe reste à changer, pour les raisons données plus
+> bas, mais ce n'est plus le premier suspect.
 
-### 1. Le mot de passe SMTP était lisible publiquement
+## Les causes, par ordre de vraisemblance
 
-`config/mail_config.php` contenait la constante `SMTP_PASS` en clair, et le
-dépôt `ColibriMilhord/bv` est public : n'importe qui pouvait la lire. Des
-robots parcourent GitHub en continu à la recherche exactement de cela ; le
-délai entre la publication d'un identifiant et sa première utilisation
-frauduleuse se compte en minutes.
-
-Un tiers disposant de ce mot de passe s'authentifie sur `smtp.hostinger.com`
-comme s'il était vous, et envoie ce qu'il veut. C'est l'explication la plus
-probable de la mention « compromission potentielle » : les messages
-incriminés ne sont sans doute jamais passés par le site.
-
-**Corrigé côté code** : les identifiants ont été sortis des fichiers versionnés
-et vivent désormais dans `config/secrets.php`, présent sur le serveur
-uniquement. **Non corrigé côté compte** : le mot de passe reste valide tant que
-vous ne l'avez pas changé, et il reste lisible dans l'historique Git.
-
-### 2. Le formulaire servait de relais
+### 1. Le formulaire servait de relais
 
 Chaque soumission déclenchait deux envois depuis la boîte du gîte : un aux
 propriétaires, et **un accusé de réception vers l'adresse saisie par le
@@ -48,7 +38,7 @@ messages depuis `reservation@` vers des adresses arbitraires. Pour le
 fournisseur, cela ressemble exactement à un envoi de spam — parce que c'en est
 un.
 
-### 3. Les en-têtes n'étaient pas nettoyés
+### 2. Les en-têtes n'étaient pas nettoyés
 
 Le nom saisi par le visiteur alimentait directement le sujet du message, et
 l'adresse saisie alimentait `To:`, `Reply-To:` et la commande SMTP `RCPT TO:`
@@ -59,6 +49,44 @@ destinataires cachés à un message parti de votre boîte :
 ```
 Nom : Marie[retour à la ligne]Bcc: victime1@ailleurs.fr, victime2@ailleurs.fr
 ```
+
+Un seul envoi légitime en apparence pouvait ainsi arroser une liste entière.
+Combiné au point précédent, c'est un dispositif d'envoi de masse complet.
+
+### 3. Le mot de passe SMTP, à changer par précaution et non par certitude
+
+`config/mail_config.php` contenait la constante `SMTP_PASS` en clair. Le dépôt
+est privé, donc il n'a pas été moissonné par les robots qui parcourent GitHub.
+Il reste cependant lisible dans l'historique des commits, présent dans toute
+copie locale du dépôt, et il l'était en clair dans un fichier du serveur.
+
+Cela ne prouve rien, mais un mot de passe de boîte e-mail se change de toute
+façon après un incident de ce type : la mention « compromission potentielle »
+d'Hostinger désigne peut-être un accès direct à la boîte, obtenu par une tout
+autre voie — un poste sur lequel le compte est configuré, une réutilisation du
+mot de passe ailleurs, une tentative par dictionnaire. Le changer coûte cinq
+minutes et referme toutes ces hypothèses d'un coup.
+
+**Corrigé côté code** : les identifiants sont sortis des fichiers versionnés et
+vivent désormais dans `config/secrets.php`, présent sur le serveur uniquement.
+**Non corrigé côté compte** : le mot de passe reste valide tant que vous ne
+l'avez pas changé.
+
+---
+
+## Comment trancher entre les deux scénarios
+
+Les deux causes possibles — abus du formulaire, ou accès direct à la boîte —
+se distinguent facilement, et la réponse oriente la suite :
+
+| À regarder | Si c'est le formulaire | Si c'est un accès direct |
+|---|---|---|
+| Dossier **Éléments envoyés** de `reservation@` | Uniquement des accusés de réception à votre format | Des messages que vous ne reconnaissez pas |
+| **Adresse IP d'envoi**, à demander à Hostinger avec les exemples de messages | Celle de votre hébergement | Une adresse étrangère au serveur |
+
+Demandez ces éléments dans votre réponse à Hostinger : ils les ont, et ils
+répondent à la question en une ligne. Dans les deux cas, les corrections
+ci-dessous et le changement de mot de passe restent à faire.
 
 ---
 
@@ -132,32 +160,33 @@ bien qu'un simple « Répondre » écrit au bon endroit.
 
 ## Ce qu'il vous reste à faire — dans cet ordre
 
-1. **Changer le mot de passe de la boîte `reservation@`** dans hPanel
+1. **Publier cette version** (voir `docs/DEPLOIEMENT.md`). C'est ce qui ferme
+   le relais : sans cela, la boîte sera suspendue à nouveau après sa
+   réactivation.
+2. **Changer le mot de passe de la boîte `reservation@`** dans hPanel
    (Emails → Comptes e-mail → Changer le mot de passe), puis reporter la
-   nouvelle valeur dans `config/secrets.php` sur le serveur. Tant que ce n'est
-   pas fait, le reste ne sert à rien : l'ancien mot de passe circule.
-2. **Changer aussi le mot de passe de la base de données**, exposé de la même
-   façon, et le reporter dans `config/secrets.php`.
-3. **Publier cette version** (voir `docs/DEPLOIEMENT.md`), pour que les
-   protections soient effectivement en place.
+   nouvelle valeur dans `config/secrets.php` sur le serveur. Par précaution, et
+   parce que cela referme d'un coup toutes les hypothèses d'accès direct.
+3. **Changer aussi le mot de passe de la base de données**, présent dans le
+   code de la même façon, et le reporter dans `config/secrets.php`.
 4. **Supprimer `bellevue_debug_mail.log`** du serveur s'il s'y trouve encore :
-   il contient les adresses de vos clients et se télécharge librement.
-5. **Répondre à Hostinger** en demandant la réactivation, en indiquant que le
-   mot de passe a été changé et que le formulaire a été sécurisé. Ce message
-   accélère la levée de la suspension ; il suffit d'être factuel.
-6. **Rendre le dépôt GitHub privé** (Settings → General → Danger Zone →
-   Change repository visibility). À défaut, tout ce qui y est publié reste
-   lisible par les robots de collecte.
-7. **Vérifier les messages envoyés** depuis la boîte `reservation@` sur les
-   dernières semaines : la présence de messages que vous n'avez pas écrits
-   confirmerait l'accès frauduleux, leur absence orienterait vers l'abus du
-   formulaire.
+   il est à la racine du site, contient les adresses de vos clients, et se
+   télécharge librement. Supprimer également `check_db.php` et
+   `fetch_datatourisme.php` s'ils y sont restés.
+5. **Répondre à Hostinger** en demandant la réactivation : indiquez que le
+   formulaire de contact envoyait un accusé de réception sans limitation, que
+   ce point est corrigé (limitation de fréquence, piège à robots, validation
+   des destinataires), et que le mot de passe a été changé. Demandez-leur au
+   passage **des exemples de messages incriminés et l'adresse IP d'envoi** :
+   c'est ce qui confirmera la cause.
+6. **Regarder le dossier « Éléments envoyés »** de `reservation@` sur les
+   dernières semaines, selon le tableau ci-dessus.
 
-> **Sur l'historique Git.** Rendre le dépôt privé ne réécrit pas son passé :
-> les anciens mots de passe restent lisibles dans les commits antérieurs pour
-> qui a accès au dépôt. C'est sans conséquence une fois les mots de passe
-> changés — d'où l'ordre des étapes ci-dessus. Une réécriture d'historique est
-> possible si vous la souhaitez, mais elle n'est pas nécessaire.
+> **Sur l'historique Git.** Le dépôt est privé, mais les anciens mots de passe
+> restent lisibles dans les commits antérieurs pour qui y a accès. C'est sans
+> conséquence une fois les mots de passe changés — d'où l'étape 2. Une
+> réécriture d'historique est possible si vous la souhaitez ; elle n'est pas
+> nécessaire.
 
 ---
 
@@ -185,8 +214,10 @@ réponse est alors un nouveau changement de mot de passe.
 
 Trois règles, valables pour tout formulaire qui déclenche un envoi :
 
-1. **Aucun identifiant dans le code versionné**, même sur un dépôt supposé
-   privé. Un fichier de secrets hors dépôt, lu au démarrage, coûte dix lignes.
+1. **Aucun identifiant dans le code versionné**, y compris sur un dépôt privé :
+   l'historique se conserve indéfiniment, la visibilité d'un dépôt se change
+   d'un clic, et une copie locale se retrouve sur n'importe quel poste. Un
+   fichier de secrets hors dépôt, lu au démarrage, coûte dix lignes.
 2. **Tout envoi vers une adresse fournie par l'utilisateur est un relais
    potentiel.** Le limiter en fréquence, et le conditionner à la réussite d'un
    envoi non détournable.
