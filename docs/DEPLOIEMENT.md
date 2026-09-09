@@ -165,7 +165,12 @@ Une erreur 500 vient presque toujours de l'une de ces trois causes :
 | Fichier non téléversé | ligne « fichier absent » en rouge |
 | Version de PHP trop ancienne | ligne « Version de PHP » en rouge |
 
-Si le diagnostic lui-même ne s'ouvre pas, le journal d'erreurs se consulte
+Si le diagnostic ne suffit pas, téléverser **`debug-500.php`** et l'ouvrir :
+il force l'affichage des erreurs PHP et charge les fichiers du site un par un.
+La dernière étape affichée avant l'arrêt désigne le fichier fautif, avec son
+numéro de ligne. À supprimer également après usage.
+
+Si aucun des deux ne s'ouvre, le journal d'erreurs se consulte
 dans hPanel → **Avancé → Journaux d'erreurs PHP** : la dernière ligne
 « Fatal error » donne le fichier et le numéro de ligne exacts.
 
