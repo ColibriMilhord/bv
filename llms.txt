@@ -47,6 +47,16 @@ en JSON-LD (schema.org) sur les pages correspondantes.
 - Réservation en direct auprès des propriétaires, sans commission de plateforme :
   calendrier de disponibilités et formulaire sur https://bellevuedaveyron.fr/#reservation
 
+## Grands sites de l'Aveyron accessibles à la journée
+
+- Conques, abbatiale Sainte-Foy et son trésor, classée UNESCO : 70 km (1 h 10)
+- Musée Soulages, Rodez : 50 km (45 min)
+- Viaduc de Millau, plus haut pont à haubans du monde : 75 km (1 h)
+- Plateau de l'Aubrac, burons et estives : 25 km (30 min)
+- Canyon de Bozouls : 35 km
+- Villages classés Plus Beaux Villages de France de la vallée du Lot :
+  Sainte-Eulalie-d'Olt (sur place), Saint-Côme-d'Olt (25 km), Estaing (38 km)
+
 ## Situation et distances routières
 
 - Saint-Geniez-d'Olt : 3 km (5 min)

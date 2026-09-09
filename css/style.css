@@ -2182,3 +2182,273 @@ img.curator-img {
         margin-bottom: 26px;
     }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RAFFINEMENTS UX/UI — rythme, lisibilité, accessibilité
+   Bloc placé en fin de feuille : il précise les règles précédentes sans les
+   réécrire. Objectif : une lecture calme et structurée, identique sur mobile,
+   tablette et ordinateur.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+    --nav-h: 96px;                 /* hauteur de la barre fixe */
+    --rythme: clamp(56px, 7vw, 104px);   /* respiration verticale des sections */
+    --gouttiere: clamp(20px, 5vw, 60px); /* marge latérale */
+}
+
+/* --- Ancres : ne plus passer sous la barre de navigation --- */
+section[id],
+div[id],
+h2[id] {
+    scroll-margin-top: var(--nav-h);
+}
+
+/* --- Rythme vertical homogène, fluide d'un support à l'autre --- */
+section {
+    padding: var(--rythme) var(--gouttiere);
+}
+
+.section-header {
+    margin-bottom: clamp(38px, 5vw, 72px);
+}
+
+/* --- Échelle typographique fluide : plus de saut brutal entre supports --- */
+.section-header h2,
+section > .section-header h2 {
+    font-size: clamp(1.5rem, 1.05rem + 1.9vw, 2.6rem);
+    line-height: 1.2;
+}
+
+.section-header .subtitle {
+    font-size: clamp(.62rem, .55rem + .25vw, .78rem);
+}
+
+section p {
+    text-wrap: pretty;             /* évite les mots orphelins en fin de bloc */
+}
+
+/* ══ Bandeau des chiffres clés ══════════════════════════════════════════ */
+
+.chiffres-cles {
+    background: var(--navy-deep);
+    padding: clamp(34px, 4vw, 54px) var(--gouttiere);
+    max-width: none;
+}
+
+.chiffres-grid {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    max-width: 1300px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+}
+
+.chiffre {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+    padding: 6px clamp(8px, 1.4vw, 22px);
+    border-left: 1px solid rgba(197, 160, 89, .22);
+}
+
+.chiffre:first-child {
+    border-left: 0;
+}
+
+.chiffre-valeur {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.35rem, 1.05rem + 1.1vw, 2.05rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: transparent;
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.chiffre-libelle {
+    font-family: 'Cinzel', serif;
+    font-size: .68rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .92);
+}
+
+.chiffre-precision {
+    font-family: 'Montserrat', sans-serif;
+    font-size: .68rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, .48);
+}
+
+@media (max-width: 900px) {
+    .chiffres-grid { grid-template-columns: repeat(3, 1fr); row-gap: 26px; }
+    .chiffre:nth-child(3n + 1) { border-left: 0; }
+}
+
+@media (max-width: 540px) {
+    .chiffres-grid { grid-template-columns: repeat(2, 1fr); row-gap: 22px; }
+    .chiffre:nth-child(3n + 1) { border-left: 1px solid rgba(197, 160, 89, .22); }
+    .chiffre:nth-child(odd) { border-left: 0; }
+}
+
+/* ══ Questions fréquentes : plus d'air, hiérarchie plus nette ═══════════ */
+
+.faq-grid {
+    gap: clamp(26px, 3vw, 42px) clamp(30px, 4vw, 58px);
+}
+
+.faq-item {
+    border-top: 1px solid rgba(197, 160, 89, .3);
+    padding-top: clamp(18px, 2vw, 26px);
+}
+
+.faq-question {
+    font-size: clamp(.86rem, .8rem + .18vw, .98rem);
+    line-height: 1.45;
+    letter-spacing: .06em;
+    margin-bottom: 10px;
+}
+
+.faq-answer {
+    font-size: .87rem;
+    line-height: 1.8;
+    color: #5d5951;
+}
+
+.faq-contact {
+    margin-top: clamp(34px, 4vw, 58px);
+    padding-top: 24px;
+    border-top: 1px solid rgba(197, 160, 89, .22);
+}
+
+/* ══ Vignette sans visuel : cadre sobre plutôt qu'image cassée ══════════ */
+
+.media-vide {
+    width: 100%;
+    height: 100%;
+    min-height: 150px;
+    background:
+        linear-gradient(135deg, #f2ece0 0%, #e6dcc7 100%);
+    position: relative;
+}
+
+.media-vide::after {
+    content: '✦';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: rgba(160, 120, 40, .32);
+}
+
+/* ══ Onglets : jamais de débordement, cibles tactiles confortables ══════ */
+
+.coups-tabs,
+.agenda-tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.coups-tab-btn,
+.agenda-tabs .tab-btn {
+    min-height: 44px;
+}
+
+@media (max-width: 700px) {
+    .coups-tabs,
+    .agenda-tabs {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 6px;
+        margin-inline: calc(var(--gouttiere) * -1);
+        padding-inline: var(--gouttiere);
+    }
+
+    .coups-tabs::-webkit-scrollbar,
+    .agenda-tabs::-webkit-scrollbar { display: none; }
+
+    .coups-tab-btn,
+    .agenda-tabs .tab-btn {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+}
+
+/* ══ Accessibilité ═════════════════════════════════════════════════════ */
+
+/* Un contour visible seulement au clavier : indispensable pour naviguer
+   au Tab, invisible à la souris — donc sans compromis esthétique. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--gold-text);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+/* Cibles tactiles : 44 px est le minimum confortable au doigt. */
+@media (pointer: coarse) {
+    .nav-links a,
+    .footer-col a,
+    .legal-links a { padding-block: 6px; }
+}
+
+/* Respect du réglage système « réduire les animations ». */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ══ Confort de lecture sur petit écran ════════════════════════════════ */
+
+@media (max-width: 640px) {
+    .section-header { margin-bottom: 32px; }
+    .exp-text-block p,
+    .access-intro,
+    .coup-body p { font-size: .86rem; line-height: 1.75; }
+    .stats-row { gap: 18px; }
+    .btn-gold, .btn-gold-outline { width: 100%; text-align: center; }
+    .hero-content { padding-inline: 4vw; }
+}
+
+/* Jamais de débordement horizontal, quel que soit le contenu. */
+html, body { overflow-x: hidden; }
+img, video, iframe, table { max-width: 100%; }
+
+/* Le bandeau des chiffres, sombre, suit désormais le héros : le dégradé de
+   bas de bandeau d'accueil doit fondre vers le navy et non vers le blanc. */
+.hero-bottom-gradient {
+    background: linear-gradient(to bottom, transparent 0%, rgba(5, 9, 20, .5) 60%, var(--navy-deep) 100%);
+}
+
+/* Le fondu qui reliait le bandeau d'accueil à la section « Expérience »
+   n'a plus lieu d'être : le bandeau des chiffres s'intercale entre les deux
+   et fournit lui-même la rupture. */
+#experience::before {
+    display: none;
+}
+
+/* Lien de rebond vers la page « Découvrir » sous les questions fréquentes */
+.faq-contact a { border-bottom: 1px solid rgba(160, 120, 40, .35); }
+.faq-contact-secondaire { margin-top: 14px; padding-top: 0; border-top: 0; font-size: .85rem; }

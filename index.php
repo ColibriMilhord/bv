@@ -220,8 +220,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <?php seo_head([
-        'title'       => "Bellevue d'Aveyron — Villa 5 étoiles avec piscine, Sainte-Eulalie-d'Olt",
-        'description' => "Gîte 5 étoiles à Sainte-Eulalie-d'Olt (Aveyron) : 200 m², 5 chambres, 10 personnes, piscine chauffée, parc de 5 000 m², accès PMR de plain-pied. Réservation en direct, "
+        'title'       => "Gîte de luxe 5 étoiles avec piscine, 10 personnes en Aveyron — Bellevue d'Aveyron",
+        'description' => "Gîte de luxe 5 étoiles avec piscine chauffée en Aveyron, pour 10 personnes : 200 m², 5 chambres, parc de 5 000 m², plain-pied accessible PMR, à Sainte-Eulalie-d'Olt. Location en direct, "
             . number_format($avis_google['note'], 1, ',', '') . "/5 sur " . (int) $avis_google['total'] . " avis Google.",
         'path'        => '',
         'type'        => 'website',
@@ -233,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="<?php echo seo_asset('css/style.css'); ?>">
 </head>
 <body class="loading">
 
@@ -336,6 +336,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <a href="#reservation" class="btn-gold">Planifier votre séjour</a>
     </div>
     <div class="hero-bottom-gradient"></div>
+</section>
+
+<!-- ══ CHIFFRES CLÉS ══ -->
+
+<section class="chiffres-cles" aria-label="Le gîte en chiffres">
+    <ul class="chiffres-grid">
+        <?php foreach (seo_chiffres_cles() as [$valeur, $libelle, $precision]): ?>
+        <li class="chiffre">
+            <span class="chiffre-valeur"><?php echo seo_e($valeur); ?></span>
+            <span class="chiffre-libelle"><?php echo seo_e($libelle); ?></span>
+            <span class="chiffre-precision"><?php echo seo_e($precision); ?></span>
+        </li>
+        <?php endforeach; ?>
+    </ul>
 </section>
 
 <!-- ══ EXPÉRIENCE ══ -->
@@ -645,6 +659,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <?php endforeach; ?>
     </div>
     <p class="faq-contact">
+        <a href="decouvrir.php">Visiter l'Aveyron : les grands sites à moins d'une heure du gîte</a>
+    </p>
+    <p class="faq-contact faq-contact-secondaire">
         Une question qui n'est pas dans cette liste ?
         <a href="tel:<?php echo SEO_PHONE; ?>"><?php echo SEO_PHONE_HUMAN; ?></a>
         &nbsp;•&nbsp;
@@ -810,7 +827,7 @@ seo_jsonld([
     seo_node_faq(seo_faq()),
 ]);
 ?>
-<script src="js/script.js"></script>
+<script src="<?php echo seo_asset('js/script.js'); ?>"></script>
 
 
 

@@ -149,6 +149,29 @@ function media_registry(): array
         'statut'   => 'reel',
     ],
 
+    // ── Onglet « Grands Sites » : les incontournables de l'Aveyron ──
+    'conques-village-et-abbatiale' => [
+        'alt'    => "Le village de Conques et son abbatiale Sainte-Foy, étape du chemin de Saint-Jacques",
+        'src'    => 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Village_de_Conques_%28Aveyron%29.JPG/640px-Village_de_Conques_%28Aveyron%29.JPG',
+        'statut' => 'reel',
+    ],
+    'musee-soulages-rodez' => [
+        'alt'    => "Le musée Soulages à Rodez, dédié à l'œuvre de Pierre Soulages",
+        'src'    => null,
+        'statut' => 'manquant',
+    ],
+    'viaduc-de-millau' => [
+        'alt'    => "Le viaduc de Millau, plus haut pont à haubans du monde, au-dessus de la vallée du Tarn",
+        'src'    => null,
+        'statut' => 'manquant',
+    ],
+    'villages-classes-vallee-du-lot' => [
+        'alt'    => "Sainte-Eulalie-d'Olt, l'un des Plus Beaux Villages de France de la vallée du Lot",
+        'src'    => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG/640px-Sainte-Eulalie-d%27Olt_-_Le_village_vu_du_ch%C3%A2teau.JPG',
+        'position' => 'center 40%',
+        'statut' => 'reel',
+    ],
+
     // ── Cartes thématiques en tête de page (« Choisissez votre Aveyron ») ──
     'theme-nature-activites' => [
         'alt'      => "Le plateau de l'Aubrac, terrain de randonnée à 25 km du gîte",
@@ -213,8 +236,11 @@ function media_resolve(string $slug): ?array
 function media_card(string $slug, string $class = 'coup-img'): void
 {
     $media = media_resolve($slug);
-    if ($media === null) {
-        echo '<div class="' . htmlspecialchars($class, ENT_QUOTES) . '"></div>';
+
+    // Sans visuel déclaré — ou sans entrée au registre — on rend un cadre
+    // sobre aux dimensions de la carte plutôt qu'une image cassée.
+    if ($media === null || empty($media['src'])) {
+        echo '<div class="' . htmlspecialchars($class, ENT_QUOTES) . ' media-vide"></div>';
         return;
     }
 

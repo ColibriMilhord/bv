@@ -66,6 +66,22 @@ function seo_url(string $path = ''): string {
     return SEO_SITE_URL . '/' . ltrim($path, '/');
 }
 
+/**
+ * URL d'une ressource statique, suffixée par sa date de modification.
+ *
+ * Sans ce marqueur, les navigateurs — et le cache de l'hébergeur — continuent
+ * de servir l'ancienne feuille de style après une mise en ligne : le HTML est
+ * à jour, la mise en page non. Le suffixe change dès que le fichier change,
+ * ce qui force le rechargement sans jamais casser la mise en cache habituelle.
+ */
+function seo_asset(string $chemin): string
+{
+    $absolu = __DIR__ . '/../' . ltrim($chemin, '/');
+    $version = is_file($absolu) ? (int) filemtime($absolu) : time();
+
+    return $chemin . '?v=' . $version;
+}
+
 /** Échappement HTML court. */
 function seo_e(?string $value): string {
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -164,6 +180,23 @@ function seo_amenities(): array {
 }
 
 /**
+ * Chiffres clés du gîte, affichés en bandeau sous le bandeau d'accueil.
+ * Format : [valeur, libellé, précision]. Une information par colonne : c'est
+ * ce qu'un visiteur cherche en premier, et ce qu'un moteur de réponse retient.
+ */
+function seo_chiffres_cles(): array
+{
+    return [
+        ['5★',      'Meublé de tourisme', 'Classement 5 étoiles'],
+        ['10',      'Personnes',          '5 chambres'],
+        ['200 m²',  'Habitables',         'Parc privé de 5 000 m²'],
+        ['4 × 8 m', 'Piscine chauffée',   'Volet sécurisé, dès mai'],
+        ['0',       'Marche à monter',    'Plain-pied, accès PMR'],
+        ['1 Gb/s',  'Fibre optique',      'Borne de recharge 18 kVA'],
+    ];
+}
+
+/**
  * Questions fréquentes — affichées dans la section #faq d'index.php et
  * balisées en FAQPage. Format « une question = une réponse autoportante »,
  * qui est l'unité de citation des moteurs génératifs.
@@ -199,8 +232,16 @@ function seo_faq(): array {
             'Oui, une borne de recharge rapide de 18 kVA compatible toutes marques (Tesla, Renault et autres) est incluse dans la location, sur le parking privé de la propriété.',
         ],
         [
-            'Que visiter autour de Bellevue d\'Aveyron ?',
-            'Depuis la villa on rayonne vers Conques et son abbatiale, le Viaduc de Millau, le musée Soulages à Rodez, les grands espaces de l\'Aubrac, le canyon de Bozouls et les marchés de la vallée du Lot. Les activités et l\'agenda local sont détaillés sur la page Découvrir la région.',
+            'Que visiter en Aveyron depuis le gîte ?',
+            'Les grands sites de l\'Aveyron sont tous accessibles à la journée : Conques et son abbatiale romane classée à l\'UNESCO à 70 km, le musée Soulages de Rodez à 50 km, le viaduc de Millau à 75 km, le plateau de l\'Aubrac à 25 km et le canyon de Bozouls à 35 km. Trois villages classés Plus Beaux Villages de France se suivent dans la vallée du Lot, à commencer par Sainte-Eulalie-d\'Olt où se trouve la villa.',
+        ],
+        [
+            'Qu\'est-ce qui fait de Bellevue d\'Aveyron un gîte de luxe 5 étoiles ?',
+            'Le classement 5 étoiles en meublé de tourisme récompense la surface, l\'équipement et le niveau de finition. Ici : 200 m² habitables, 5 chambres, piscine privée chauffée, parc clos de 5 000 m², fibre optique 1 Gbit/s, borne de recharge pour véhicule électrique, plain-pied intégral accessible PMR, et une vue panoramique sur la vallée du Lot. La maison est louée en exclusivité, sans voisinage ni partage d\'équipement.',
+        ],
+        [
+            'Peut-on louer ce gîte avec piscine pour un groupe de 10 personnes ?',
+            'Oui, la villa se loue entière pour un seul groupe, jusqu\'à 10 personnes réparties dans 5 chambres. Le format convient aux réunions de famille, aux anniversaires et aux séjours entre amis. La piscine, les terrasses et le parc sont privatifs pendant toute la durée du séjour.',
         ],
         [
             'Comment réserver un séjour à Bellevue d\'Aveyron ?',

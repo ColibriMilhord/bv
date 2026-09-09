@@ -164,6 +164,14 @@ CARTES: dict[str, tuple[str, str]] = {
         "barn owl portrait",
         "Chouette",
     ),
+    "musee-soulages-rodez": (
+        "modern art museum architecture corten steel",
+        "Musée Soulages à Rodez",
+    ),
+    "viaduc-de-millau": (
+        "millau viaduct bridge france valley",
+        "Viaduc de Millau",
+    ),
     "air-globe-fun-e-bike": (
         "electric mountain bike forest trail",
         "Vélo électrique tout-terrain",
