@@ -135,6 +135,8 @@ Dans l'ordre, en notant tout ce qui cloche :
 | `https://bellevuedaveyron.fr/llms.txt` | Le fichier s'affiche |
 | `https://bellevuedaveyron.fr/config/db.php` | **Erreur 403** — si le fichier se télécharge, le `.htaccess` n'est pas monté |
 | `https://bellevuedaveyron.fr/admin/` | Page de connexion, puis tableau de bord |
+| Administration → **Audience du site** | Les tuiles s'affichent ; la carte se charge depuis un service externe |
+| Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
 | Formulaire de réservation du site | **Faire un envoi de test** : le mail arrive bien aux destinataires réglés |
 
@@ -202,6 +204,10 @@ place : il n'est utilisé que par la nouvelle version.
 - Destinataires du formulaire réglables dans l'administration.
 - Avis Google : note, compteur et trois derniers avis synchronisés
   automatiquement (facultatif, voir `docs/seo-ia/avis-google.md`).
+- Audience du site dans l'administration : carte du monde, France et pays
+  limitrophes, pages vues. Les tables se créent seules à la première
+  ouverture de l'écran.
+- Annonces : bandeau d'information publiable depuis l'administration.
 - Mots de passe sortis du code ; `?show_log=1` et les deux scripts de
   maintenance de l'administration désormais réservés aux administrateurs
   connectés.

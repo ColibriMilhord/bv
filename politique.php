@@ -77,7 +77,27 @@
             Conformément à la réglementation européenne (RGPD), vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles. Pour exercer ce droit, il vous suffit de nous contacter par email à : <strong>accueil@bellevuedaveyron.com</strong>.
         </p>
 
-        <h2>5. Cookies</h2>
+        <h2>5. Mesure d'audience</h2>
+        <p>
+            Le site mesure sa fréquentation avec un outil interne, sans service tiers
+            ni traceur publicitaire. Sont enregistrés : la date de la visite, la page
+            consultée, le type d'appareil, le site d'où provient le visiteur le cas
+            échéant, et le pays.
+        </p>
+        <p>
+            <strong>Votre adresse IP n'est jamais conservée en entier.</strong> Seul le
+            préfixe réseau est enregistré — par exemple 82.64.132.0 pour une adresse
+            82.64.132.47 — ce qui permet de déterminer un pays sans identifier un foyer.
+            Le comptage des visiteurs distincts repose sur une empreinte non réversible,
+            renouvelée chaque jour et impossible à rattacher à une personne.
+        </p>
+        <p>
+            Cette mesure ne dépose aucun cookie et ne nécessite donc pas votre
+            consentement préalable. Les données sont conservées treize mois au maximum,
+            puis supprimées automatiquement.
+        </p>
+
+        <h2>6. Cookies</h2>
         <p>
             Ce site utilise uniquement des cookies techniques nécessaires au bon fonctionnement de la navigation (notamment pour la sécurité du formulaire). Aucun cookie publicitaire ou de traçage tiers n'est installé sans votre consentement explicite.
         </p>

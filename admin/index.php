@@ -187,6 +187,28 @@ $next_checkin = $pdo->query("SELECT * FROM reservations WHERE statut = 'validee'
                 <p class="text-sm text-slate-500">Configuration du gîte, acompte, heures d'arrivée, etc.</p>
             </a>
 
+            <!-- Card : Audience -->
+            <a href="statistiques.php"
+                class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-lg transition flex flex-col items-center text-center">
+                <div
+                    class="h-14 w-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition">
+                    <span class="material-symbols-outlined text-3xl">public</span>
+                </div>
+                <h4 class="text-lg font-bold text-slate-900 mb-2">Audience du site</h4>
+                <p class="text-sm text-slate-500">Qui visite le site, d'où, sur quelles pages — carte du monde et détail par pays.</p>
+            </a>
+
+            <!-- Card : Annonces -->
+            <a href="annonces.php"
+                class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-lg transition flex flex-col items-center text-center">
+                <div
+                    class="h-14 w-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4 group-hover:bg-amber-600 group-hover:text-white transition">
+                    <span class="material-symbols-outlined text-3xl">campaign</span>
+                </div>
+                <h4 class="text-lg font-bold text-slate-900 mb-2">Annonces du site</h4>
+                <p class="text-sm text-slate-500">Publier une dernière disponibilité, une promotion, une information ponctuelle.</p>
+            </a>
+
             <!-- Card 5: Intégration Widget -->
             <a href="integration.php"
                 class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-lg transition flex flex-col items-center text-center">

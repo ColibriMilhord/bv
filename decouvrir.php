@@ -7,6 +7,13 @@
 require_once __DIR__ . '/config/seo.php';
 require_once __DIR__ . '/config/medias.php';
 require_once __DIR__ . '/config/agenda.php';
+require_once __DIR__ . '/config/annonces.php';
+require_once __DIR__ . '/config/stats.php';
+require_once __DIR__ . '/config/db.php';
+
+// Mesure d'audience et bandeau d'annonce, comme sur la page d'accueil.
+stats_enregistrer($pdo ?? null, '/decouvrir.php');
+$annonce = annonce_active($pdo ?? null);
 
 // Agenda de proximité : rayon de 35 km autour du gîte, trié par distance.
 // Le bloc est facultatif : en cas d'incident, la page s'affiche sans lui.
@@ -1353,5 +1360,6 @@ if (!empty($agenda_proches)) {
     seo_jsonld(array_map('agenda_node_event', $agenda_proches));
 }
 ?>
+<?php annonce_bandeau($annonce); ?>
 </body>
 </html>
