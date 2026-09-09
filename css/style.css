@@ -2269,6 +2269,42 @@ section p {
     background: var(--gold-gradient);
     -webkit-background-clip: text;
     background-clip: text;
+    white-space: nowrap;
+}
+
+/* Le nombre défile au moment où la bande entre dans l'écran. Sa largeur est
+   réservée d'avance, d'après le nombre final (attribut style en ligne) : le
+   libellé au-dessous ne bouge pas d'un pixel pendant le décompte. */
+.chiffre-nombre {
+    display: inline-block;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.chiffre-suffixe {
+    display: inline-block;
+}
+
+/* Avant l'animation, la ligne est légèrement effacée et abaissée ; elle se
+   pose en même temps que le nombre se fixe. Sans JavaScript, cette classe
+   n'est jamais posée et tout s'affiche normalement. */
+.chiffre-valeur.compteur-pret {
+    opacity: .35;
+    transform: translateY(6px);
+}
+
+.chiffre-valeur.compteur-fini,
+.chiffre-valeur.compteur-en-cours {
+    opacity: 1;
+    transform: none;
+    transition: opacity .5s ease, transform .5s cubic-bezier(.22, .61, .36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chiffre-valeur.compteur-pret {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 .chiffre-libelle {
@@ -2736,8 +2772,8 @@ img, video, iframe, table { max-width: 100%; }
 /* ══════════════════════════════════════════════════════════════════════════
    TARIFS PAR SAISON
    Trois blocs nommés — haute, moyenne, basse — au lieu d'une liste de prix
-   croissants. Le visiteur situe sa date, lit le prix à la semaine et son
-   équivalent par nuit, puis trouve les conditions sans avoir à écrire.
+   croissants. Le visiteur situe sa date, lit le prix à la semaine, puis
+   trouve les conditions sans avoir à écrire.
    ══════════════════════════════════════════════════════════════════════════ */
 
 .tarifs-accroche {
@@ -2876,14 +2912,6 @@ img, video, iframe, table { max-width: 100%; }
     color: #8a8172;
 }
 
-.prix-nuit {
-    display: block;
-    margin-top: 3px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: .74rem;
-    color: #a09888;
-}
-
 .saison-conseil {
     margin: 0;
     padding: 14px clamp(20px, 3vw, 36px);
@@ -2948,7 +2976,6 @@ img, video, iframe, table { max-width: 100%; }
 
     .ligne-prix { text-align: left; }
     .prix-unite { display: inline; }
-    .prix-nuit  { display: inline; margin-left: 6px; }
 }
 
 /* La règle « header { position: fixed } » du haut de cette feuille visait la

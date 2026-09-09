@@ -171,7 +171,7 @@ function seo_amenities(): array {
         ['Borne de recharge électrique 18 kVA toutes marques', true],
         ['Fibre optique 1 Gbit/s et Wi-Fi dans toute la villa', true],
         ['Parc privé clos de 5 000 m²', true],
-        ['Accès PMR : plain-pied intégral, chambre et salle de bain adaptées au rez-de-chaussée', true],
+        ['Accès PMR : rez-de-chaussée de plain-pied, chambre et salle de bain adaptées', true],
         ['Baby-foot Bonzini professionnel', true],
         ['6 vélos adultes et 5 vélos enfants à disposition', true],
         ['Terrasses multiples orientées plein sud', true],
@@ -186,14 +186,55 @@ function seo_amenities(): array {
  */
 function seo_chiffres_cles(): array
 {
+    // « nombre » est la part que le compteur fait défiler à l'arrivée dans
+    // l'écran ; « suffixe » la suit sans bouger. Sans JavaScript, la valeur
+    // complète s'affiche telle quelle : l'animation est un agrément, jamais
+    // une condition de lecture.
     return [
-        ['5★',      'Meublé de tourisme', 'Classement 5 étoiles'],
-        ['10',      'Personnes',          '5 chambres'],
-        ['200 m²',  'Habitables',         'Parc privé de 5 000 m²'],
-        ['4 × 8 m', 'Piscine chauffée',   'Volet sécurisé, dès mai'],
-        ['0',       'Marche à monter',    'Plain-pied, accès PMR'],
-        ['1 Gb/s',  'Fibre optique',      'Borne de recharge 18 kVA'],
+        // L'espace qui ouvre un suffixe est insécable : à l'intérieur d'un bloc
+        // en ligne, une espace ordinaire en tête serait supprimée à l'affichage
+        // et donnerait « 200m² ».
+        ['nombre' => 5,   'suffixe' => '★',            'libelle' => 'Meublé de tourisme', 'precision' => 'Classement 5 étoiles'],
+        ['nombre' => 10,  'suffixe' => '',             'libelle' => 'Personnes',          'precision' => '5 chambres'],
+        ['nombre' => 200, 'suffixe' => "\u{00A0}m²",    'libelle' => 'Habitables',         'precision' => 'Parc privé de 5 000 m²'],
+        ['nombre' => 4,   'suffixe' => "\u{00A0}× 8 m", 'libelle' => 'Piscine chauffée',   'precision' => 'Volet sécurisé, dès mai'],
+        ['nombre' => 0,   'suffixe' => '',             'libelle' => 'Marche pour entrer', 'precision' => 'Accès PMR de plain-pied'],
+        ['nombre' => 1,   'suffixe' => "\u{00A0}Gb/s",  'libelle' => 'Fibre optique',      'precision' => 'Borne de recharge 18 kVA'],
     ];
+}
+
+/**
+ * Adresse de retour vers le site, depuis une page annexe (mentions légales,
+ * politique de confidentialité).
+ * ---------------------------------------------------------------------------
+ * Le visiteur qui ouvre les mentions légales depuis le bas de la page d'accueil
+ * s'attend à revenir là où il était, et non tout en haut. La page d'origine et
+ * la section sont donc passées en paramètres, et relues ici.
+ *
+ * Les deux valeurs viennent de l'adresse : elles sont vérifiées contre une
+ * liste fermée de pages et un format d'ancre strict. Une valeur inattendue est
+ * ignorée au profit du défaut — une page annexe ne renverra jamais ailleurs
+ * que sur ce site.
+ */
+function seo_retour_site(string $defaut = 'index.php'): string
+{
+    $pages = ['index.php', 'decouvrir.php'];
+
+    $page = (string) ($_GET['retour'] ?? '');
+    if (!in_array($page, $pages, true)) return $defaut;
+
+    $ancre = (string) ($_GET['section'] ?? '');
+    if ($ancre !== '' && preg_match('~^[A-Za-z][A-Za-z0-9_-]{0,39}$~', $ancre)) {
+        return $page . '#' . $ancre;
+    }
+
+    return $page;
+}
+
+/** Valeur complète d'un chiffre clé : « 200 m² », « 4 × 8 m »… */
+function seo_chiffre_texte(array $chiffre): string
+{
+    return number_format((int) $chiffre['nombre'], 0, ',', ' ') . $chiffre['suffixe'];
 }
 
 /**
@@ -225,7 +266,7 @@ function seo_faq(): array {
         ],
         [
             'Le gîte est-il accessible aux personnes à mobilité réduite ?',
-            'Oui. Bellevue d\'Aveyron est de plain-pied intégral, du parking aux espaces de vie. Une chambre et une salle de bain adaptées se trouvent au rez-de-chaussée, et une piste aménagée relie le parking à la maison.',
+            'Oui. Tout le rez-de-chaussée est accessible de plain-pied, sans une seule marche : du parking aux espaces de vie, avec une chambre et une salle de bain adaptées. Une piste aménagée relie le parking à la maison. La villa compte un étage, desservi par un escalier, mais un séjour complet se vit au rez-de-chaussée sans jamais l\'emprunter.',
         ],
         [
             'Peut-on recharger un véhicule électrique sur place ?',
@@ -237,7 +278,7 @@ function seo_faq(): array {
         ],
         [
             'Qu\'est-ce qui fait de Bellevue d\'Aveyron un gîte de luxe 5 étoiles ?',
-            'Le classement 5 étoiles en meublé de tourisme récompense la surface, l\'équipement et le niveau de finition. Ici : 200 m² habitables, 5 chambres, piscine privée chauffée, parc clos de 5 000 m², fibre optique 1 Gbit/s, borne de recharge pour véhicule électrique, plain-pied intégral accessible PMR, et une vue panoramique sur la vallée du Lot. La maison est louée en exclusivité, sans voisinage ni partage d\'équipement.',
+            'Le classement 5 étoiles en meublé de tourisme récompense la surface, l\'équipement et le niveau de finition. Ici : 200 m² habitables, 5 chambres, piscine privée chauffée, parc clos de 5 000 m², fibre optique 1 Gbit/s, borne de recharge pour véhicule électrique, rez-de-chaussée de plain-pied accessible PMR, et une vue panoramique sur la vallée du Lot. La maison est louée en exclusivité, sans voisinage ni partage d\'équipement.',
         ],
         [
             'Peut-on louer ce gîte avec piscine pour un groupe de 10 personnes ?',
@@ -383,7 +424,7 @@ function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
         'alternateName' => "Gîte Bellevue d'Aveyron",
         'legalName'     => SEO_LEGAL_NAME,
         'url'           => seo_url(),
-        'description'   => "Villa de luxe 5 étoiles avec piscine chauffée et vue panoramique sur la vallée du Lot, à Sainte-Eulalie-d'Olt en Aveyron. 200 m², 5 chambres, jusqu'à 10 personnes, parc privé de 5 000 m², accessible PMR de plain-pied. Location à la semaine en direct auprès des propriétaires.",
+        'description'   => "Villa de luxe 5 étoiles avec piscine chauffée et vue panoramique sur la vallée du Lot, à Sainte-Eulalie-d'Olt en Aveyron. 200 m², 5 chambres, jusqu'à 10 personnes, parc privé de 5 000 m², rez-de-chaussée de plain-pied accessible PMR. Location à la semaine en direct auprès des propriétaires.",
         'image'         => [seo_url(SEO_DEFAULT_IMG)],
         'telephone'     => SEO_PHONE,
         'email'         => SEO_EMAIL,

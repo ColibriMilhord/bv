@@ -538,3 +538,86 @@ function submitWithoutDates() {
     var form = document.getElementById('bookingForm');
     if (form) form.submit();
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CHIFFRES CLÉS — le compteur
+   Les valeurs de la bande sous le bandeau défilent de zéro jusqu'à leur
+   valeur réelle, une fois seulement, au moment où la bande entre dans
+   l'écran. Le HTML contient déjà la valeur finale : sans JavaScript, ou si
+   le visiteur a demandé moins d'animations, elle s'affiche telle quelle.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+    var nombres = document.querySelectorAll('.chiffre-nombre[data-compteur]');
+    if (!nombres.length) return;
+
+    var sobre = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (sobre || !('IntersectionObserver' in window)) return;
+
+    var DUREE = 1400;   // millisecondes
+
+    function formater(valeur) {
+        // Espace insécable fine pour les milliers, comme number_format côté PHP.
+        return String(valeur).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+    }
+
+    function animer(element) {
+        var cible = parseInt(element.getAttribute('data-compteur'), 10) || 0;
+        var ligne = element.closest ? element.closest('.chiffre-valeur') : null;
+
+        if (ligne) {
+            ligne.classList.remove('compteur-pret');
+            ligne.classList.add('compteur-en-cours');
+        }
+
+        // Zéro n'a rien à faire défiler : la ligne se pose, sans décompte.
+        if (cible === 0) {
+            if (ligne) ligne.classList.add('compteur-fini');
+            return;
+        }
+
+        var debut = null;
+
+        function pas(horodatage) {
+            if (debut === null) debut = horodatage;
+
+            var avancement = Math.min((horodatage - debut) / DUREE, 1);
+            // Décélération : le nombre s'élance puis se pose doucement.
+            var douceur = 1 - Math.pow(1 - avancement, 3);
+
+            element.textContent = formater(Math.round(cible * douceur));
+
+            if (avancement < 1) {
+                requestAnimationFrame(pas);
+            } else {
+                element.textContent = formater(cible);
+                if (ligne) {
+                    ligne.classList.remove('compteur-en-cours');
+                    ligne.classList.add('compteur-fini');
+                }
+            }
+        }
+
+        requestAnimationFrame(pas);
+    }
+
+    // État de départ posé par le script, jamais dans le HTML : une page sans
+    // JavaScript ne doit pas rester avec des valeurs à zéro.
+    Array.prototype.forEach.call(nombres, function (element) {
+        var ligne = element.parentNode;
+        if (ligne && ligne.classList) ligne.classList.add('compteur-pret');
+        element.textContent = '0';
+    });
+
+    var observateur = new IntersectionObserver(function (entrees) {
+        entrees.forEach(function (entree) {
+            if (!entree.isIntersecting) return;
+            observateur.unobserve(entree.target);
+            animer(entree.target);
+        });
+    }, { threshold: 0.4 });
+
+    Array.prototype.forEach.call(nombres, function (element) {
+        observateur.observe(element);
+    });
+})();

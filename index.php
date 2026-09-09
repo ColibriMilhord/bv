@@ -252,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <?php seo_head([
         'title'       => "Gîte de luxe 5 étoiles avec piscine, 10 personnes en Aveyron — Bellevue d'Aveyron",
-        'description' => "Gîte de luxe 5 étoiles avec piscine chauffée en Aveyron, pour 10 personnes : 200 m², 5 chambres, parc de 5 000 m², plain-pied accessible PMR, à Sainte-Eulalie-d'Olt. Location en direct, "
+        'description' => "Gîte de luxe 5 étoiles avec piscine chauffée en Aveyron, pour 10 personnes : 200 m², 5 chambres, parc de 5 000 m², rez-de-chaussée accessible PMR, à Sainte-Eulalie-d'Olt. Location en direct, "
             . number_format($avis_google['note'], 1, ',', '') . "/5 sur " . (int) $avis_google['total'] . " avis Google.",
         'path'        => '',
         'type'        => 'website',
@@ -373,11 +373,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <section class="chiffres-cles" aria-label="Le gîte en chiffres">
     <ul class="chiffres-grid">
-        <?php foreach (seo_chiffres_cles() as [$valeur, $libelle, $precision]): ?>
+        <?php foreach (seo_chiffres_cles() as $chiffre):
+            $texte = seo_chiffre_texte($chiffre);
+            // Largeur réservée d'après le nombre final : le compteur défile
+            // sans décaler le libellé au-dessous.
+            $largeur = max(1, mb_strlen(number_format((int) $chiffre['nombre'], 0, ',', ' ')));
+        ?>
         <li class="chiffre">
-            <span class="chiffre-valeur"><?php echo seo_e($valeur); ?></span>
-            <span class="chiffre-libelle"><?php echo seo_e($libelle); ?></span>
-            <span class="chiffre-precision"><?php echo seo_e($precision); ?></span>
+            <span class="chiffre-valeur">
+                <span class="chiffre-nombre"
+                      data-compteur="<?php echo (int) $chiffre['nombre']; ?>"
+                      style="min-width:<?php echo $largeur; ?>ch"><?php
+                    echo seo_e(number_format((int) $chiffre['nombre'], 0, ',', ' '));
+                ?></span><?php if ($chiffre['suffixe'] !== ''): ?><span class="chiffre-suffixe"><?php echo seo_e($chiffre['suffixe']); ?></span><?php endif; ?>
+            </span>
+            <span class="chiffre-libelle"><?php echo seo_e($chiffre['libelle']); ?></span>
+            <span class="chiffre-precision"><?php echo seo_e($chiffre['precision']); ?></span>
         </li>
         <?php endforeach; ?>
     </ul>
@@ -449,7 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <?php if (!empty($pmr_images)): ?>
                 <div class="pmr-slideshow" id="pmrSlideshow">
                     <?php foreach ($pmr_images as $i => $img): ?>
-                        <img src="<?php echo $img; ?>" alt="Espaces de plain-pied accessibles PMR du gîte Bellevue d'Aveyron — photo <?php echo $i+1; ?>" loading="lazy" class="pmr-slide <?php echo $i===0?'active':''; ?>">
+                        <img src="<?php echo $img; ?>" alt="Rez-de-chaussée de plain-pied accessible PMR du gîte Bellevue d'Aveyron — photo <?php echo $i+1; ?>" loading="lazy" class="pmr-slide <?php echo $i===0?'active':''; ?>">
                     <?php endforeach; ?>
                     <div class="pmr-frame-overlay"></div>
                 </div>
@@ -466,8 +477,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
             <p class="access-intro">Pour des vacances en toute tranquillité, nous avons conçu Bellevue d'Aveyron comme un espace ouvert à tous. L'accessibilité n'est pas une option, c'est une promesse de sérénité partagée.</p>
             <div class="access-features">
-                <div class="access-item"><span class="check-gold">✓</span><p><strong>Plain-pied intégral :</strong> Du parking aux espaces de vie (cuisine, salon, terrasses), tout est pensé pour une circulation fluide sans obstacle.</p></div>
-                <div class="access-item"><span class="check-gold">✓</span><p><strong>Espace nuit adapté :</strong> Une chambre et une salle de bain entièrement équipées sont accessibles directement au rez-de-chaussée.</p></div>
+                <div class="access-item"><span class="check-gold">✓</span><p><strong>Rez-de-chaussée sans une marche :</strong> Du parking aux espaces de vie (cuisine, salon, terrasses), tout est de plain-pied et pensé pour une circulation fluide sans obstacle.</p></div>
+                <div class="access-item"><span class="check-gold">✓</span><p><strong>Espace nuit adapté :</strong> Une chambre et une salle de bain entièrement équipées sont accessibles directement au rez-de-chaussée. La villa compte un étage, mais un séjour complet s'y vit sans jamais emprunter l'escalier.</p></div>
                 <div class="access-item"><span class="check-gold">✓</span><p><strong>Aménagements extérieurs :</strong> Une piste aménagée relie le parking à la maison pour un accès facilité en toutes circonstances.</p></div>
             </div>
             <p class="access-footer">Idéalement situé pour visiter les merveilles accessibles de la région (Beaux villages, Viaduc de Millau, Musée Soulages...).<br><em>N'hésitez pas à nous contacter pour préparer votre venue.</em></p>
@@ -543,9 +554,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="ligne-prix">
                         <span class="prix-semaine"><?php echo number_format($l['semaine'], 0, ',', ' '); ?> €</span>
                         <span class="prix-unite">la semaine</span>
-                        <?php if ($l['par_nuit'] > 0): ?>
-                            <span class="prix-nuit">soit <?php echo number_format($l['par_nuit'], 0, ',', ' '); ?> € la nuit</span>
-                        <?php endif; ?>
                     </div>
                 </li>
                 <?php endforeach; ?>
@@ -759,9 +767,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <div class="legal-links">
             <span>&copy; 2026 Bellevue d'Aveyron</span>
             <span class="separator">•</span>
-            <a href="mentions.php">Mentions Légales</a>
+            <a href="mentions.php?retour=index.php&amp;section=footer-luxe">Mentions Légales</a>
             <span class="separator">•</span>
-            <a href="politique.php">Politique de Confidentialité</a>
+            <a href="politique.php?retour=index.php&amp;section=footer-luxe">Politique de Confidentialité</a>
         </div>
         <div class="signature">Excellence &amp; Tradition</div>
     </div>

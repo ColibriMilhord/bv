@@ -95,27 +95,27 @@ function tarifs_periode(?string $debut, ?string $fin): string
     $moisD = $mois[(int) $d->format('n')];
     $moisF = $mois[(int) $f->format('n')];
 
+    // « 1er » et non « 1 » : le quantième s'ordonne en français.
+    $quantieme = function (DateTimeInterface $date) {
+        $jour = (int) $date->format('j');
+        return $jour === 1 ? '1er' : (string) $jour;
+    };
+
+    $jourD = $quantieme($d);
+    $jourF = $quantieme($f);
+
     // Même mois : « du 4 au 29 août 2026 ».
     if ($d->format('Y-n') === $f->format('Y-n')) {
-        return 'Du ' . $d->format('j') . ' au ' . $f->format('j') . ' ' . $moisF . ' ' . $f->format('Y');
+        return 'Du ' . $jourD . ' au ' . $jourF . ' ' . $moisF . ' ' . $f->format('Y');
     }
 
     // Même année : l'année n'apparaît qu'une fois.
     if ($d->format('Y') === $f->format('Y')) {
-        return 'Du ' . $d->format('j') . ' ' . $moisD . ' au ' . $f->format('j') . ' ' . $moisF . ' ' . $f->format('Y');
+        return 'Du ' . $jourD . ' ' . $moisD . ' au ' . $jourF . ' ' . $moisF . ' ' . $f->format('Y');
     }
 
-    return 'Du ' . $d->format('j') . ' ' . $moisD . ' ' . $d->format('Y')
-         . ' au ' . $f->format('j') . ' ' . $moisF . ' ' . $f->format('Y');
-}
-
-/** Nombre de nuits d'une période, pour information. */
-function tarifs_nuits(?string $debut, ?string $fin): int
-{
-    $d = $debut ? date_create($debut) : null;
-    $f = $fin ? date_create($fin) : null;
-
-    return ($d && $f) ? max(0, (int) $d->diff($f)->days) : 0;
+    return 'Du ' . $jourD . ' ' . $moisD . ' ' . $d->format('Y')
+         . ' au ' . $jourF . ' ' . $moisF . ' ' . $f->format('Y');
 }
 
 /**
@@ -147,8 +147,6 @@ function tarifs_grille(array $lignes): array
             'debut'     => $l['date_debut'] ?? null,
             'fin'       => $l['date_fin'] ?? null,
             'semaine'   => $semaine,
-            'par_nuit'  => $semaine > 0 ? (int) round($semaine / 7) : 0,
-            'nuits'     => tarifs_nuits($l['date_debut'] ?? null, $l['date_fin'] ?? null),
         ];
     }
 
