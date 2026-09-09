@@ -8,6 +8,10 @@
  *       'SMTP_FROM_NAME' => "Bellevue d'Aveyron",   ← correct
  *   Et chaque ligne doit se terminer par une virgule.
  *
+ * ⚠ Toutes les valeurs doivent être écrites À L'INTÉRIEUR du « return [ … ]; »
+ *   ci-dessous. Placées avant ou après, elles ne sont jamais lues : la base et
+ *   les e-mails restent alors inaccessibles, sans message d'erreur visible.
+ *
  * Sur le serveur :
  *   cp config/secrets.example.php config/secrets.php
  *   puis renseigner les valeurs réelles dans config/secrets.php.

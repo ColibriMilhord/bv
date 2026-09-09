@@ -56,8 +56,22 @@ function secret(string $cle, $defaut = null)
             }
 
             if ($syntaxeValide) {
-                $charge  = require $chemin;
-                $fichier = is_array($charge) ? $charge : [];
+                $charge = require $chemin;
+
+                if (is_array($charge) && $charge !== []) {
+                    $fichier = $charge;
+                } elseif (is_array($charge)) {
+                    // Tableau vide : les valeurs ont sans doute été écrites
+                    // avant ou après le « return [ … ]; », où elles sont ignorées.
+                    error_log('[bellevue] config/secrets.php ne contient aucune valeur : '
+                        . 'vérifier qu\'elles sont bien à l\'intérieur du « return [ … ]; ».');
+                } else {
+                    // Le fichier existe et se lit, mais ne renvoie rien : les
+                    // valeurs ont été écrites en dehors du « return [ … ]; ».
+                    // Sans ce message, la panne serait totalement muette.
+                    error_log('[bellevue] config/secrets.php ne renvoie pas de tableau : '
+                        . 'les valeurs doivent être placées à l\'intérieur du « return [ … ]; ».');
+                }
             }
         }
     }
