@@ -11,6 +11,30 @@
 
 require_once __DIR__ . '/config/avis.php';
 
+/**
+ * Accès réservé.
+ * ---------------------------------------------------------------------------
+ * Cet outil décrit l'installation : il ne doit pas rester ouvert à tous.
+ * Deux façons d'y accéder :
+ *   • être connecté à l'espace d'administration ;
+ *   • ou ajouter la clé à l'adresse : ?cle=bellevue-avis
+ *
+ * La clé ci-dessous est volontairement lisible : elle sert de garde-fou quand
+ * la base de données est en panne et que la connexion à l'administration est
+ * elle-même impossible. Changez-la, ou supprimez ce fichier une fois le
+ * problème réglé.
+ */
+const DIAG_CLE = 'bellevue-avis';
+
+if (session_status() === PHP_SESSION_NONE) @session_start();
+
+if (empty($_SESSION['admin_id']) && (($_GET['cle'] ?? '') !== DIAG_CLE)) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=UTF-8');
+    header('X-Robots-Tag: noindex, nofollow');
+    exit("Accès refusé.\n\nConnectez-vous à l'espace d'administration, ou ajoutez ?cle=… à l'adresse.\nLa clé figure en clair au début de ce fichier.");
+}
+
 header('Content-Type: text/html; charset=UTF-8');
 header('X-Robots-Tag: noindex, nofollow');
 

@@ -111,7 +111,14 @@ Copier le contenu du dossier décompressé vers la racine du site sur le serveur
    l'agenda. En cas d'impossibilité, le site fonctionne quand même, simplement
    sans cache.
 
-4. **Trois fichiers sont à supprimer** du serveur, s'ils y sont encore :
+4. **Les trois outils de diagnostic** (`diagnostic.php`, `debug-500.php`,
+   `diagnostic-avis.php`) sont désormais protégés : ils exigent une session
+   d'administrateur, ou la clé indiquée en clair au début de chaque fichier
+   (`?cle=bellevue-diag`, `?cle=bellevue-debug`, `?cle=bellevue-avis`). Les
+   laisser sur le serveur ne présente plus de risque ; les supprimer reste
+   possible.
+
+5. **Trois fichiers sont à supprimer** du serveur, s'ils y sont encore :
    `check_db.php`, `fetch_datatourisme.php` (scripts de debug qui exposaient le
    schéma de la base et la clé Datatourisme) et `bellevue_debug_mail.log` (il
    contient des adresses e-mail de clients, à la racine web).
