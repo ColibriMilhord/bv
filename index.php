@@ -767,9 +767,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <div class="legal-links">
             <span>&copy; 2026 Bellevue d'Aveyron</span>
             <span class="separator">•</span>
-            <a href="mentions.php?retour=index.php&amp;section=footer-luxe">Mentions Légales</a>
+            <a href="mentions.php?retour=index.php&amp;section=reservation">Mentions Légales</a>
             <span class="separator">•</span>
-            <a href="politique.php?retour=index.php&amp;section=footer-luxe">Politique de Confidentialité</a>
+            <a href="politique.php?retour=index.php&amp;section=reservation">Politique de Confidentialité</a>
         </div>
         <div class="signature">Excellence &amp; Tradition</div>
     </div>
