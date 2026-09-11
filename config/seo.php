@@ -381,6 +381,15 @@ function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
         ];
     }
 
+    // Fourchette de prix : Google l'affiche sur la fiche d'établissement et
+    // s'en sert pour rapprocher un hébergement d'une requête « à partir de ».
+    $prix = array_filter(array_map(function ($t) {
+        return (float) ($t['prix_semaine'] ?? 0);
+    }, $tarifs));
+    $fourchette = $prix
+        ? number_format(min($prix), 0, ',', ' ') . '–' . number_format(max($prix), 0, ',', ' ') . ' EUR la semaine'
+        : null;
+
     $offers = [];
     foreach ($tarifs as $t) {
         if (!isset($t['prix_semaine'])) continue;
@@ -429,6 +438,7 @@ function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
         'telephone'     => SEO_PHONE,
         'email'         => SEO_EMAIL,
         'currenciesAccepted' => 'EUR',
+        'priceRange'         => $fourchette,
         'address' => [
             '@type'           => 'PostalAddress',
             'addressLocality' => SEO_LOCALITY,
@@ -441,7 +451,9 @@ function seo_node_lodging(array $tarifs = [], ?array $avis = null): array {
             'latitude'  => SEO_LAT,
             'longitude' => SEO_LNG,
         ],
-        'hasMap' => 'https://www.google.com/maps/search/?api=1&query=' . SEO_LAT . ',' . SEO_LNG,
+        // La fiche d'établissement Google plutôt qu'une simple recherche par
+        // coordonnées : c'est elle qui fait autorité auprès de Google.
+        'hasMap' => 'https://g.page/r/CVWZLGkfDaptEAE',
         'starRating' => ['@type' => 'Rating', 'ratingValue' => 5, 'bestRating' => 5],
         'aggregateRating' => ($note > 0 && $nbAvis > 0) ? [
             '@type'       => 'AggregateRating',
