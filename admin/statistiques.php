@@ -5,6 +5,13 @@ session_start();
 require_once '../config/db.php';
 require_once '../config/stats.php';
 require_once '../config/antispam.php';
+require_once '../config/seo.php';   // pour seo_asset() : versionne les fichiers servis
+
+// Les fichiers de la carte sont servis par le site lui-même. Le chemin est
+// relatif à la racine, d'où le « ../ » depuis /admin/.
+$carte_js  = '../' . seo_asset('js/vendor/jsvectormap/jsvectormap.min.js');
+$carte_css = '../' . seo_asset('js/vendor/jsvectormap/jsvectormap.min.css');
+$carte_monde = '../' . seo_asset('js/vendor/jsvectormap/world.js');
 
 if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
@@ -64,7 +71,7 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsvectormap/1.5.3/jsvectormap.min.css">
+    <link rel="stylesheet" href="<?php echo $e($carte_css); ?>">
     <style>
         #carteMonde { height: 420px; }
         .barre { background: linear-gradient(90deg, #b8912f, #e0c56a); }
@@ -136,8 +143,9 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
 
             <div id="carteMonde"></div>
 
-            <div id="carteRepli" class="hidden text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-4 py-6 text-center">
-                La carte n'a pas pu se charger — elle est fournie par un service externe.
+            <div id="carteRepli" hidden class="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-4 py-6 text-center">
+                La carte n'a pas pu s'afficher. Vérifiez que le dossier
+                <code>js/vendor/jsvectormap/</code> a bien été téléversé sur le serveur.
                 Le détail par pays reste disponible ci-dessous.
             </div>
 
@@ -312,17 +320,25 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
         </p>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsvectormap/1.5.3/jsvectormap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsvectormap/1.5.3/maps/world.js"></script>
+    <!-- La carte était chargée depuis un réseau de diffusion externe, et ne
+         s'affichait pas quand celui-ci était injoignable. Les deux fichiers
+         sont désormais servis par le site : plus aucune dépendance extérieure,
+         et aucune requête vers un tiers depuis l'administration.
+         jsVectorMap 1.7.0, licence MIT — voir js/vendor/jsvectormap/LICENSE. -->
+    <script src="<?php echo $e($carte_js); ?>"></script>
+    <script src="<?php echo $e($carte_monde); ?>"></script>
     <script>
     (function () {
         var valeurs = <?php echo json_encode($valeursCarte, JSON_UNESCAPED_UNICODE); ?>;
 
-        // La carte vient d'un service externe : si elle ne se charge pas, on
-        // bascule sur le repli plutôt que de laisser une zone vide.
+        // La carte est servie par le site, mais un fichier absent après un
+        // téléversement partiel reste possible : on bascule alors sur le repli
+        // plutôt que de laisser une zone vide.
+        // L'attribut « hidden » est natif : le repli reste correct même si la
+        // feuille de style externe de l'administration n'a pas été chargée.
         function replier() {
-            document.getElementById('carteMonde').classList.add('hidden');
-            document.getElementById('carteRepli').classList.remove('hidden');
+            document.getElementById('carteMonde').hidden = true;
+            document.getElementById('carteRepli').hidden = false;
         }
 
         if (typeof jsVectorMap === 'undefined') { replier(); return; }
@@ -336,13 +352,11 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                     initial: { fill: '#e9e7e2', stroke: '#ffffff', strokeWidth: 0.6 },
                     hover:   { fill: '#c9b271' }
                 },
-                series: {
-                    regions: [{
-                        attribute: 'fill',
-                        scale: ['#efe9dc', '#b8912f'],
-                        normalizeFunction: 'polynomial',
-                        values: valeurs
-                    }]
+                // Dégradé du plus clair au plus soutenu, selon le nombre de
+                // pages vues. Les pays sans visite gardent le gris initial.
+                visualizeData: {
+                    scale: ['#efe9dc', '#b8912f'],
+                    values: valeurs
                 },
                 onRegionTooltipShow: function (event, tooltip, code) {
                     var n = valeurs[code] || 0;

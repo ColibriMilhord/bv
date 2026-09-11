@@ -109,19 +109,24 @@ Copier le contenu du dossier décompressé vers la racine du site sur le serveur
 2. **Ne pas écraser `config/secrets.php`.** Le fichier créé à l'étape 1 n'est
    pas dans l'archive : il doit rester tel quel.
 
-3. **Créer le dossier `cache/`** à la racine du site s'il n'existe pas, et le
+3. **Téléverser le dossier `js/vendor/`.** Il contient la bibliothèque de la
+   carte du monde de l'écran Audience, désormais servie par le site et non
+   plus par un réseau de diffusion externe. Sans lui, la carte ne s'affiche
+   pas — le reste de l'écran fonctionne.
+
+4. **Créer le dossier `cache/`** à la racine du site s'il n'existe pas, et le
    laisser accessible en écriture (permissions 755). Il sert au cache de
    l'agenda. En cas d'impossibilité, le site fonctionne quand même, simplement
    sans cache.
 
-4. **Les trois outils de diagnostic** (`diagnostic.php`, `debug-500.php`,
+5. **Les trois outils de diagnostic** (`diagnostic.php`, `debug-500.php`,
    `diagnostic-avis.php`) sont désormais protégés : ils exigent une session
    d'administrateur, ou la clé indiquée en clair au début de chaque fichier
    (`?cle=bellevue-diag`, `?cle=bellevue-debug`, `?cle=bellevue-avis`). Les
    laisser sur le serveur ne présente plus de risque ; les supprimer reste
    possible.
 
-5. **Trois fichiers sont à supprimer** du serveur, s'ils y sont encore :
+6. **Trois fichiers sont à supprimer** du serveur, s'ils y sont encore :
    `check_db.php`, `fetch_datatourisme.php` (scripts de debug qui exposaient le
    schéma de la base et la clé Datatourisme) et `bellevue_debug_mail.log` (il
    contient des adresses e-mail de clients, à la racine web).
@@ -145,7 +150,7 @@ Dans l'ordre, en notant tout ce qui cloche :
 | `https://bellevuedaveyron.fr/llms.txt` | Le fichier s'affiche |
 | `https://bellevuedaveyron.fr/config/db.php` | **Erreur 403** — si le fichier se télécharge, le `.htaccess` n'est pas monté |
 | `https://bellevuedaveyron.fr/admin/` | Page de connexion, puis tableau de bord |
-| Administration → **Audience du site** | Les tuiles s'affichent ; la carte se charge depuis un service externe |
+| Administration → **Audience du site** | Les tuiles s'affichent et **la carte du monde apparaît**, la France colorée. Si le message « la carte n'a pas pu s'afficher » s'affiche, c'est que le dossier `js/vendor/` n'a pas été téléversé |
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
 | Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
@@ -237,6 +242,8 @@ place : il n'est utilisé que par la nouvelle version.
 - Les deux messages du formulaire — celui des propriétaires et l'accusé de
   réception du client — sont désormais mis en forme à l'image du site, en
   HTML doublé d'une version texte.
+- Carte de l'écran Audience servie par le site : elle ne dépend plus d'un
+  réseau de diffusion externe, qui était injoignable et laissait la zone vide.
 - Section Réservation entièrement refaite : deux étapes numérotées, un seul
   bouton dont l'intitulé suit l'état de la sélection, semaines louées
   reconnaissables au premier coup d'œil, et calendrier utilisable au clavier
