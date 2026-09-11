@@ -149,7 +149,7 @@ Dans l'ordre, en notant tout ce qui cloche :
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
 | Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
-| Formulaire de réservation du site | **Faire un envoi de test** : le mail arrive bien aux destinataires réglés. Prenez plus de trois secondes à le remplir, sans quoi la protection anti-robots l'écarte |
+| Formulaire de réservation du site | **Faire un envoi de test** : les deux messages arrivent, mis en forme. Prenez plus de trois secondes à le remplir, sans quoi la protection anti-robots l'écarte |
 
 Si les tarifs n'apparaissent pas ou si l'administration répond « Service
 temporairement indisponible » : `config/secrets.php` est absent, mal nommé, ou
@@ -169,7 +169,13 @@ une valeur est erronée. C'est la cause dans la quasi-totalité des cas.
 3. **Valider les distances** de la page Découvrir avec un calculateur
    d'itinéraire, et me signaler les écarts : elles alimentent aussi le balisage
    et `llms.txt`.
-4. **Photos** : voir `docs/seo-ia/installer-python-windows.md` et
+4. **Authentifier le domaine pour l'e-mail** : SPF, DKIM et DMARC, dans
+   hPanel → Domaines → Zone DNS. C'est ce qui décide, chez Gmail et Outlook,
+   du sort de vos messages, et ce qui rétablit le plus vite la réputation du
+   domaine après une suspension. Marche à suivre dans
+   `docs/securite-mail.md`. Contrôle ensuite avec un envoi de test vers
+   <https://www.mail-tester.com> : viser 9 ou 10 sur 10.
+5. **Photos** : voir `docs/seo-ia/installer-python-windows.md` et
    `images/decouvrir/README.md`. Rien d'urgent, le site est complet sans elles.
 
 ---
@@ -225,6 +231,11 @@ place : il n'est utilisé que par la nouvelle version.
   par réseau, contrôle du contenu, validation des destinataires et des
   en-têtes. C'est la réponse à la suspension de la boîte d'envoi — voir
   `docs/securite-mail.md`.
+- Couche d'envoi reprise : échappement du point, en-têtes `Date` et
+  `Message-ID`, réponses du serveur vérifiées, encodage conforme.
+- Les deux messages du formulaire — celui des propriétaires et l'accusé de
+  réception du client — sont désormais mis en forme à l'image du site, en
+  HTML doublé d'une version texte.
 - Mots de passe sortis du code ; les deux scripts de maintenance de
   l'administration désormais réservés aux administrateurs connectés.
 - `index.php?show_log=1` et le fichier `bellevue_debug_mail.log` supprimés :

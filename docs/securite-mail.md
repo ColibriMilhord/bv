@@ -140,6 +140,63 @@ visible dans **Administration → Audience du site**.
 
 ---
 
+## L'envoi lui-même était-il correct ? Non.
+
+Fermer le formulaire ne suffisait pas : la couche d'envoi elle-même comportait
+des défauts qui pèsent sur le sort d'un message à l'arrivée. Ils ont été repris.
+
+### Ce qui pouvait casser un envoi, ou pire
+
+| Défaut | Conséquence |
+|---|---|
+| Le corps n'échappait pas le point en début de ligne | Une ligne réduite à un point met fin aux données SMTP. Le message du visiteur en contenant une était tronqué, **et la suite interprétée comme des commandes du protocole** — une injection, cette fois au niveau SMTP et non des en-têtes. |
+| Aucun en-tête `Date` ni `Message-ID` | Deux absences que les filtres anti-spam tiennent pour un signe de message fabriqué à la main. Elles cassent aussi le fil de discussion chez le destinataire. |
+| Les réponses du serveur n'étaient pas vérifiées | Un destinataire refusé passait inaperçu : le site annonçait « envoyé » alors que le message n'était allé nulle part. |
+| Le corps partait en 8 bits sans encodage déclaré | Une ligne de plus de 998 caractères — un message un peu long sans retour à la ligne — pouvait être coupée n'importe où par un relais. |
+| Le salut `EHLO` reprenait l'en-tête `Host` de la requête | Une valeur fournie par le visiteur se retrouvait dans le dialogue SMTP. |
+
+### Ce qui a été mis en place
+
+- **Échappement du point** sur l'ensemble des données transmises, conformément
+  au protocole. Vérifié : un message contenant une ligne réduite à un point
+  arrive intact, point compris.
+- **`Date` et `Message-ID`** émis à chaque envoi, l'identifiant construit sur le
+  domaine d'expédition.
+- **Chaque réponse du serveur contrôlée** — authentification, expéditeur,
+  destinataires, ouverture des données, acceptation finale. Un destinataire
+  refusé est consigné dans le journal, et un envoi sans aucun destinataire
+  accepté est rapporté comme un échec, non comme un succès.
+- **Encodage « quoted-printable »** des deux corps : le texte reste lisible tel
+  quel dans la source du message, les accents sont préservés et aucune ligne ne
+  dépasse la limite du protocole.
+- **`EHLO` sur le domaine d'expédition**, jamais sur une valeur venue de la
+  requête.
+
+Le tout a été vérifié face à un vrai serveur SMTP, en relisant octet par octet
+ce qui part sur le fil.
+
+### Ce qui reste à faire chez l'hébergeur — et qui compte autant
+
+Le code ne peut rien pour l'authentification du domaine. Trois enregistrements
+DNS décident, chez Gmail et Outlook, si un message est distribué, classé
+indésirable ou rejeté. Ils se règlent dans hPanel → Domaines → **Zone DNS**, et
+Hostinger propose un assistant pour les deux premiers :
+
+| Enregistrement | Rôle | Sans lui |
+|---|---|---|
+| **SPF** | Déclare quels serveurs ont le droit d'envoyer au nom du domaine | N'importe qui peut se faire passer pour vous — et vos propres messages sont suspects |
+| **DKIM** | Signe chaque message ; le destinataire vérifie qu'il n'a pas été modifié | Aucune preuve d'origine ; Gmail classe volontiers en indésirables |
+| **DMARC** | Dit quoi faire d'un message qui échoue aux deux premiers, et vous fait remonter des rapports | Aucune visibilité sur les usurpations de votre domaine |
+
+Après une suspension pour envoi indésirable, ces trois réglages sont le
+meilleur investissement possible : ils rétablissent la réputation du domaine
+bien plus vite que le temps.
+
+Une fois en place, un envoi de test vers <https://www.mail-tester.com> donne une
+note sur 10 et la liste de ce qui manque encore. Viser 9 ou 10.
+
+---
+
 ## Faut-il changer l'adresse d'envoi ?
 
 **Non.** Vous aviez posé la règle vous-même : l'expéditeur reste

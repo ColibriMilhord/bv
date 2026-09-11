@@ -10,6 +10,7 @@ require_once 'config/annonces.php';
 require_once 'config/stats.php';
 require_once 'config/tarifs.php';
 require_once 'config/antispam.php';
+require_once 'config/courriels.php';
 
 // Avis Google : note, compteur et trois derniers avis (cache 12 h, repli
 // éditorial). Un incident sur ce bloc — réseau, cache en lecture seule,
@@ -142,56 +143,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $bookingData = ['nuits' => $nuits, 'total' => $prix_total];
         } catch (Exception $e) {}
 
-        // ── Corps du mail propriétaires ──
+        // ── Les deux messages ──
+        // Le texte et la mise en forme sortent de config/courriels.php : la
+        // page ne fabrique plus de corps de message. Chaque envoi part en deux
+        // versions, texte et HTML, dans un même message.
         $has_dates = ($date_debut && $date_fin && $nuits > 0);
 
-        if ($has_dates) {
-            $subject = "🗓 RÉSERVATION BELLEVUE : " . $client_nom . " (" . $nuits . " nuits)";
-        } else {
-            $subject = "📩 DEMANDE INFO BELLEVUE : " . $client_nom;
-        }
+        $demande = [
+            'nom'           => $raw_nom,
+            'email'         => $client_email,
+            'telephone'     => $raw_tel,
+            'message'       => $raw_note,
+            'has_dates'     => $has_dates,
+            'date_debut'    => $date_debut,
+            'date_fin'      => $date_fin,
+            'nuits'         => $nuits,
+            'prix_total'    => $prix_total,
+            'acompte'       => $acompte_montant,
+            'option_menage' => $option_menage,
+            'recu_le'       => date('d/m/Y à H\\hi'),
+        ];
 
-        $body  = "========================================\n";
-        $body .= $has_dates
-            ? "  DEMANDE DE RÉSERVATION — bellevuedaveyron.fr\n"
-            : "  DEMANDE D'INFORMATION — bellevuedaveyron.fr\n";
-        $body .= "========================================\n\n";
+        $courriel_proprio = courriel_proprietaires($demande);
+        $courriel_visiteur = courriel_client($demande);
 
-        $body .= "CLIENT\n";
-        $body .= "------\n";
-        $body .= "Nom       : $raw_nom\n";
-        $body .= "Email     : $client_email\n";
-        $body .= "Téléphone : $raw_tel\n\n";
-
-        $body .= "SÉJOUR\n";
-        $body .= "------\n";
-        if ($has_dates) {
-            $body .= "Arrivée   : " . date('d/m/Y', strtotime($date_debut)) . "\n";
-            $body .= "Départ    : " . date('d/m/Y', strtotime($date_fin))   . "\n";
-            $body .= "Durée     : " . $nuits . " nuits\n";
-            $body .= "Ménage    : " . ($option_menage ? "Oui (+220€)" : "Non") . "\n\n";
-            $body .= "\n";
-        } else {
-            $body .= "Dates     : Non précisées (demande d'information générale)\n\n";
-        }
-
-        $body .= "MESSAGE DU CLIENT\n";
-        $body .= "-----------------\n";
-        $body .= ($raw_note ?: "Aucun message.") . "\n\n";
-        $body .= "========================================\n";
-        $body .= "Répondre à : $client_email\n";
-        $body .= "========================================\n";
-
-        // ── Envoi aux propriétaires — un mail par destinataire ──
-        $mailSent    = false;
+        // ── Envoi aux propriétaires — un message par destinataire ──
         // Destinataires réglables depuis l'administration (Paramètres du Gîte).
-        // Un envoi par destinataire ; repli sur les adresses par défaut si le
-        // réglage est vide. L'expéditeur reste la boîte SMTP reservation@.
+        // Repli sur les adresses par défaut si le réglage est vide.
+        // L'expéditeur reste la boîte SMTP reservation@.
+        $mailSent    = false;
         $admin_list  = notifications_destinataires($settings);
         $mail_errors = [];
 
         foreach ($admin_list as $admin) {
-            $r = send_smtp_mail($admin, $subject, $body, $client_email);
+            $r = send_smtp_mail(
+                $admin,
+                $courriel_proprio['sujet'],
+                $courriel_proprio['texte'],
+                $client_email,
+                $courriel_proprio['html']
+            );
+
             if ($r === true) {
                 $mailSent = true;
             } else {
@@ -202,28 +194,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
-        // ── Accusé de réception client ──
-        $ack_body  = "Bonjour $raw_nom,\n\n";
-        if ($has_dates) {
-            $ack_body .= "Nous avons bien reçu votre demande de réservation pour la villa Bellevue d'Aveyron.\n\n";
-            $ack_body .= "Récapitulatif de votre demande :\n";
-            $ack_body .= "  Arrivée  : " . date('d/m/Y', strtotime($date_debut)) . "\n";
-            $ack_body .= "  Départ   : " . date('d/m/Y', strtotime($date_fin)) . "\n";
-            $ack_body .= "  Durée    : " . $nuits . " nuits\n";
-            $ack_body .= "\n";
-        } else {
-            $ack_body .= "Nous avons bien reçu votre demande d'information concernant la villa Bellevue d'Aveyron.\n\n";
-        }
-        $ack_body .= "Nous reviendrons vers vous dans les meilleurs délais.\n\n";
-        $ack_body .= "Cordialement,\nL'equipe Bellevue d'Aveyron\nhttps://bellevuedaveyron.fr\nTel : 06 80 90 71 07";
-
-        // L'accusé part vers une adresse fournie par le visiteur : c'est le
-        // seul envoi détournable. On ne l'émet que si la demande a bien été
-        // reçue par les propriétaires — un robot n'obtient donc rien d'un
-        // formulaire dont l'envoi principal a échoué.
+        // ── Accusé de réception du client ──
+        // Il part vers une adresse fournie par le visiteur : c'est le seul
+        // envoi détournable. On ne l'émet que si la demande a bien été reçue
+        // par les propriétaires — un robot n'obtient donc rien d'un formulaire
+        // dont l'envoi principal a échoué.
         if ($mailSent) {
-            $ack_result = send_smtp_mail($client_email,
-                "Confirmation de réception - Bellevue d'Aveyron", $ack_body);
+            $ack_result = send_smtp_mail(
+                $client_email,
+                $courriel_visiteur['sujet'],
+                $courriel_visiteur['texte'],
+                '',
+                $courriel_visiteur['html']
+            );
 
             if ($ack_result !== true) {
                 error_log('[bellevue] accusé de réception en échec — ' . $ack_result);
