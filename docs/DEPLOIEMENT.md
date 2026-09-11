@@ -149,6 +149,7 @@ Dans l'ordre, en notant tout ce qui cloche :
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
 | Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
+| Section **Réserver votre séjour** | Le calendrier s'affiche, les semaines déjà louées apparaissent grisées et barrées. Cliquez une arrivée puis un départ : le récapitulatif se remplit et l'intitulé du bouton devient « Demander cette période » |
 | Formulaire de réservation du site | **Faire un envoi de test** : les deux messages arrivent, mis en forme. Prenez plus de trois secondes à le remplir, sans quoi la protection anti-robots l'écarte |
 
 Si les tarifs n'apparaissent pas ou si l'administration répond « Service
@@ -236,6 +237,10 @@ place : il n'est utilisé que par la nouvelle version.
 - Les deux messages du formulaire — celui des propriétaires et l'accusé de
   réception du client — sont désormais mis en forme à l'image du site, en
   HTML doublé d'une version texte.
+- Section Réservation entièrement refaite : deux étapes numérotées, un seul
+  bouton dont l'intitulé suit l'état de la sélection, semaines louées
+  reconnaissables au premier coup d'œil, et calendrier utilisable au clavier
+  comme au doigt.
 - Mots de passe sortis du code ; les deux scripts de maintenance de
   l'administration désormais réservés aux administrateurs connectés.
 - `index.php?show_log=1` et le fichier `bellevue_debug_mail.log` supprimés :

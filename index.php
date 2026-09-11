@@ -55,7 +55,7 @@ if ($pdo) {
         $booked_dates = $pdo->query("SELECT jour FROM calendrier_dispo WHERE statut != 'libre'")->fetchAll(PDO::FETCH_COLUMN);
     } catch (Exception $e) {}
 }
-$json_booked_dates = json_encode($booked_dates);
+$json_booked_dates = json_encode(array_values(array_unique($booked_dates)));
 
 // ── Mesure d'audience interne et bandeau d'annonce ──
 // Sans cookie ni traceur tiers : l'enregistrement est silencieux et ne peut
@@ -74,6 +74,25 @@ if ($pdo) {
 // ── Grille tarifaire regroupée par saison ──
 $tarifs_grille   = tarifs_grille($tarifs_display);
 $tarif_mini      = tarifs_a_partir_de($tarifs_display);
+
+// Périodes tarifaires transmises au calendrier : le récapitulatif annonce la
+// saison et le prix à la semaine dès que la date d'arrivée est choisie, sans
+// que le visiteur ait à remonter à la grille.
+$prix_grille  = array_map(function ($l) { return (float) ($l['prix_semaine'] ?? 0); }, $tarifs_display);
+$prix_mini    = $prix_grille ? min($prix_grille) : 0.0;
+$prix_maxi    = $prix_grille ? max($prix_grille) : 0.0;
+$json_saisons = json_encode(array_values(array_map(
+    function ($l) use ($prix_mini, $prix_maxi) {
+        $saison = tarifs_saisons()[tarifs_categorie($l, $prix_mini, $prix_maxi)] ?? null;
+        return [
+            'debut' => (string) ($l['date_debut'] ?? ''),
+            'fin'   => (string) ($l['date_fin'] ?? ''),
+            'prix'  => (int) round((float) ($l['prix_semaine'] ?? 0)),
+            'nom'   => $saison ? $saison['nom'] : '',
+        ];
+    },
+    $tarifs_display
+)), JSON_UNESCAPED_UNICODE);
 $tarifs_settings = [];
 if ($pdo) {
     try {
@@ -564,68 +583,144 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </section>
 
 <!-- ══ RÉSERVATION ══ -->
+<!--
+    Une seule demande, un seul bouton.
+    L'ancien écran proposait « réserver » et « demander une information » par le
+    même formulaire, départagés par une fenêtre qui s'ouvrait quand les dates
+    manquaient : le visiteur découvrait la question après avoir cliqué. Ici les
+    dates sont facultatives et annoncées comme telles, et l'intitulé du bouton
+    dit à tout moment ce que le clic va produire.
+-->
 
-<section id="reservation">
+<section id="reservation" class="resa">
     <div class="section-header">
         <span class="subtitle">Disponibilités</span>
         <h2>Réservez Votre Séjour</h2>
-    </div>
-    <div class="booking-layout">
-
-    <!-- Calendrier -->
-    <div class="calendar-side">
-        <div class="calendar-header">
-            <button class="cal-nav" onclick="changeMonth(-1)">❮</button>
-            <span class="month-label" id="calendarTitle">Juillet 2026</span>
-            <button class="cal-nav" onclick="changeMonth(1)">❯</button>
-        </div>
-        <div class="days-grid">
-            <div class="day-label">L</div><div class="day-label">M</div><div class="day-label">M</div>
-            <div class="day-label">J</div><div class="day-label">V</div><div class="day-label">S</div><div class="day-label">D</div>
-        </div>
-        <div class="days-grid" id="calendarDays"></div>
-        <div style="margin-top:20px;display:flex;gap:15px;font-size:.8rem;justify-content:center;">
-            <div style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;border:1px solid #ddd;display:inline-block;"></span> Libre</div>
-            <div style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--gold-gradient);display:inline-block;"></span> Sélection</div>
-            <div style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#ddd;display:inline-block;"></span> Occupé</div>
-        </div>
+        <p class="resa-chapeau">
+            En direct auprès des propriétaires, sans commission.
+            Réponse sous 24&nbsp;heures.
+        </p>
     </div>
 
-    <!-- Formulaire -->
-    <div class="form-side">
-        <h3 class="form-title">Votre Demande</h3>
-        <div class="summary-box" id="bookingSummary">
-            <p>Veuillez sélectionner vos dates dans le calendrier.<br><small style="color:#aaa;font-style:italic;">Durée minimale : 3 nuits (selon la période).</small></p>
+    <div class="resa-grille">
+
+        <!-- ── Calendrier ────────────────────────────────────────────── -->
+        <div class="resa-calendrier">
+            <div class="resa-etape">
+                <span class="resa-numero">1</span>
+                <div>
+                    <h3>Vos dates</h3>
+                    <p>Facultatif — cliquez l'arrivée, puis le départ. Minimum 3&nbsp;nuits.</p>
+                </div>
+            </div>
+
+            <div class="cal-barre">
+                <button type="button" class="cal-fleche" id="calPrec" aria-label="Mois précédent">
+                    <span aria-hidden="true">&#8249;</span>
+                </button>
+                <span class="cal-titre" id="calTitre" aria-live="polite">&nbsp;</span>
+                <button type="button" class="cal-fleche" id="calSuiv" aria-label="Mois suivant">
+                    <span aria-hidden="true">&#8250;</span>
+                </button>
+            </div>
+
+            <div class="cal-mois" id="calMois"></div>
+
+            <noscript>
+                <!-- Sans JavaScript, le calendrier ne s'affiche pas : deux champs
+                     de date natifs prennent le relais. Ils portent les mêmes noms
+                     que les champs cachés et, placés après eux, l'emportent. -->
+                <div class="cal-sansjs">
+                    <p>Votre navigateur n'exécute pas JavaScript : saisissez vos dates ici.</p>
+                    <div class="champ">
+                        <label for="sansjs_arrivee">Arrivée</label>
+                        <input type="date" id="sansjs_arrivee" name="check_in" form="bookingForm">
+                    </div>
+                    <div class="champ">
+                        <label for="sansjs_depart">Départ</label>
+                        <input type="date" id="sansjs_depart" name="check_out" form="bookingForm">
+                    </div>
+                </div>
+            </noscript>
+
+            <ul class="cal-legende">
+                <li><span class="pastille pastille--libre"></span>Libre</li>
+                <li><span class="pastille pastille--choix"></span>Votre séjour</li>
+                <li><span class="pastille pastille--occupe"></span>Déjà réservé</li>
+            </ul>
+
+            <p class="cal-aide" id="calAide" role="status"></p>
+
+            <ul class="cal-reperes">
+                <li>Location principalement à la semaine, du samedi au samedi.</li>
+                <li>Séjour de 3 nuits minimum, possible sur certaines périodes — écrivez-nous.</li>
+                <li>Vous réservez en direct : aucune commission de plateforme.</li>
+            </ul>
         </div>
-        <form method="POST" action="index.php#reservation" id="bookingForm">
-            <input type="hidden" name="action" value="book">
-            <input type="hidden" name="check_in" id="input_check_in">
-            <input type="hidden" name="check_out" id="input_check_out">
-            <?php echo antispam_champs(); ?>
-            <div style="position:relative;margin-bottom:15px;">
-                <input type="text" name="customer_name" class="lux-input" placeholder="Nom Complet *" required>
+
+        <!-- ── Formulaire ────────────────────────────────────────────── -->
+        <div class="resa-formulaire">
+            <div class="resa-etape">
+                <span class="resa-numero">2</span>
+                <div>
+                    <h3>Vos coordonnées</h3>
+                    <p>Nous vous répondons personnellement, sous 24&nbsp;heures.</p>
+                </div>
             </div>
-            <div style="position:relative;margin-bottom:15px;">
-                <input type="email" name="customer_email" class="lux-input" placeholder="Adresse E-mail *" required>
+
+            <div class="resa-recap" id="resaRecap">
+                <p class="resa-recap-vide">Aucune date sélectionnée — nous répondrons à vos questions.</p>
             </div>
-            <div style="position:relative;margin-bottom:15px;">
-                <input type="tel" name="customer_phone" class="lux-input" placeholder="Téléphone *" required>
-            </div>
-            <textarea name="customer_message" class="lux-input" rows="3" placeholder="Une demande particulière ? (Lit bébé, arrivée tardive, question...)"></textarea>
-            <label class="option-check">
-                <input type="checkbox" name="cleaning_fee" value="1">
-                Option Ménage fin de séjour (+220€)
-            </label>
-            <button type="button" onclick="validateBooking()" class="btn-gold" style="width:100%;border-radius:4px;">Envoyer la demande</button>
-            <p style="font-size:.75rem;color:#888;margin-top:15px;text-align:center;">
-                Les champs marqués d'une * sont obligatoires.<br>
-                Durée minimale de 3 nuits (seulement certaines périodes de l'année).<br>
-                Un acompte de 30% sera demandé après validation.
+
+            <form method="POST" action="index.php#reservation" id="bookingForm" novalidate>
+                <input type="hidden" name="action" value="book">
+                <input type="hidden" name="check_in" id="input_check_in">
+                <input type="hidden" name="check_out" id="input_check_out">
+                <?php echo antispam_champs(); ?>
+
+                <div class="champ">
+                    <label for="champ_nom">Nom et prénom <span aria-hidden="true">*</span></label>
+                    <input type="text" id="champ_nom" name="customer_name" autocomplete="name" required>
+                </div>
+
+                <div class="champ-duo">
+                    <div class="champ">
+                        <label for="champ_email">Adresse e-mail <span aria-hidden="true">*</span></label>
+                        <input type="email" id="champ_email" name="customer_email" autocomplete="email" inputmode="email" required>
+                    </div>
+                    <div class="champ">
+                        <label for="champ_tel">Téléphone <span aria-hidden="true">*</span></label>
+                        <input type="tel" id="champ_tel" name="customer_phone" autocomplete="tel" inputmode="tel" required>
+                    </div>
+                </div>
+
+                <div class="champ">
+                    <label for="champ_message">Votre message</label>
+                    <textarea id="champ_message" name="customer_message" rows="3"
+                              placeholder="Nombre de personnes, lit bébé, arrivée tardive, une question…"></textarea>
+                </div>
+
+                <label class="champ-case">
+                    <input type="checkbox" name="cleaning_fee" value="1">
+                    <span>Ajouter le ménage de fin de séjour
+                        <em><?php echo (int) ($tarifs_settings['frais_menage'] ?? 220); ?> €, en option</em>
+                    </span>
+                </label>
+
+                <button type="submit" class="resa-envoyer" id="resaEnvoyer">Envoyer ma demande</button>
+
+                <p class="resa-mentions">
+                    Champs obligatoires marqués d'un astérisque. Aucun paiement à cette étape :
+                    nous vérifions la disponibilité, puis vous confirmons le tarif exact.
+                </p>
+            </form>
+
+            <p class="resa-telephone">
+                Vous préférez appeler ? <a href="tel:<?php echo SEO_PHONE; ?>"><?php echo SEO_PHONE_HUMAN; ?></a>
             </p>
-        </form>
-    </div>
-</div>
+        </div>
 
+    </div>
 </section>
 
 <!-- ══ AVIS CLIENTS ══ -->
@@ -775,23 +870,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     </div>
 </div>
 
-<!-- ══ MODALE SANS DATES ══ -->
-
-<div class="modal-overlay" id="dateConfirmModal">
-    <div class="modal-card">
-        <div class="icon-gold">📅</div>
-        <h3 style="font-family:'Cinzel',serif;color:var(--navy-deep);margin-bottom:15px;">Dates non sélectionnées</h3>
-        <p style="color:#666;margin-bottom:20px;">Vous n'avez pas sélectionné de dates dans le calendrier.<br>Souhaitez-vous envoyer une demande d'information générale ?</p>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-            <button onclick="submitWithoutDates()" class="btn-gold" style="padding:12px 25px;font-size:.72rem;">Oui, envoyer</button>
-            <button onclick="document.getElementById('dateConfirmModal').classList.remove('active')"
-                class="btn-gold-outline" style="padding:12px 25px;font-size:.72rem;border:1px solid var(--gold-dark);color:var(--gold-dark);background:transparent;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:1px;text-transform:uppercase;">Choisir des dates</button>
-        </div>
-    </div>
-</div>
-
-
-
 <div id="contactModal" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
     <div class="contact-card" role="document">
 
@@ -858,7 +936,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </script>
 <?php endif; ?>
 
-<script>const bookedDates = <?php echo $json_booked_dates ?: '[]'; ?>;</script>
+<script>
+    // Données du calendrier, produites par le serveur.
+    const bookedDates = <?php echo $json_booked_dates ?: '[]'; ?>;
+    const tarifSaisons = <?php echo $json_saisons ?: '[]'; ?>;
+</script>
 
 <?php
 // ── Données structurées JSON-LD (Google, ChatGPT, Perplexity, Gemini…) ──
