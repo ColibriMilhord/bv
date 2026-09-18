@@ -37,6 +37,7 @@ $courant = stats_synthese($pdo, $periode);
 
 $parJour     = stats_par_jour($pdo, min($periode, 90));
 $formulaire  = antispam_bilan($pdo, $periode);
+$campagnes   = stats_campagnes($pdo, $periode);
 $parPays     = stats_par_pays($pdo, $periode);
 $pages       = stats_classement($pdo, 'page', $periode);
 $referents   = stats_classement($pdo, 'referent', $periode);
@@ -277,6 +278,60 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
+        </div>
+
+        <!-- ── Campagnes ────────────────────────────────────────────────── -->
+        <div class="bg-white shadow rounded-lg p-5 mt-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-1">Campagnes publicitaires</h2>
+            <p class="text-sm text-gray-500 mb-4">
+                Sur <?php echo (int) $periode; ?> jours. Chaque ligne correspond à un lien
+                d'annonce muni de ses paramètres&nbsp;: aucun traceur, aucun cookie.
+            </p>
+
+            <?php if (!$campagnes): ?>
+                <div class="rounded-md bg-gray-50 border border-gray-200 px-4 py-5 text-sm text-gray-600 leading-relaxed">
+                    <p class="mb-2">Aucune campagne mesurée pour l'instant.</p>
+                    <p class="mb-2">
+                        Pour qu'une annonce apparaisse ici, ajoutez ses paramètres au bout du lien
+                        que vous mettez dans la publicité&nbsp;:
+                    </p>
+                    <p class="font-mono text-xs bg-white border border-gray-200 rounded px-3 py-2 break-all">
+                        https://bellevuedaveyron.fr/?utm_source=facebook&amp;utm_campaign=ete2026
+                    </p>
+                    <p class="mt-2">
+                        Changez <span class="font-mono text-xs">ete2026</span> à chaque annonce
+                        pour les comparer entre elles.
+                    </p>
+                </div>
+            <?php else: ?>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wide text-gray-500 border-b border-gray-200">
+                            <th class="py-2 font-medium">Campagne</th>
+                            <th class="py-2 font-medium text-right">Visites</th>
+                            <th class="py-2 font-medium text-right">Visiteurs</th>
+                            <th class="py-2 font-medium text-right">Demandes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <?php foreach ($campagnes as $c): ?>
+                            <tr>
+                                <td class="py-2 text-gray-800"><?php echo $e($c['campagne']); ?></td>
+                                <td class="py-2 text-right text-gray-500"><?php echo number_format($c['vues'], 0, ',', ' '); ?></td>
+                                <td class="py-2 text-right text-gray-500"><?php echo number_format($c['visiteurs'], 0, ',', ' '); ?></td>
+                                <td class="py-2 text-right <?php echo $c['demandes'] ? 'font-semibold text-gray-900' : 'text-gray-400'; ?>">
+                                    <?php echo number_format($c['demandes'], 0, ',', ' '); ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p class="mt-3 text-xs text-gray-400 leading-relaxed">
+                    Une demande est rattachée à la campagne du jour même&nbsp;: l'empreinte du
+                    visiteur est renouvelée chaque nuit, et aucun rapprochement n'est possible
+                    au-delà — y compris par nous.
+                </p>
+            <?php endif; ?>
         </div>
 
         <!-- ── Formulaire de réservation ────────────────────────────────── -->

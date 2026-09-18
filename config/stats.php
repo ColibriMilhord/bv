@@ -94,11 +94,25 @@ function stats_migrer(?PDO $pdo): bool
                 visiteur    CHAR(40)     NOT NULL,
                 referent    VARCHAR(190) NULL,
                 appareil    VARCHAR(12)  NOT NULL DEFAULT 'ordinateur',
+                campagne    VARCHAR(120) NULL,
                 INDEX idx_jour (jour),
                 INDEX idx_pays (pays),
-                INDEX idx_prefixe (prefixe_ip)
+                INDEX idx_prefixe (prefixe_ip),
+                INDEX idx_campagne (campagne)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
+
+        // Ajout de la colonne sur une table déjà créée par une version
+        // antérieure. SHOW COLUMNS plutôt que « ADD COLUMN IF NOT EXISTS » :
+        // MySQL ne connaît pas cette forme.
+        try {
+            if (!$pdo->query("SHOW COLUMNS FROM visites LIKE 'campagne'")->fetch()) {
+                $pdo->exec("ALTER TABLE visites ADD COLUMN campagne VARCHAR(120) DEFAULT NULL");
+                $pdo->exec("CREATE INDEX idx_campagne ON visites (campagne)");
+            }
+        } catch (PDOException $e) {
+            // Table absente ou droits insuffisants : sans incidence sur le reste.
+        }
 
         $pdo->exec(
             "CREATE TABLE IF NOT EXISTS geo_cache (
@@ -182,6 +196,97 @@ function stats_appareil(string $ua): string
 }
 
 /**
+ * Empreinte non réversible du visiteur, renouvelée chaque jour.
+ *
+ * Elle permet de compter les visiteurs distincts, et de rattacher une demande
+ * de séjour à la campagne qui l'a amenée, sans jamais pouvoir remonter à
+ * quiconque. Le renouvellement quotidien est volontaire : il borne à la
+ * journée tout rapprochement possible, y compris le nôtre.
+ */
+function stats_visiteur(): string
+{
+    $ip = stats_ip();
+    $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+    return substr(hash('sha256', $ip . '|' . $ua . '|' . date('Y-m-d') . '|bellevue'), 0, 40);
+}
+
+/**
+ * Campagne d'origine de la visite courante, lue dans l'adresse.
+ * ---------------------------------------------------------------------------
+ * Aucun traceur, aucun cookie : l'information est celle que vous avez
+ * vous-même mise au bout du lien de votre publicité, par exemple
+ * « ?utm_source=facebook&utm_campaign=ete2026 ». Le visiteur n'est ni suivi
+ * ni identifié — seule l'annonce qui l'a amené est notée.
+ *
+ * À défaut de paramètres utm, l'identifiant de clic laissé par Facebook
+ * (fbclid) ou Google (gclid) suffit à reconnaître la source.
+ *
+ * @return string|null « facebook / ete2026 », ou null hors campagne
+ */
+function stats_campagne(): ?string
+{
+    // Les accents sont transposés avant le filtrage : sans cela, « Été 2026 »
+    // ressortait en « t 2026 ». Ne restent ensuite que des caractères sûrs,
+    // la valeur venant de l'adresse et finissant affichée dans l'administration.
+    $propre = function ($valeur) {
+        $accents = [
+            'à'=>'a','â'=>'a','ä'=>'a','á'=>'a','ã'=>'a','å'=>'a',
+            'ç'=>'c','è'=>'e','é'=>'e','ê'=>'e','ë'=>'e',
+            'î'=>'i','ï'=>'i','í'=>'i','ì'=>'i',
+            'ô'=>'o','ö'=>'o','ó'=>'o','ò'=>'o','õ'=>'o',
+            'ù'=>'u','û'=>'u','ü'=>'u','ú'=>'u','ÿ'=>'y','ñ'=>'n','œ'=>'oe','æ'=>'ae',
+        ];
+
+        $valeur = mb_strtolower(trim((string) $valeur), 'UTF-8');
+        $valeur = strtr($valeur, $accents);
+        $valeur = preg_replace('/[^a-z0-9 _.\-]/', ' ', $valeur);
+        $valeur = preg_replace('/\s+/', ' ', (string) $valeur);
+
+        return substr(trim((string) $valeur), 0, 50);
+    };
+
+    $source   = $propre($_GET['utm_source']   ?? '');
+    $campagne = $propre($_GET['utm_campaign'] ?? '');
+
+    if ($source === '' && $campagne === '') {
+        if (!empty($_GET['fbclid'])) $source = 'facebook';
+        elseif (!empty($_GET['gclid'])) $source = 'google ads';
+        else return null;
+    }
+
+    if ($source === '')   $source = 'inconnue';
+    if ($campagne === '') return $source;
+
+    return $source . ' / ' . $campagne;
+}
+
+/**
+ * Campagne ayant amené ce visiteur, pour rattacher une demande à une annonce.
+ * L'empreinte tournant chaque jour, le rapprochement ne vaut que pour la
+ * journée en cours — ce qui couvre l'essentiel des demandes, envoyées dans la
+ * foulée de la visite.
+ */
+function stats_campagne_du_visiteur(?PDO $pdo): ?string
+{
+    if (!$pdo) return null;
+
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT campagne FROM visites
+              WHERE visiteur = ? AND jour = ? AND campagne IS NOT NULL
+           ORDER BY id DESC LIMIT 1"
+        );
+        $stmt->execute([stats_visiteur(), date('Y-m-d')]);
+        $ligne = $stmt->fetch();
+
+        return $ligne ? (string) $ligne['campagne'] : null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+/**
  * Enregistre la visite courante. À appeler depuis les pages publiques.
  * Ne lève jamais d'exception et n'affiche jamais rien.
  */
@@ -199,9 +304,7 @@ function stats_enregistrer(?PDO $pdo, string $page): void
         $ip      = stats_ip();
         $prefixe = stats_prefixe_ip($ip);
 
-        // Empreinte non réversible, renouvelée chaque jour : elle permet de
-        // compter les visiteurs distincts sans jamais pouvoir les retrouver.
-        $visiteur = substr(hash('sha256', $ip . '|' . $ua . '|' . date('Y-m-d') . '|bellevue'), 0, 40);
+        $visiteur = stats_visiteur();
 
         $referent = (string) ($_SERVER['HTTP_REFERER'] ?? '');
         if ($referent !== '') {
@@ -210,8 +313,8 @@ function stats_enregistrer(?PDO $pdo, string $page): void
         }
 
         $stmt = $pdo->prepare(
-            "INSERT INTO visites (vue_le, jour, page, prefixe_ip, pays, visiteur, referent, appareil)
-             VALUES (?, ?, ?, ?, NULL, ?, ?, ?)"
+            "INSERT INTO visites (vue_le, jour, page, prefixe_ip, pays, visiteur, referent, appareil, campagne)
+             VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)"
         );
         $stmt->execute([
             date('Y-m-d H:i:s'),
@@ -221,6 +324,7 @@ function stats_enregistrer(?PDO $pdo, string $page): void
             $visiteur,
             substr($referent, 0, 190) ?: null,
             stats_appareil($ua),
+            stats_campagne(),
         ]);
     } catch (Throwable $e) {
         // Silencieux par construction : la mesure ne doit rien casser.
@@ -408,7 +512,7 @@ function stats_par_pays(?PDO $pdo, int $jours = 365): array
 function stats_classement(?PDO $pdo, string $colonne, int $jours = 30, int $limite = 8): array
 {
     if (!$pdo) return [];
-    if (!in_array($colonne, ['page', 'referent', 'appareil'], true)) return [];
+    if (!in_array($colonne, ['page', 'referent', 'appareil', 'campagne'], true)) return [];
 
     try {
         $stmt = $pdo->prepare(
@@ -422,6 +526,65 @@ function stats_classement(?PDO $pdo, string $colonne, int $jours = 30, int $limi
     } catch (Throwable $e) {
         return [];
     }
+}
+
+/**
+ * Bilan par campagne : visites, visiteurs distincts et demandes reçues.
+ * ---------------------------------------------------------------------------
+ * C'est la réponse à « qu'est-ce que ma publicité m'a rapporté ? », obtenue
+ * sans traceur ni cookie — donc sans bandeau de consentement. Les deux
+ * requêtes sont volontairement séparées et rapprochées en PHP : les tables
+ * restent indépendantes, et l'absence de l'une n'empêche pas l'autre.
+ *
+ * @return array<int, array{campagne:string, vues:int, visiteurs:int, demandes:int}>
+ */
+function stats_campagnes(?PDO $pdo, int $jours = 30): array
+{
+    if (!$pdo) return [];
+
+    $lignes = [];
+
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT campagne, COUNT(*) AS vues, COUNT(DISTINCT visiteur) AS visiteurs
+               FROM visites
+              WHERE jour >= ? AND campagne IS NOT NULL
+           GROUP BY campagne ORDER BY vues DESC LIMIT 20"
+        );
+        $stmt->execute([stats_depuis($jours)]);
+
+        foreach ($stmt->fetchAll() as $l) {
+            $lignes[(string) $l['campagne']] = [
+                'campagne'  => (string) $l['campagne'],
+                'vues'      => (int) $l['vues'],
+                'visiteurs' => (int) $l['visiteurs'],
+                'demandes'  => 0,
+            ];
+        }
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT campagne, COUNT(*) AS demandes
+               FROM envois_formulaire
+              WHERE envoye_le >= ? AND accepte = 1 AND campagne IS NOT NULL
+           GROUP BY campagne"
+        );
+        $stmt->execute([stats_depuis($jours) . ' 00:00:00']);
+
+        foreach ($stmt->fetchAll() as $l) {
+            $cle = (string) $l['campagne'];
+            if (isset($lignes[$cle])) {
+                $lignes[$cle]['demandes'] = (int) $l['demandes'];
+            }
+        }
+    } catch (Throwable $e) {
+        // Table absente : le bilan reste juste, sans le compte des demandes.
+    }
+
+    return array_values($lignes);
 }
 
 /** Supprime les visites au-delà de la durée de conservation. */
