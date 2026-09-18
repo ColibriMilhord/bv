@@ -1,4 +1,9 @@
-<?php require_once __DIR__ . '/config/seo.php'; ?>
+<?php
+require_once __DIR__ . '/config/seo.php';
+
+// Retour à l'endroit d'où la page a été ouverte, et non en haut du site.
+$retour = seo_retour_site();
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -32,8 +37,9 @@
             align-items: center;
             border-bottom: 1px solid rgba(197, 160, 89, 0.3);
         }
-        .logo { font-family: 'Cinzel', serif; font-size: 1.2rem; color: white; text-decoration: none; font-weight: 700; }
-        .logo span { color: var(--gold-text); }
+        .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; color: white; text-decoration: none; font-weight: 700; display: flex; flex-direction: column; line-height: 1; transition: opacity .3s ease; }
+        .logo:hover { opacity: .82; }
+        .logo span { font-family: 'Montserrat', sans-serif; font-size: .62rem; font-weight: 500; letter-spacing: .28em; text-transform: uppercase; color: var(--gold-text); margin-top: 6px; }
         
         .btn-return {
             color: var(--gold-text);
@@ -71,8 +77,8 @@
 <body>
 
     <header>
-        <a href="index.php?skip=1" class="logo">Bellevue d'Aveyron <span>★</span></a>
-        <a href="index.php?skip=1" class="btn-return">← Retour au site</a>
+        <a href="<?php echo seo_e($retour); ?>" class="logo">Bellevue d'Aveyron<span>Villa 5 étoiles</span></a>
+        <a href="<?php echo seo_e($retour); ?>" class="btn-return">← Retour au site</a>
     </header>
     
     <div class="legal-container">

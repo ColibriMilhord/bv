@@ -69,139 +69,347 @@ function toggleMenu() {
     document.getElementById('navLinks').classList.toggle('active');
 }
 
-// --- 3. CALENDRIER INTELLIGENT ---
-// 'bookedDates' est défini dans index.php
-let currentDate = new Date();
-let selectedStart = null;
-let selectedEnd = null;
+/* ══════════════════════════════════════════════════════════════════════════
+   CALENDRIER DE RÉSERVATION
+   ──────────────────────────────────────────────────────────────────────────
+   Deux données viennent du serveur, posées par index.php :
+     • bookedDates  — les jours déjà pris, au format « AAAA-MM-JJ » ;
+     • tarifSaisons — les périodes tarifaires, pour annoncer la saison dès que
+                      la date d'arrivée est choisie.
 
-function renderCalendar() {
-    // ... (Code de rendu du calendrier identique au précédent) ...
-    // Je remets le début pour la structure, le cœur ne change pas
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-    const titleEl = document.getElementById('calendarTitle');
-    if(titleEl) titleEl.innerText = `${monthNames[month]} ${year}`;
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    let startDayIndex = firstDay.getDay() - 1; 
-    if (startDayIndex === -1) startDayIndex = 6;
-    const grid = document.getElementById('calendarDays');
-    if(!grid) return;
-    grid.innerHTML = '';
-    for (let i = 0; i < startDayIndex; i++) grid.innerHTML += `<div></div>`;
+   Deux principes ont guidé la réécriture :
 
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const el = document.createElement('div');
-        el.className = 'day-cell';
-        el.innerText = day;
-        
-        const isBooked = typeof bookedDates !== 'undefined' && bookedDates.includes(dateStr);
-        const isPast = new Date(dateStr) < new Date().setHours(0,0,0,0);
+   1. Aucune date n'est construite à partir d'une chaîne. « new Date('2026-08-01') »
+      est lu en temps universel : selon le fuseau du visiteur, le jour affiché
+      n'est pas celui qu'il a cliqué. Tout se calcule ici en année, mois, jour.
 
-        if (isBooked || isPast) {
-            el.classList.add('disabled');
+   2. Une sélection impossible ne doit pas pouvoir être faite. Dès l'arrivée
+      choisie, les jours situés au-delà de la première nuit occupée sont
+      désactivés : le visiteur ne peut plus composer un séjour à cheval sur une
+      semaine louée, et n'a donc pas de message d'erreur à lire.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+    var grille = document.getElementById('calMois');
+    if (!grille) return;   // page sans calendrier
+
+    var MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+                'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    var JOURS_COURTS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'];
+    var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    var NUITS_MINI = 3;
+
+    var occupes = {};
+    (typeof bookedDates !== 'undefined' ? bookedDates : []).forEach(function (j) { occupes[j] = true; });
+
+    var saisons = (typeof tarifSaisons !== 'undefined') ? tarifSaisons : [];
+
+    var titre  = document.getElementById('calTitre');
+    var prec   = document.getElementById('calPrec');
+    var suiv   = document.getElementById('calSuiv');
+    var aide   = document.getElementById('calAide');
+    var recap  = document.getElementById('resaRecap');
+    var envoi  = document.getElementById('resaEnvoyer');
+    var champA = document.getElementById('input_check_in');
+    var champD = document.getElementById('input_check_out');
+
+    var aujourdhui = new Date();
+    var CLE_AUJ = cle(aujourdhui.getFullYear(), aujourdhui.getMonth(), aujourdhui.getDate());
+
+    var curseur = new Date(aujourdhui.getFullYear(), aujourdhui.getMonth(), 1);
+    var arrivee = null;   // « AAAA-MM-JJ »
+    var depart  = null;
+
+    // Deux mois côte à côte dès qu'il y a la place, un seul sinon.
+    var deuxMois = window.matchMedia('(min-width: 1280px)');
+
+    // ── Petits utilitaires de date, sans analyse de chaîne ─────────────────
+    function cle(a, m, j) {
+        return a + '-' + String(m + 1).padStart(2, '0') + '-' + String(j).padStart(2, '0');
+    }
+    function versDate(c) {
+        var p = c.split('-');
+        return new Date(+p[0], +p[1] - 1, +p[2]);
+    }
+    function nuitsEntre(a, b) {
+        return Math.round((versDate(b) - versDate(a)) / 86400000);
+    }
+    function enFrancais(c) {
+        var d = versDate(c);
+        var j = d.getDate();
+        return JOURS[d.getDay()] + ' ' + (j === 1 ? '1er' : j) + ' ' + MOIS[d.getMonth()] + ' ' + d.getFullYear();
+    }
+    /** « 13 septembre » — sans le jour de la semaine ni l'année. */
+    function court(c) {
+        var d = versDate(c);
+        var j = d.getDate();
+        return (j === 1 ? '1er' : j) + ' ' + MOIS[d.getMonth()];
+    }
+    function euros(n) {
+        return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
+    }
+
+    /** Première nuit occupée à partir d'une date, dans les deux ans à venir. */
+    function prochainJourOccupe(depuis) {
+        var d = versDate(depuis);
+        for (var i = 0; i < 730; i++) {
+            d.setDate(d.getDate() + 1);
+            var c = cle(d.getFullYear(), d.getMonth(), d.getDate());
+            if (occupes[c]) return c;
+        }
+        return null;
+    }
+
+    /** Saison tarifaire contenant une date. */
+    function saisonDe(c) {
+        for (var i = 0; i < saisons.length; i++) {
+            if (saisons[i].debut <= c && c <= saisons[i].fin) return saisons[i];
+        }
+        return null;
+    }
+
+    /** Un jour est-il cliquable dans l'état courant de la sélection ? */
+    function selectionnable(c) {
+        if (c < CLE_AUJ || occupes[c]) return false;
+
+        // Arrivée choisie, départ à venir : on borne au premier jour occupé.
+        if (arrivee && !depart) {
+            if (c <= arrivee) return true;   // permet de reprendre l'arrivée
+            var butoir = prochainJourOccupe(arrivee);
+            return !butoir || c <= butoir;
+        }
+        return true;
+    }
+
+    // ── Rendu ──────────────────────────────────────────────────────────────
+    function moisHtml(annee, mois) {
+        var premier = new Date(annee, mois, 1);
+        var nbJours = new Date(annee, mois + 1, 0).getDate();
+        var decalage = (premier.getDay() + 6) % 7;   // la semaine commence lundi
+
+        var h = '<div class="cal-bloc"><p class="cal-nom">' + MOIS[mois] + ' ' + annee + '</p>';
+
+        h += '<div class="cal-semaine">';
+        for (var i = 0; i < 7; i++) {
+            h += '<span class="cal-jour-nom"><abbr title="' + JOURS[(i + 1) % 7] + '">'
+               + JOURS_COURTS[i].charAt(0).toUpperCase() + '</abbr></span>';
+        }
+        h += '</div><div class="cal-jours">';
+
+        for (var v = 0; v < decalage; v++) h += '<span class="cal-vide"></span>';
+
+        for (var j = 1; j <= nbJours; j++) {
+            var c = cle(annee, mois, j);
+            var classes = ['cal-jour'];
+            var etat = '';
+
+            if (occupes[c]) {
+                classes.push('est-occupe');
+                etat = ' — déjà réservé';
+            } else if (c < CLE_AUJ) {
+                classes.push('est-passe');
+                etat = ' — date passée';
+            } else if (!selectionnable(c)) {
+                classes.push('est-hors-portee');
+                etat = ' — indisponible pour ce séjour';
+            }
+
+            if (c === arrivee) { classes.push('est-choisi', 'est-arrivee'); etat = ' — votre arrivée'; }
+            if (c === depart)  { classes.push('est-choisi', 'est-depart');  etat = ' — votre départ'; }
+            if (arrivee && depart && c > arrivee && c < depart) classes.push('est-entre');
+
+            var inactif = classes.indexOf('est-occupe') > -1
+                       || classes.indexOf('est-passe') > -1
+                       || classes.indexOf('est-hors-portee') > -1;
+
+            h += '<button type="button" class="' + classes.join(' ') + '" data-jour="' + c + '"'
+               + (inactif ? ' disabled' : '')
+               + ' aria-label="' + enFrancais(c) + etat + '">' + j + '</button>';
+        }
+
+        return h + '</div></div>';
+    }
+
+    function dessiner() {
+        var a = curseur.getFullYear(), m = curseur.getMonth();
+        var html = moisHtml(a, m);
+
+        if (deuxMois.matches) {
+            var suivant = new Date(a, m + 1, 1);
+            html += moisHtml(suivant.getFullYear(), suivant.getMonth());
+        }
+        grille.innerHTML = html;
+
+        // Le titre sert de repère aux lecteurs d'écran ; les mois sont déjà
+        // nommés au-dessus de chaque bloc.
+        var fin = new Date(a, m + (deuxMois.matches ? 1 : 0), 1);
+        titre.textContent = deuxMois.matches
+            ? MOIS[m] + ' – ' + MOIS[fin.getMonth()] + ' ' + fin.getFullYear()
+            : MOIS[m] + ' ' + a;
+
+        // On ne remonte pas avant le mois en cours.
+        prec.disabled = (a === aujourdhui.getFullYear() && m === aujourdhui.getMonth());
+
+        majAide();
+    }
+
+    function majAide() {
+        if (!aide) return;
+
+        if (arrivee && depart) {
+            aide.textContent = '';
+        } else if (arrivee) {
+            var butoir = prochainJourOccupe(arrivee);
+            aide.textContent = butoir
+                ? 'Choisissez la date de départ — la villa est reprise le ' + court(butoir) + '.'
+                : 'Choisissez maintenant la date de départ.';
         } else {
-            el.onclick = () => selectDate(dateStr);
-        }
-
-        if (selectedStart === dateStr) { el.classList.add('selected', 'range-start'); }
-        if (selectedEnd === dateStr) { el.classList.add('selected', 'range-end'); }
-        if (selectedStart && selectedEnd && dateStr > selectedStart && dateStr < selectedEnd) {
-            el.classList.add('range');
-        }
-        grid.appendChild(el);
-    }
-}
-
-function selectDate(dateStr) {
-    if (!selectedStart || (selectedStart && selectedEnd)) {
-        // Clic 1 : Début
-        selectedStart = dateStr;
-        selectedEnd = null;
-    } else if (dateStr < selectedStart) {
-        // Correction si clic avant
-        selectedStart = dateStr;
-    } else {
-        // Clic 2 : Fin -> C'EST ICI QU'ON VÉRIFIE LES RÈGLES
-        
-        // 1. Vérif Disponibilité
-        if(!checkAvailability(selectedStart, dateStr)) {
-            showNotification("Certaines dates sélectionnées sont indisponibles.", "error");
-            selectedStart = dateStr; // Reset
-            selectedEnd = null;
-        } 
-        // 2. Vérif Durée (3 nuits min)
-        else if (!checkMinStay(selectedStart, dateStr)) {
-            showNotification("Le séjour doit être de 3 nuits minimum.", "error");
-            // On ne valide pas la fin, on laisse l'utilisateur choisir une autre date
-        } 
-        else {
-            selectedEnd = dateStr;
+            aide.textContent = '';
         }
     }
-    renderCalendar();
-    updateForm();
-}
 
-function checkMinStay(start, end) {
-    const d1 = new Date(start);
-    const d2 = new Date(end);
-    // Calcul de la différence en jours
-    const diffTime = Math.abs(d2 - d1);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    return diffDays >= 3;
-}
+    // ── Récapitulatif et intitulé du bouton ────────────────────────────────
+    function majRecap() {
+        champA.value = arrivee || '';
+        champD.value = (arrivee && depart) ? depart : '';
 
-function checkAvailability(start, end) {
-    let curr = new Date(start);
-    let last = new Date(end);
-    while(curr <= last) {
-        if(typeof bookedDates !== 'undefined' && bookedDates.includes(curr.toISOString().split('T')[0])) return false;
-        curr.setDate(curr.getDate() + 1);
+        if (arrivee && depart) {
+            var nuits = nuitsEntre(arrivee, depart);
+            var saison = saisonDe(arrivee);
+
+            var h = '<p class="resa-recap-titre">' + nuits + ' nuits</p>'
+                  + '<dl class="resa-recap-liste">'
+                  + '<div><dt>Arrivée</dt><dd>' + enFrancais(arrivee) + '</dd></div>'
+                  + '<div><dt>Départ</dt><dd>' + enFrancais(depart) + '</dd></div>';
+
+            if (saison && saison.prix > 0) {
+                h += '<div><dt>' + saison.nom + '</dt><dd>' + euros(saison.prix) + ' la semaine</dd></div>';
+            }
+
+            h += '</dl><p class="resa-recap-note">Tarif exact confirmé par nos soins sous 24 heures.</p>'
+               + '<button type="button" class="resa-effacer" id="resaEffacer">Modifier mes dates</button>';
+
+            recap.className = 'resa-recap est-rempli';
+            recap.innerHTML = h;
+            document.getElementById('resaEffacer').addEventListener('click', effacer);
+
+            envoi.textContent = 'Demander cette période';
+        } else if (arrivee) {
+            recap.className = 'resa-recap est-partiel';
+            recap.innerHTML = '<p class="resa-recap-titre">Arrivée le ' + enFrancais(arrivee) + '</p>'
+                            + '<p class="resa-recap-note">Sélectionnez la date de départ.</p>'
+                            + '<button type="button" class="resa-effacer" id="resaEffacer">Annuler</button>';
+            document.getElementById('resaEffacer').addEventListener('click', effacer);
+
+            envoi.textContent = 'Envoyer ma demande';
+        } else {
+            recap.className = 'resa-recap';
+            recap.innerHTML = '<p class="resa-recap-vide">Aucune date sélectionnée — nous répondrons à vos questions.</p>';
+            envoi.textContent = 'Envoyer ma demande';
+        }
     }
-    return true;
-}
 
-function updateForm() {
-    const inputStart = document.getElementById('input_check_in');
-    const inputEnd = document.getElementById('input_check_out');
-    
-    if(inputStart) inputStart.value = selectedStart || '';
-    if(inputEnd) inputEnd.value = selectedEnd || '';
-    
-    const summary = document.getElementById('bookingSummary');
-    if (selectedStart && selectedEnd) {
-        // Recalcul pour affichage
-        const d1 = new Date(selectedStart);
-        const d2 = new Date(selectedEnd);
-        const nights = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
-
-        summary.innerHTML = `
-            <strong>Séjour de ${nights} Nuits :</strong><br>
-            Du ${d1.toLocaleDateString('fr-FR')}<br>
-            Au ${d2.toLocaleDateString('fr-FR')}
-        `;
-    } else if (selectedStart) {
-        summary.innerHTML = `Arrivée : ${new Date(selectedStart).toLocaleDateString('fr-FR')}<br>Sélectionnez la date de départ...`;
-    } else {
-        summary.innerHTML = "Veuillez sélectionner vos dates.";
+    function effacer() {
+        arrivee = depart = null;
+        dessiner();
+        majRecap();
     }
-}
 
-function changeMonth(delta) {
-    currentDate.setMonth(currentDate.getMonth() + delta);
-    renderCalendar();
-}
+    // ── Sélection ──────────────────────────────────────────────────────────
+    function choisir(c) {
+        if (!arrivee || depart) {
+            arrivee = c;
+            depart = null;
+        } else if (c <= arrivee) {
+            arrivee = c;            // le visiteur revient en arrière
+        } else if (nuitsEntre(arrivee, c) < NUITS_MINI) {
+            if (typeof showNotification === 'function') {
+                showNotification('Le séjour est de ' + NUITS_MINI + ' nuits minimum.', 'error');
+            }
+            return;
+        } else {
+            depart = c;
+        }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderCalendar);
-} else {
-    renderCalendar();
-}
+        dessiner();
+        majRecap();
+    }
+
+    grille.addEventListener('click', function (e) {
+        var bouton = e.target.closest ? e.target.closest('.cal-jour') : null;
+        if (bouton && !bouton.disabled) choisir(bouton.getAttribute('data-jour'));
+    });
+
+    prec.addEventListener('click', function () {
+        curseur.setMonth(curseur.getMonth() - 1);
+        dessiner();
+    });
+    suiv.addEventListener('click', function () {
+        curseur.setMonth(curseur.getMonth() + 1);
+        dessiner();
+    });
+
+    // Le passage d'un à deux mois suit la largeur de la fenêtre.
+    if (deuxMois.addEventListener) {
+        deuxMois.addEventListener('change', dessiner);
+    } else if (deuxMois.addListener) {
+        deuxMois.addListener(dessiner);   // Safari ancien
+    }
+
+    dessiner();
+    majRecap();
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENVOI DU FORMULAIRE DE RÉSERVATION
+   Les champs se valident à la soumission, et non par une fonction appelée
+   depuis l'attribut du bouton : la touche Entrée déclenche donc le même
+   contrôle que le clic.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+    var form = document.getElementById('bookingForm');
+    if (!form) return;
+
+    var bouton = document.getElementById('resaEnvoyer');
+    var envoiEnCours = false;
+
+    function erreur(champ, message) {
+        if (typeof showNotification === 'function') showNotification(message, 'error');
+        if (champ) {
+            champ.classList.add('est-invalide');
+            champ.focus();
+            champ.addEventListener('input', function retirer() {
+                champ.classList.remove('est-invalide');
+                champ.removeEventListener('input', retirer);
+            });
+        }
+        return false;
+    }
+
+    form.addEventListener('submit', function (e) {
+        if (envoiEnCours) { e.preventDefault(); return; }
+
+        var nom   = form.querySelector('[name="customer_name"]');
+        var email = form.querySelector('[name="customer_email"]');
+        var tel   = form.querySelector('[name="customer_phone"]');
+
+        var valide = true;
+        if (!nom.value.trim() || nom.value.trim().length < 2) {
+            valide = erreur(nom, 'Merci d’indiquer votre nom.');
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim())) {
+            valide = erreur(email, 'Cette adresse e-mail ne semble pas valide.');
+        } else if (tel.value.replace(/[^0-9]/g, '').length < 9) {
+            valide = erreur(tel, 'Merci d’indiquer un numéro de téléphone.');
+        }
+
+        if (!valide) { e.preventDefault(); return; }
+
+        // Retour visuel immédiat, et garde-fou contre le double envoi.
+        envoiEnCours = true;
+        bouton.disabled = true;
+        bouton.classList.add('est-en-cours');
+        bouton.textContent = 'Envoi en cours…';
+    });
+})();
 
 /* ══════════════════════════════════════════════════════════════
    LOGIQUE DE LA PAGE D'ACCUEIL (index.php)
@@ -468,73 +676,84 @@ if (document.readyState === 'loading') {
 
 })();
 
-/* ══════════════════════════════════════════════════════════════
-   VALIDATION ET SOUMISSION DU FORMULAIRE DE RÉSERVATION
-   ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   CHIFFRES CLÉS — le compteur
+   Les valeurs de la bande sous le bandeau défilent de zéro jusqu'à leur
+   valeur réelle, une fois seulement, au moment où la bande entre dans
+   l'écran. Le HTML contient déjà la valeur finale : sans JavaScript, ou si
+   le visiteur a demandé moins d'animations, elle s'affiche telle quelle.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+    var nombres = document.querySelectorAll('.chiffre-nombre[data-compteur]');
+    if (!nombres.length) return;
 
-/**
- * Appelée par le bouton "Envoyer la demande".
- * Valide les champs obligatoires puis soumet ou affiche la modale sans-dates.
- */
-function setButtonLoading() {
-    var btn = document.querySelector('#bookingForm button[onclick="validateBooking()"]');
-    if (!btn) return;
-    btn.disabled = true;
-    btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;"></span>Envoi en cours…';
-    // Assure que l'animation CSS "spin" existe
-    if (!document.getElementById('spin-style')) {
-        var s = document.createElement('style');
-        s.id = 'spin-style';
-        s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
-        document.head.appendChild(s);
-    }
-}
+    var sobre = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (sobre || !('IntersectionObserver' in window)) return;
 
-function validateBooking() {
-    var form = document.getElementById('bookingForm');
-    if (!form) return;
+    var DUREE = 1400;   // millisecondes
 
-    var name  = form.querySelector('[name="customer_name"]');
-    var email = form.querySelector('[name="customer_email"]');
-    var phone = form.querySelector('[name="customer_phone"]');
-
-    if (!name || !name.value.trim()) {
-        showNotification('Veuillez indiquer votre nom complet.', 'error');
-        if (name) name.focus();
-        return;
-    }
-    if (!email || !email.value.trim() || !email.value.includes('@')) {
-        showNotification('Veuillez indiquer une adresse e-mail valide.', 'error');
-        if (email) email.focus();
-        return;
-    }
-    if (!phone || !phone.value.trim()) {
-        showNotification('Veuillez indiquer votre numéro de téléphone.', 'error');
-        if (phone) phone.focus();
-        return;
+    function formater(valeur) {
+        // Espace insécable fine pour les milliers, comme number_format côté PHP.
+        return String(valeur).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
     }
 
-    var checkIn  = document.getElementById('input_check_in');
-    var checkOut = document.getElementById('input_check_out');
+    function animer(element) {
+        var cible = parseInt(element.getAttribute('data-compteur'), 10) || 0;
+        var ligne = element.closest ? element.closest('.chiffre-valeur') : null;
 
-    if (!checkIn || !checkIn.value || !checkOut || !checkOut.value) {
-        var modal = document.getElementById('dateConfirmModal');
-        if (modal) modal.classList.add('active');
-        return;
+        if (ligne) {
+            ligne.classList.remove('compteur-pret');
+            ligne.classList.add('compteur-en-cours');
+        }
+
+        // Zéro n'a rien à faire défiler : la ligne se pose, sans décompte.
+        if (cible === 0) {
+            if (ligne) ligne.classList.add('compteur-fini');
+            return;
+        }
+
+        var debut = null;
+
+        function pas(horodatage) {
+            if (debut === null) debut = horodatage;
+
+            var avancement = Math.min((horodatage - debut) / DUREE, 1);
+            // Décélération : le nombre s'élance puis se pose doucement.
+            var douceur = 1 - Math.pow(1 - avancement, 3);
+
+            element.textContent = formater(Math.round(cible * douceur));
+
+            if (avancement < 1) {
+                requestAnimationFrame(pas);
+            } else {
+                element.textContent = formater(cible);
+                if (ligne) {
+                    ligne.classList.remove('compteur-en-cours');
+                    ligne.classList.add('compteur-fini');
+                }
+            }
+        }
+
+        requestAnimationFrame(pas);
     }
 
-    // ✅ Retour visuel immédiat avant la soumission
-    setButtonLoading();
-    form.submit();
-}
+    // État de départ posé par le script, jamais dans le HTML : une page sans
+    // JavaScript ne doit pas rester avec des valeurs à zéro.
+    Array.prototype.forEach.call(nombres, function (element) {
+        var ligne = element.parentNode;
+        if (ligne && ligne.classList) ligne.classList.add('compteur-pret');
+        element.textContent = '0';
+    });
 
-function submitWithoutDates() {
-    var modal = document.getElementById('dateConfirmModal');
-    if (modal) modal.classList.remove('active');
+    var observateur = new IntersectionObserver(function (entrees) {
+        entrees.forEach(function (entree) {
+            if (!entree.isIntersecting) return;
+            observateur.unobserve(entree.target);
+            animer(entree.target);
+        });
+    }, { threshold: 0.4 });
 
-    // ✅ Retour visuel immédiat avant la soumission
-    setButtonLoading();
-
-    var form = document.getElementById('bookingForm');
-    if (form) form.submit();
-}
+    Array.prototype.forEach.call(nombres, function (element) {
+        observateur.observe(element);
+    });
+})();

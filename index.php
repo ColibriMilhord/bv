@@ -9,6 +9,8 @@ require_once 'config/avis.php';
 require_once 'config/annonces.php';
 require_once 'config/stats.php';
 require_once 'config/tarifs.php';
+require_once 'config/antispam.php';
+require_once 'config/courriels.php';
 
 // Avis Google : note, compteur et trois derniers avis (cache 12 h, repli
 // éditorial). Un incident sur ce bloc — réseau, cache en lecture seule,
@@ -20,23 +22,11 @@ try {
     error_log('[bellevue] avis indisponibles : ' . $e->getMessage());
 }
     
-// ── Visualisation des logs : index.php?show_log=1 ──
-// Réservée à un administrateur connecté : le journal contient les adresses
-// e-mail des clients (donnée personnelle).
-if (isset($_GET['show_log'])) {
-    if (!isset($_SESSION['admin_id'])) {
-        header('HTTP/1.1 403 Forbidden');
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo "Accès refusé.";
-        die();
-    }
-    header('Content-Type: text/plain; charset=UTF-8');
-    header('X-Robots-Tag: noindex, nofollow');
-    echo file_exists('bellevue_debug_mail.log')
-        ? "LOGS :\n" . file_get_contents('bellevue_debug_mail.log')
-        : "Aucun log pour l'instant.";
-    die();
-}
+// Le journal d'envois « bellevue_debug_mail.log » n'existe plus : il était
+// écrit à la racine du site, contenait les adresses e-mail des clients, et se
+// consultait par « index.php?show_log=1 ». Les envois sont désormais consignés
+// dans le journal d'erreurs de PHP, hors du dossier public. Le fichier restant
+// éventuellement sur le serveur est à supprimer (voir docs/DEPLOIEMENT.md).
 
 // ── Connexion BDD ──
 if (file_exists('config/db.php')) {
@@ -65,7 +55,7 @@ if ($pdo) {
         $booked_dates = $pdo->query("SELECT jour FROM calendrier_dispo WHERE statut != 'libre'")->fetchAll(PDO::FETCH_COLUMN);
     } catch (Exception $e) {}
 }
-$json_booked_dates = json_encode($booked_dates);
+$json_booked_dates = json_encode(array_values(array_unique($booked_dates)));
 
 // ── Mesure d'audience interne et bandeau d'annonce ──
 // Sans cookie ni traceur tiers : l'enregistrement est silencieux et ne peut
@@ -84,6 +74,25 @@ if ($pdo) {
 // ── Grille tarifaire regroupée par saison ──
 $tarifs_grille   = tarifs_grille($tarifs_display);
 $tarif_mini      = tarifs_a_partir_de($tarifs_display);
+
+// Périodes tarifaires transmises au calendrier : le récapitulatif annonce la
+// saison et le prix à la semaine dès que la date d'arrivée est choisie, sans
+// que le visiteur ait à remonter à la grille.
+$prix_grille  = array_map(function ($l) { return (float) ($l['prix_semaine'] ?? 0); }, $tarifs_display);
+$prix_mini    = $prix_grille ? min($prix_grille) : 0.0;
+$prix_maxi    = $prix_grille ? max($prix_grille) : 0.0;
+$json_saisons = json_encode(array_values(array_map(
+    function ($l) use ($prix_mini, $prix_maxi) {
+        $saison = tarifs_saisons()[tarifs_categorie($l, $prix_mini, $prix_maxi)] ?? null;
+        return [
+            'debut' => (string) ($l['date_debut'] ?? ''),
+            'fin'   => (string) ($l['date_fin'] ?? ''),
+            'prix'  => (int) round((float) ($l['prix_semaine'] ?? 0)),
+            'nom'   => $saison ? $saison['nom'] : '',
+        ];
+    },
+    $tarifs_display
+)), JSON_UNESCAPED_UNICODE);
 $tarifs_settings = [];
 if ($pdo) {
     try {
@@ -96,15 +105,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     try {
         if (!$pdo) throw new Exception("Erreur de connexion à la base de données.");
 
+        // ── Contrôle anti-abus, avant toute écriture et tout envoi ──
+        // Chaque soumission déclenche deux mails depuis la boîte du gîte, dont
+        // un vers une adresse choisie par le visiteur : sans garde-fou, le
+        // formulaire sert de relais à spam et la boîte finit suspendue.
+        antispam_migrer($pdo);
+        list($antispam_ok, $antispam_motif) = antispam_verifier($pdo, $_POST);
+        antispam_journaliser($pdo, $antispam_ok, $antispam_motif);
+
+        if (!$antispam_ok) {
+            error_log('[bellevue] demande refusée — ' . $antispam_motif);
+            throw new Exception(antispam_message_refus($antispam_motif));
+        }
+
         $settings = $pdo->query("SELECT * FROM gite_settings WHERE id = 1")->fetch() ?: [];
 
-        // Valeurs brutes pour les emails (pas d'entités HTML)
-        $raw_nom       = trim($_POST['customer_name']);
-        $raw_tel       = trim($_POST['customer_phone']);
-        $raw_note      = trim($_POST['customer_message'] ?? '');
+        // Valeurs brutes pour les emails : débarrassées des retours à la ligne,
+        // qui sont ce qui permet d'ajouter des destinataires dans un en-tête.
+        $raw_nom       = antispam_nettoyer(trim((string) ($_POST['customer_name'] ?? '')));
+        $raw_tel       = antispam_nettoyer(trim((string) ($_POST['customer_phone'] ?? '')), 40);
+        $raw_note      = trim((string) ($_POST['customer_message'] ?? ''));
         // Valeurs encodées pour l'affichage HTML (page web)
         $client_nom    = htmlspecialchars($raw_nom);
-        $client_email  = filter_var(trim($_POST['customer_email']), FILTER_SANITIZE_EMAIL);
+        // Adresse déjà validée par antispam_verifier() : on reprend la même
+        // règle, et non un simple nettoyage, qui laisse passer « a@b\r\nBcc: ».
+        $client_email  = filter_var(trim((string) ($_POST['customer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
         $client_tel    = htmlspecialchars($raw_tel);
         $client_note   = htmlspecialchars($raw_note);
         $date_debut    = !empty($_POST['check_in'])  ? $_POST['check_in']  : null;
@@ -130,93 +155,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // Insertion BDD
         try {
-            $pdo->prepare("INSERT INTO reservations (client_nom, client_email, client_tel, date_debut, date_fin, prix_total, acompte_montant, option_menage, client_message, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'attente', NOW())")
-                ->execute([$client_nom, $client_email, $client_tel, $date_debut, $date_fin, $prix_total, $acompte_montant, $option_menage, $client_note]);
+            // Horodatage calculé en PHP plutôt que par NOW() : la requête reste
+            // ainsi vérifiable hors MySQL, comme le reste des modules.
+            $pdo->prepare("INSERT INTO reservations (client_nom, client_email, client_tel, date_debut, date_fin, prix_total, acompte_montant, option_menage, client_message, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'attente', ?)")
+                ->execute([$client_nom, $client_email, $client_tel, $date_debut, $date_fin, $prix_total, $acompte_montant, $option_menage, $client_note, date('Y-m-d H:i:s')]);
             $bookingData = ['nuits' => $nuits, 'total' => $prix_total];
         } catch (Exception $e) {}
 
-        // ── Corps du mail propriétaires ──
+        // ── Les deux messages ──
+        // Le texte et la mise en forme sortent de config/courriels.php : la
+        // page ne fabrique plus de corps de message. Chaque envoi part en deux
+        // versions, texte et HTML, dans un même message.
         $has_dates = ($date_debut && $date_fin && $nuits > 0);
 
-        if ($has_dates) {
-            $subject = "🗓 RÉSERVATION BELLEVUE : " . $client_nom . " (" . $nuits . " nuits)";
-        } else {
-            $subject = "📩 DEMANDE INFO BELLEVUE : " . $client_nom;
-        }
+        $demande = [
+            'nom'           => $raw_nom,
+            'email'         => $client_email,
+            'telephone'     => $raw_tel,
+            'message'       => $raw_note,
+            'has_dates'     => $has_dates,
+            'date_debut'    => $date_debut,
+            'date_fin'      => $date_fin,
+            'nuits'         => $nuits,
+            'prix_total'    => $prix_total,
+            'acompte'       => $acompte_montant,
+            'option_menage' => $option_menage,
+            'recu_le'       => date('d/m/Y à H\\hi'),
+        ];
 
-        $body  = "========================================\n";
-        $body .= $has_dates
-            ? "  DEMANDE DE RÉSERVATION — bellevuedaveyron.fr\n"
-            : "  DEMANDE D'INFORMATION — bellevuedaveyron.fr\n";
-        $body .= "========================================\n\n";
+        $courriel_proprio = courriel_proprietaires($demande);
+        $courriel_visiteur = courriel_client($demande);
 
-        $body .= "CLIENT\n";
-        $body .= "------\n";
-        $body .= "Nom       : $raw_nom\n";
-        $body .= "Email     : $client_email\n";
-        $body .= "Téléphone : $raw_tel\n\n";
-
-        $body .= "SÉJOUR\n";
-        $body .= "------\n";
-        if ($has_dates) {
-            $body .= "Arrivée   : " . date('d/m/Y', strtotime($date_debut)) . "\n";
-            $body .= "Départ    : " . date('d/m/Y', strtotime($date_fin))   . "\n";
-            $body .= "Durée     : " . $nuits . " nuits\n";
-            $body .= "Ménage    : " . ($option_menage ? "Oui (+220€)" : "Non") . "\n\n";
-            $body .= "\n";
-        } else {
-            $body .= "Dates     : Non précisées (demande d'information générale)\n\n";
-        }
-
-        $body .= "MESSAGE DU CLIENT\n";
-        $body .= "-----------------\n";
-        $body .= ($raw_note ?: "Aucun message.") . "\n\n";
-        $body .= "========================================\n";
-        $body .= "Répondre à : $client_email\n";
-        $body .= "========================================\n";
-
-        // ── Envoi aux propriétaires — un mail par destinataire ──
-        $mailSent    = false;
+        // ── Envoi aux propriétaires — un message par destinataire ──
         // Destinataires réglables depuis l'administration (Paramètres du Gîte).
-        // Un envoi par destinataire ; repli sur les adresses par défaut si le
-        // réglage est vide. L'expéditeur reste la boîte SMTP reservation@.
+        // Repli sur les adresses par défaut si le réglage est vide.
+        // L'expéditeur reste la boîte SMTP reservation@.
+        $mailSent    = false;
         $admin_list  = notifications_destinataires($settings);
         $mail_errors = [];
 
         foreach ($admin_list as $admin) {
-            $r = send_smtp_mail($admin, $subject, $body, $client_email);
+            $r = send_smtp_mail(
+                $admin,
+                $courriel_proprio['sujet'],
+                $courriel_proprio['texte'],
+                $client_email,
+                $courriel_proprio['html']
+            );
+
             if ($r === true) {
-                @file_put_contents('bellevue_debug_mail.log',
-                    date('[Y-m-d H:i:s]') . " SMTP OK -> $admin\n", FILE_APPEND);
                 $mailSent = true;
             } else {
-                @file_put_contents('bellevue_debug_mail.log',
-                    date('[Y-m-d H:i:s]') . " SMTP FAIL -> $admin : $r\n", FILE_APPEND);
+                // Journal du serveur, et non un fichier à la racine du site :
+                // celui-ci se téléchargeait, avec les adresses des clients.
+                error_log('[bellevue] envoi propriétaire en échec — ' . $r);
                 $mail_errors[] = $admin . " : " . $r;
             }
         }
 
-        // ── Accusé de réception client ──
-        $ack_body  = "Bonjour $raw_nom,\n\n";
-        if ($has_dates) {
-            $ack_body .= "Nous avons bien reçu votre demande de réservation pour la villa Bellevue d'Aveyron.\n\n";
-            $ack_body .= "Récapitulatif de votre demande :\n";
-            $ack_body .= "  Arrivée  : " . date('d/m/Y', strtotime($date_debut)) . "\n";
-            $ack_body .= "  Départ   : " . date('d/m/Y', strtotime($date_fin)) . "\n";
-            $ack_body .= "  Durée    : " . $nuits . " nuits\n";
-            $ack_body .= "\n";
-        } else {
-            $ack_body .= "Nous avons bien reçu votre demande d'information concernant la villa Bellevue d'Aveyron.\n\n";
+        // ── Accusé de réception du client ──
+        // Il part vers une adresse fournie par le visiteur : c'est le seul
+        // envoi détournable. On ne l'émet que si la demande a bien été reçue
+        // par les propriétaires — un robot n'obtient donc rien d'un formulaire
+        // dont l'envoi principal a échoué.
+        if ($mailSent) {
+            $ack_result = send_smtp_mail(
+                $client_email,
+                $courriel_visiteur['sujet'],
+                $courriel_visiteur['texte'],
+                '',
+                $courriel_visiteur['html']
+            );
+
+            if ($ack_result !== true) {
+                error_log('[bellevue] accusé de réception en échec — ' . $ack_result);
+            }
         }
-        $ack_body .= "Nous reviendrons vers vous dans les meilleurs délais.\n\n";
-        $ack_body .= "Cordialement,\nL'equipe Bellevue d'Aveyron\nhttps://bellevuedaveyron.fr\nTel : 06 80 90 71 07";
-
-        $ack_result = send_smtp_mail($client_email,
-            "Confirmation de réception - Bellevue d'Aveyron", $ack_body);
-
-        @file_put_contents('bellevue_debug_mail.log',
-            date('[Y-m-d H:i:s]') . " ACK client -> $client_email : " .
-            ($ack_result === true ? "OK" : $ack_result) . "\n", FILE_APPEND);
 
         if (!$mailSent) {
             $errorMsg = "Erreur lors de l'envoi de l'email. Merci de nous contacter par téléphone.";
@@ -240,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <?php seo_head([
         'title'       => "Gîte de luxe 5 étoiles avec piscine, 10 personnes en Aveyron — Bellevue d'Aveyron",
-        'description' => "Gîte de luxe 5 étoiles avec piscine chauffée en Aveyron, pour 10 personnes : 200 m², 5 chambres, parc de 5 000 m², plain-pied accessible PMR, à Sainte-Eulalie-d'Olt. Location en direct, "
+        'description' => "Gîte de luxe 5 étoiles avec piscine chauffée en Aveyron, pour 10 personnes : 200 m², 5 chambres, parc de 5 000 m², rez-de-chaussée accessible PMR, à Sainte-Eulalie-d'Olt. Location en direct, "
             . number_format($avis_google['note'], 1, ',', '') . "/5 sur " . (int) $avis_google['total'] . " avis Google.",
         'path'        => '',
         'type'        => 'website',
@@ -361,11 +375,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <section class="chiffres-cles" aria-label="Le gîte en chiffres">
     <ul class="chiffres-grid">
-        <?php foreach (seo_chiffres_cles() as [$valeur, $libelle, $precision]): ?>
+        <?php foreach (seo_chiffres_cles() as $chiffre):
+            $texte = seo_chiffre_texte($chiffre);
+            // Largeur réservée d'après le nombre final : le compteur défile
+            // sans décaler le libellé au-dessous.
+            $largeur = max(1, mb_strlen(number_format((int) $chiffre['nombre'], 0, ',', ' ')));
+        ?>
         <li class="chiffre">
-            <span class="chiffre-valeur"><?php echo seo_e($valeur); ?></span>
-            <span class="chiffre-libelle"><?php echo seo_e($libelle); ?></span>
-            <span class="chiffre-precision"><?php echo seo_e($precision); ?></span>
+            <span class="chiffre-valeur">
+                <span class="chiffre-nombre"
+                      data-compteur="<?php echo (int) $chiffre['nombre']; ?>"
+                      style="min-width:<?php echo $largeur; ?>ch"><?php
+                    echo seo_e(number_format((int) $chiffre['nombre'], 0, ',', ' '));
+                ?></span><?php if ($chiffre['suffixe'] !== ''): ?><span class="chiffre-suffixe"><?php echo seo_e($chiffre['suffixe']); ?></span><?php endif; ?>
+            </span>
+            <span class="chiffre-libelle"><?php echo seo_e($chiffre['libelle']); ?></span>
+            <span class="chiffre-precision"><?php echo seo_e($chiffre['precision']); ?></span>
         </li>
         <?php endforeach; ?>
     </ul>
@@ -437,7 +462,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <?php if (!empty($pmr_images)): ?>
                 <div class="pmr-slideshow" id="pmrSlideshow">
                     <?php foreach ($pmr_images as $i => $img): ?>
-                        <img src="<?php echo $img; ?>" alt="Espaces de plain-pied accessibles PMR du gîte Bellevue d'Aveyron — photo <?php echo $i+1; ?>" loading="lazy" class="pmr-slide <?php echo $i===0?'active':''; ?>">
+                        <img src="<?php echo $img; ?>" alt="Rez-de-chaussée de plain-pied accessible PMR du gîte Bellevue d'Aveyron — photo <?php echo $i+1; ?>" loading="lazy" class="pmr-slide <?php echo $i===0?'active':''; ?>">
                     <?php endforeach; ?>
                     <div class="pmr-frame-overlay"></div>
                 </div>
@@ -454,8 +479,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
             <p class="access-intro">Pour des vacances en toute tranquillité, nous avons conçu Bellevue d'Aveyron comme un espace ouvert à tous. L'accessibilité n'est pas une option, c'est une promesse de sérénité partagée.</p>
             <div class="access-features">
-                <div class="access-item"><span class="check-gold">✓</span><p><strong>Plain-pied intégral :</strong> Du parking aux espaces de vie (cuisine, salon, terrasses), tout est pensé pour une circulation fluide sans obstacle.</p></div>
-                <div class="access-item"><span class="check-gold">✓</span><p><strong>Espace nuit adapté :</strong> Une chambre et une salle de bain entièrement équipées sont accessibles directement au rez-de-chaussée.</p></div>
+                <div class="access-item"><span class="check-gold">✓</span><p><strong>Rez-de-chaussée sans une marche :</strong> Du parking aux espaces de vie (cuisine, salon, terrasses), tout est de plain-pied et pensé pour une circulation fluide sans obstacle.</p></div>
+                <div class="access-item"><span class="check-gold">✓</span><p><strong>Espace nuit adapté :</strong> Une chambre et une salle de bain entièrement équipées sont accessibles directement au rez-de-chaussée. La villa compte un étage, mais un séjour complet s'y vit sans jamais emprunter l'escalier.</p></div>
                 <div class="access-item"><span class="check-gold">✓</span><p><strong>Aménagements extérieurs :</strong> Une piste aménagée relie le parking à la maison pour un accès facilité en toutes circonstances.</p></div>
             </div>
             <p class="access-footer">Idéalement situé pour visiter les merveilles accessibles de la région (Beaux villages, Viaduc de Millau, Musée Soulages...).<br><em>N'hésitez pas à nous contacter pour préparer votre venue.</em></p>
@@ -531,9 +556,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="ligne-prix">
                         <span class="prix-semaine"><?php echo number_format($l['semaine'], 0, ',', ' '); ?> €</span>
                         <span class="prix-unite">la semaine</span>
-                        <?php if ($l['par_nuit'] > 0): ?>
-                            <span class="prix-nuit">soit <?php echo number_format($l['par_nuit'], 0, ',', ' '); ?> € la nuit</span>
-                        <?php endif; ?>
                     </div>
                 </li>
                 <?php endforeach; ?>
@@ -561,67 +583,144 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </section>
 
 <!-- ══ RÉSERVATION ══ -->
+<!--
+    Une seule demande, un seul bouton.
+    L'ancien écran proposait « réserver » et « demander une information » par le
+    même formulaire, départagés par une fenêtre qui s'ouvrait quand les dates
+    manquaient : le visiteur découvrait la question après avoir cliqué. Ici les
+    dates sont facultatives et annoncées comme telles, et l'intitulé du bouton
+    dit à tout moment ce que le clic va produire.
+-->
 
-<section id="reservation">
+<section id="reservation" class="resa">
     <div class="section-header">
         <span class="subtitle">Disponibilités</span>
         <h2>Réservez Votre Séjour</h2>
-    </div>
-    <div class="booking-layout">
-
-    <!-- Calendrier -->
-    <div class="calendar-side">
-        <div class="calendar-header">
-            <button class="cal-nav" onclick="changeMonth(-1)">❮</button>
-            <span class="month-label" id="calendarTitle">Juillet 2026</span>
-            <button class="cal-nav" onclick="changeMonth(1)">❯</button>
-        </div>
-        <div class="days-grid">
-            <div class="day-label">L</div><div class="day-label">M</div><div class="day-label">M</div>
-            <div class="day-label">J</div><div class="day-label">V</div><div class="day-label">S</div><div class="day-label">D</div>
-        </div>
-        <div class="days-grid" id="calendarDays"></div>
-        <div style="margin-top:20px;display:flex;gap:15px;font-size:.8rem;justify-content:center;">
-            <div style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;border:1px solid #ddd;display:inline-block;"></span> Libre</div>
-            <div style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--gold-gradient);display:inline-block;"></span> Sélection</div>
-            <div style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#ddd;display:inline-block;"></span> Occupé</div>
-        </div>
+        <p class="resa-chapeau">
+            En direct auprès des propriétaires, sans commission.
+            Réponse sous 24&nbsp;heures.
+        </p>
     </div>
 
-    <!-- Formulaire -->
-    <div class="form-side">
-        <h3 class="form-title">Votre Demande</h3>
-        <div class="summary-box" id="bookingSummary">
-            <p>Veuillez sélectionner vos dates dans le calendrier.<br><small style="color:#aaa;font-style:italic;">Durée minimale : 3 nuits (selon la période).</small></p>
+    <div class="resa-grille">
+
+        <!-- ── Calendrier ────────────────────────────────────────────── -->
+        <div class="resa-calendrier">
+            <div class="resa-etape">
+                <span class="resa-numero">1</span>
+                <div>
+                    <h3>Vos dates</h3>
+                    <p>Facultatif — cliquez l'arrivée, puis le départ. Minimum 3&nbsp;nuits.</p>
+                </div>
+            </div>
+
+            <div class="cal-barre">
+                <button type="button" class="cal-fleche" id="calPrec" aria-label="Mois précédent">
+                    <span aria-hidden="true">&#8249;</span>
+                </button>
+                <span class="cal-titre" id="calTitre" aria-live="polite">&nbsp;</span>
+                <button type="button" class="cal-fleche" id="calSuiv" aria-label="Mois suivant">
+                    <span aria-hidden="true">&#8250;</span>
+                </button>
+            </div>
+
+            <div class="cal-mois" id="calMois"></div>
+
+            <noscript>
+                <!-- Sans JavaScript, le calendrier ne s'affiche pas : deux champs
+                     de date natifs prennent le relais. Ils portent les mêmes noms
+                     que les champs cachés et, placés après eux, l'emportent. -->
+                <div class="cal-sansjs">
+                    <p>Votre navigateur n'exécute pas JavaScript : saisissez vos dates ici.</p>
+                    <div class="champ">
+                        <label for="sansjs_arrivee">Arrivée</label>
+                        <input type="date" id="sansjs_arrivee" name="check_in" form="bookingForm">
+                    </div>
+                    <div class="champ">
+                        <label for="sansjs_depart">Départ</label>
+                        <input type="date" id="sansjs_depart" name="check_out" form="bookingForm">
+                    </div>
+                </div>
+            </noscript>
+
+            <ul class="cal-legende">
+                <li><span class="pastille pastille--libre"></span>Libre</li>
+                <li><span class="pastille pastille--choix"></span>Votre séjour</li>
+                <li><span class="pastille pastille--occupe"></span>Déjà réservé</li>
+            </ul>
+
+            <p class="cal-aide" id="calAide" role="status"></p>
+
+            <ul class="cal-reperes">
+                <li>Location principalement à la semaine, du samedi au samedi.</li>
+                <li>Séjour de 3 nuits minimum, possible sur certaines périodes — écrivez-nous.</li>
+                <li>Vous réservez en direct : aucune commission de plateforme.</li>
+            </ul>
         </div>
-        <form method="POST" action="index.php#reservation" id="bookingForm">
-            <input type="hidden" name="action" value="book">
-            <input type="hidden" name="check_in" id="input_check_in">
-            <input type="hidden" name="check_out" id="input_check_out">
-            <div style="position:relative;margin-bottom:15px;">
-                <input type="text" name="customer_name" class="lux-input" placeholder="Nom Complet *" required>
+
+        <!-- ── Formulaire ────────────────────────────────────────────── -->
+        <div class="resa-formulaire">
+            <div class="resa-etape">
+                <span class="resa-numero">2</span>
+                <div>
+                    <h3>Vos coordonnées</h3>
+                    <p>Nous vous répondons personnellement, sous 24&nbsp;heures.</p>
+                </div>
             </div>
-            <div style="position:relative;margin-bottom:15px;">
-                <input type="email" name="customer_email" class="lux-input" placeholder="Adresse E-mail *" required>
+
+            <div class="resa-recap" id="resaRecap">
+                <p class="resa-recap-vide">Aucune date sélectionnée — nous répondrons à vos questions.</p>
             </div>
-            <div style="position:relative;margin-bottom:15px;">
-                <input type="tel" name="customer_phone" class="lux-input" placeholder="Téléphone *" required>
-            </div>
-            <textarea name="customer_message" class="lux-input" rows="3" placeholder="Une demande particulière ? (Lit bébé, arrivée tardive, question...)"></textarea>
-            <label class="option-check">
-                <input type="checkbox" name="cleaning_fee" value="1">
-                Option Ménage fin de séjour (+220€)
-            </label>
-            <button type="button" onclick="validateBooking()" class="btn-gold" style="width:100%;border-radius:4px;">Envoyer la demande</button>
-            <p style="font-size:.75rem;color:#888;margin-top:15px;text-align:center;">
-                Les champs marqués d'une * sont obligatoires.<br>
-                Durée minimale de 3 nuits (seulement certaines périodes de l'année).<br>
-                Un acompte de 30% sera demandé après validation.
+
+            <form method="POST" action="index.php#reservation" id="bookingForm" novalidate>
+                <input type="hidden" name="action" value="book">
+                <input type="hidden" name="check_in" id="input_check_in">
+                <input type="hidden" name="check_out" id="input_check_out">
+                <?php echo antispam_champs(); ?>
+
+                <div class="champ">
+                    <label for="champ_nom">Nom et prénom <span aria-hidden="true">*</span></label>
+                    <input type="text" id="champ_nom" name="customer_name" autocomplete="name" required>
+                </div>
+
+                <div class="champ-duo">
+                    <div class="champ">
+                        <label for="champ_email">Adresse e-mail <span aria-hidden="true">*</span></label>
+                        <input type="email" id="champ_email" name="customer_email" autocomplete="email" inputmode="email" required>
+                    </div>
+                    <div class="champ">
+                        <label for="champ_tel">Téléphone <span aria-hidden="true">*</span></label>
+                        <input type="tel" id="champ_tel" name="customer_phone" autocomplete="tel" inputmode="tel" required>
+                    </div>
+                </div>
+
+                <div class="champ">
+                    <label for="champ_message">Votre message</label>
+                    <textarea id="champ_message" name="customer_message" rows="3"
+                              placeholder="Nombre de personnes, lit bébé, arrivée tardive, une question…"></textarea>
+                </div>
+
+                <label class="champ-case">
+                    <input type="checkbox" name="cleaning_fee" value="1">
+                    <span>Ajouter le ménage de fin de séjour
+                        <em><?php echo (int) ($tarifs_settings['frais_menage'] ?? 220); ?> €, en option</em>
+                    </span>
+                </label>
+
+                <button type="submit" class="resa-envoyer" id="resaEnvoyer">Envoyer ma demande</button>
+
+                <p class="resa-mentions">
+                    Champs obligatoires marqués d'un astérisque. Aucun paiement à cette étape :
+                    nous vérifions la disponibilité, puis vous confirmons le tarif exact.
+                </p>
+            </form>
+
+            <p class="resa-telephone">
+                Vous préférez appeler ? <a href="tel:<?php echo SEO_PHONE; ?>"><?php echo SEO_PHONE_HUMAN; ?></a>
             </p>
-        </form>
-    </div>
-</div>
+        </div>
 
+    </div>
 </section>
 
 <!-- ══ AVIS CLIENTS ══ -->
@@ -746,9 +845,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <div class="legal-links">
             <span>&copy; 2026 Bellevue d'Aveyron</span>
             <span class="separator">•</span>
-            <a href="mentions.php">Mentions Légales</a>
+            <a href="mentions.php?retour=index.php&amp;section=reservation">Mentions Légales</a>
             <span class="separator">•</span>
-            <a href="politique.php">Politique de Confidentialité</a>
+            <a href="politique.php?retour=index.php&amp;section=reservation">Politique de Confidentialité</a>
         </div>
         <div class="signature">Excellence &amp; Tradition</div>
     </div>
@@ -770,23 +869,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <button onclick="document.getElementById('successModal').classList.remove('active')" class="btn-gold">Fermer</button>
     </div>
 </div>
-
-<!-- ══ MODALE SANS DATES ══ -->
-
-<div class="modal-overlay" id="dateConfirmModal">
-    <div class="modal-card">
-        <div class="icon-gold">📅</div>
-        <h3 style="font-family:'Cinzel',serif;color:var(--navy-deep);margin-bottom:15px;">Dates non sélectionnées</h3>
-        <p style="color:#666;margin-bottom:20px;">Vous n'avez pas sélectionné de dates dans le calendrier.<br>Souhaitez-vous envoyer une demande d'information générale ?</p>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-            <button onclick="submitWithoutDates()" class="btn-gold" style="padding:12px 25px;font-size:.72rem;">Oui, envoyer</button>
-            <button onclick="document.getElementById('dateConfirmModal').classList.remove('active')"
-                class="btn-gold-outline" style="padding:12px 25px;font-size:.72rem;border:1px solid var(--gold-dark);color:var(--gold-dark);background:transparent;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:1px;text-transform:uppercase;">Choisir des dates</button>
-        </div>
-    </div>
-</div>
-
-
 
 <div id="contactModal" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
     <div class="contact-card" role="document">
@@ -854,7 +936,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </script>
 <?php endif; ?>
 
-<script>const bookedDates = <?php echo $json_booked_dates ?: '[]'; ?>;</script>
+<script>
+    // Données du calendrier, produites par le serveur.
+    const bookedDates = <?php echo $json_booked_dates ?: '[]'; ?>;
+    const tarifSaisons = <?php echo $json_saisons ?: '[]'; ?>;
+</script>
 
 <?php
 // ── Données structurées JSON-LD (Google, ChatGPT, Perplexity, Gemini…) ──

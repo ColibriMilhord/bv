@@ -66,10 +66,13 @@ encore en ligne : `config/db.php` (variable `$password`) et
 `config/mail_config.php` (constante `SMTP_PASS`). **Lisez-les avant de
 téléverser quoi que ce soit**, puisque le téléversement va les remplacer.
 
-> **Profitez-en pour changer ces deux mots de passe.** Ils ont circulé en clair
-> dans le dépôt Git et restent lisibles dans son historique : les sortir du
-> code ne suffit pas à les rendre sûrs. Changez-les dans hPanel (base de
-> données et boîte e-mail), puis saisissez les nouvelles valeurs ici.
+> **Changez ces deux mots de passe.** Ils figuraient en clair dans le code, et
+> restent lisibles dans l'historique du dépôt comme dans toute copie locale de
+> celui-ci. Après la suspension de la boîte d'envoi par Hostinger, c'est une
+> précaution qui referme d'un coup toutes les hypothèses d'accès direct.
+> Changez-les dans hPanel (base de données, puis Emails → Comptes e-mail), et
+> saisissez ici les nouvelles valeurs. Le détail de l'incident et la marche à
+> suivre complète figurent dans `docs/securite-mail.md`.
 
 ---
 
@@ -106,19 +109,24 @@ Copier le contenu du dossier décompressé vers la racine du site sur le serveur
 2. **Ne pas écraser `config/secrets.php`.** Le fichier créé à l'étape 1 n'est
    pas dans l'archive : il doit rester tel quel.
 
-3. **Créer le dossier `cache/`** à la racine du site s'il n'existe pas, et le
+3. **Téléverser le dossier `js/vendor/`.** Il contient la bibliothèque de la
+   carte du monde de l'écran Audience, désormais servie par le site et non
+   plus par un réseau de diffusion externe. Sans lui, la carte ne s'affiche
+   pas — le reste de l'écran fonctionne.
+
+4. **Créer le dossier `cache/`** à la racine du site s'il n'existe pas, et le
    laisser accessible en écriture (permissions 755). Il sert au cache de
    l'agenda. En cas d'impossibilité, le site fonctionne quand même, simplement
    sans cache.
 
-4. **Les trois outils de diagnostic** (`diagnostic.php`, `debug-500.php`,
+5. **Les trois outils de diagnostic** (`diagnostic.php`, `debug-500.php`,
    `diagnostic-avis.php`) sont désormais protégés : ils exigent une session
    d'administrateur, ou la clé indiquée en clair au début de chaque fichier
    (`?cle=bellevue-diag`, `?cle=bellevue-debug`, `?cle=bellevue-avis`). Les
    laisser sur le serveur ne présente plus de risque ; les supprimer reste
    possible.
 
-5. **Trois fichiers sont à supprimer** du serveur, s'ils y sont encore :
+6. **Trois fichiers sont à supprimer** du serveur, s'ils y sont encore :
    `check_db.php`, `fetch_datatourisme.php` (scripts de debug qui exposaient le
    schéma de la base et la clé Datatourisme) et `bellevue_debug_mail.log` (il
    contient des adresses e-mail de clients, à la racine web).
@@ -142,10 +150,12 @@ Dans l'ordre, en notant tout ce qui cloche :
 | `https://bellevuedaveyron.fr/llms.txt` | Le fichier s'affiche |
 | `https://bellevuedaveyron.fr/config/db.php` | **Erreur 403** — si le fichier se télécharge, le `.htaccess` n'est pas monté |
 | `https://bellevuedaveyron.fr/admin/` | Page de connexion, puis tableau de bord |
-| Administration → **Audience du site** | Les tuiles s'affichent ; la carte se charge depuis un service externe |
+| Administration → **Audience du site** | Les tuiles s'affichent et **la carte du monde apparaît**, la France colorée. Si le message « la carte n'a pas pu s'afficher » s'affiche, c'est que le dossier `js/vendor/` n'a pas été téléversé |
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
-| Formulaire de réservation du site | **Faire un envoi de test** : le mail arrive bien aux destinataires réglés |
+| Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
+| Section **Réserver votre séjour** | Le calendrier s'affiche, les semaines déjà louées apparaissent grisées et barrées. Cliquez une arrivée puis un départ : le récapitulatif se remplit et l'intitulé du bouton devient « Demander cette période » |
+| Formulaire de réservation du site | **Faire un envoi de test** : les deux messages arrivent, mis en forme. Prenez plus de trois secondes à le remplir, sans quoi la protection anti-robots l'écarte |
 
 Si les tarifs n'apparaissent pas ou si l'administration répond « Service
 temporairement indisponible » : `config/secrets.php` est absent, mal nommé, ou
@@ -165,7 +175,13 @@ une valeur est erronée. C'est la cause dans la quasi-totalité des cas.
 3. **Valider les distances** de la page Découvrir avec un calculateur
    d'itinéraire, et me signaler les écarts : elles alimentent aussi le balisage
    et `llms.txt`.
-4. **Photos** : voir `docs/seo-ia/installer-python-windows.md` et
+4. **Authentifier le domaine pour l'e-mail** : SPF, DKIM et DMARC, dans
+   hPanel → Domaines → Zone DNS. C'est ce qui décide, chez Gmail et Outlook,
+   du sort de vos messages, et ce qui rétablit le plus vite la réputation du
+   domaine après une suspension. Marche à suivre dans
+   `docs/securite-mail.md`. Contrôle ensuite avec un envoi de test vers
+   <https://www.mail-tester.com> : viser 9 ou 10 sur 10.
+5. **Photos** : voir `docs/seo-ia/installer-python-windows.md` et
    `images/decouvrir/README.md`. Rien d'urgent, le site est complet sans elles.
 
 ---
@@ -215,9 +231,27 @@ place : il n'est utilisé que par la nouvelle version.
   limitrophes, pages vues. Les tables se créent seules à la première
   ouverture de l'écran.
 - Annonces : bandeau d'information publiable depuis l'administration.
-- Mots de passe sortis du code ; `?show_log=1` et les deux scripts de
-  maintenance de l'administration désormais réservés aux administrateurs
-  connectés.
+- Tarifs présentés par saison (haute, moyenne, basse), avec équivalent par
+  nuit et conditions de location explicites.
+- Formulaire de réservation protégé : champ piège, délai minimal, limitation
+  par réseau, contrôle du contenu, validation des destinataires et des
+  en-têtes. C'est la réponse à la suspension de la boîte d'envoi — voir
+  `docs/securite-mail.md`.
+- Couche d'envoi reprise : échappement du point, en-têtes `Date` et
+  `Message-ID`, réponses du serveur vérifiées, encodage conforme.
+- Les deux messages du formulaire — celui des propriétaires et l'accusé de
+  réception du client — sont désormais mis en forme à l'image du site, en
+  HTML doublé d'une version texte.
+- Carte de l'écran Audience servie par le site : elle ne dépend plus d'un
+  réseau de diffusion externe, qui était injoignable et laissait la zone vide.
+- Section Réservation entièrement refaite : deux étapes numérotées, un seul
+  bouton dont l'intitulé suit l'état de la sélection, semaines louées
+  reconnaissables au premier coup d'œil, et calendrier utilisable au clavier
+  comme au doigt.
+- Mots de passe sortis du code ; les deux scripts de maintenance de
+  l'administration désormais réservés aux administrateurs connectés.
+- `index.php?show_log=1` et le fichier `bellevue_debug_mail.log` supprimés :
+  ce journal siégeait à la racine du site avec les adresses de vos clients.
 
 **Prérequis serveur** : PHP 7.4 ou plus récent (Hostinger propose 8.x par
 défaut ; vérifiable dans hPanel → Avancé → Configuration PHP).

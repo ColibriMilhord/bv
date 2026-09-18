@@ -4,7 +4,7 @@
 > propriétaires, à Sainte-Eulalie-d'Olt (12130, Aveyron, Occitanie), village classé
 > parmi les Plus Beaux Villages de France. 5 chambres, jusqu'à 10 personnes,
 > piscine privée chauffée, parc de 5 000 m², vue panoramique sur la vallée du Lot,
-> accessible de plain-pied aux personnes à mobilité réduite.
+> rez-de-chaussée de plain-pied accessible aux personnes à mobilité réduite.
 > Note 5,0/5 sur Google (102 avis au 8 septembre 2026 ; le compteur affiché
 > sur le site est synchronisé quotidiennement avec Google).
 
@@ -31,8 +31,9 @@ en JSON-LD (schema.org) sur les pages correspondantes.
 - Piscine privée 4 x 8 m, chauffée à partir de mai, volet roulant sécurisé homologué
 - Vue panoramique 360° sur la vallée du Lot et les monts d'Aubrac, orientation plein sud
 - Bâtisse familiale en galets du Lot et toiture en lauze, ancienne ferme vigneronne rénovée
-- Accessibilité PMR : plain-pied intégral, chambre et salle de bain adaptées au
-  rez-de-chaussée, piste aménagée du parking à la maison
+- Accessibilité PMR : rez-de-chaussée de plain-pied, sans aucune marche, avec chambre
+  et salle de bain adaptées et piste aménagée du parking à la maison. La villa compte
+  un étage desservi par un escalier ; un séjour complet se vit au rez-de-chaussée.
 - Borne de recharge pour véhicule électrique 18 kVA, toutes marques, incluse
 - Fibre optique 1 Gbit/s, Wi-Fi dans toute la villa
 - Baby-foot Bonzini professionnel, 6 vélos adultes et 5 vélos enfants
