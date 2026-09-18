@@ -43,10 +43,22 @@ function antispam_migrer(?PDO $pdo): bool
                 prefixe_ip VARCHAR(45) NULL,
                 accepte    TINYINT(1)  NOT NULL DEFAULT 1,
                 motif      VARCHAR(60) NULL,
+                campagne   VARCHAR(120) NULL,
                 INDEX idx_prefixe (prefixe_ip),
                 INDEX idx_date (envoye_le)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
+
+        // Colonne ajoutée après coup sur une table déjà en place : elle
+        // rattache une demande à l'annonce qui a amené le visiteur.
+        try {
+            if (!$pdo->query("SHOW COLUMNS FROM envois_formulaire LIKE 'campagne'")->fetch()) {
+                $pdo->exec("ALTER TABLE envois_formulaire ADD COLUMN campagne VARCHAR(120) DEFAULT NULL");
+            }
+        } catch (PDOException $e) {
+            // Sans incidence : le suivi par campagne sera simplement vide.
+        }
+
         return true;
     } catch (PDOException $e) {
         error_log('[bellevue] antispam : création de la table impossible — ' . $e->getMessage());
@@ -163,13 +175,21 @@ function antispam_journaliser(?PDO $pdo, bool $accepte, string $motif = ''): voi
     if (!$pdo) return;
 
     try {
+        // La campagne d'origine n'est notée que pour une demande acceptée :
+        // c'est la seule qui compte pour savoir ce que rapporte une annonce.
+        $campagne = $accepte && function_exists('stats_campagne_du_visiteur')
+            ? stats_campagne_du_visiteur($pdo)
+            : null;
+
         $pdo->prepare(
-            "INSERT INTO envois_formulaire (envoye_le, prefixe_ip, accepte, motif) VALUES (?, ?, ?, ?)"
+            "INSERT INTO envois_formulaire (envoye_le, prefixe_ip, accepte, motif, campagne)
+             VALUES (?, ?, ?, ?, ?)"
         )->execute([
             date('Y-m-d H:i:s'),
             stats_prefixe_ip(stats_ip()),
             $accepte ? 1 : 0,
             $motif !== '' ? mb_substr($motif, 0, 60) : null,
+            $campagne,
         ]);
     } catch (Throwable $e) {
         // Journalisation défaillante : sans incidence sur l'envoi.

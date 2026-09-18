@@ -154,6 +154,7 @@ Dans l'ordre, en notant tout ce qui cloche :
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
 | Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
+| Administration → **Audience du site** → « Campagnes publicitaires » | Le bloc s'affiche ; sans campagne en cours, il explique comment étiqueter un lien d'annonce (voir `docs/campagnes-publicitaires.md`) |
 | Section **Réserver votre séjour** | Le calendrier s'affiche, les semaines déjà louées apparaissent grisées et barrées. Cliquez une arrivée puis un départ : le récapitulatif se remplit et l'intitulé du bouton devient « Demander cette période » |
 | Formulaire de réservation du site | **Faire un envoi de test** : les deux messages arrivent, mis en forme. Prenez plus de trois secondes à le remplir, sans quoi la protection anti-robots l'écarte |
 
@@ -242,6 +243,9 @@ place : il n'est utilisé que par la nouvelle version.
 - Les deux messages du formulaire — celui des propriétaires et l'accusé de
   réception du client — sont désormais mis en forme à l'image du site, en
   HTML doublé d'une version texte.
+- Suivi des campagnes publicitaires sans traceur ni cookie : les paramètres
+  posés au bout d'un lien d'annonce sont comptés, et les demandes qui en
+  découlent rattachées. Les colonnes se créent seules.
 - Carte de l'écran Audience servie par le site : elle ne dépend plus d'un
   réseau de diffusion externe, qui était injoignable et laissait la zone vide.
 - Section Réservation entièrement refaite : deux étapes numérotées, un seul
