@@ -1,0 +1,109 @@
+# =============================================================================
+# .htaccess — racine du site
+# -----------------------------------------------------------------------------
+# L'hébergement déploie le dépôt Git directement dans le dossier public. Tout
+# ce qui est versionné se retrouve donc accessible par le web, y compris ce qui
+# n'a jamais été destiné à l'être : l'historique Git, la documentation interne,
+# les scripts de maintenance.
+#
+# Ce fichier ferme ces accès. Il s'applique à la racine et à tous les
+# sous-dossiers ; les .htaccess de config/ et ARCHIVE/ restent en place, en
+# second rideau.
+#
+# Rien ici ne modifie le fonctionnement du site : seules des adresses qui
+# n'auraient jamais dû répondre cessent de répondre.
+# =============================================================================
+
+# ── Pas de listage de dossier ────────────────────────────────────────────────
+# Sans cette ligne, un dossier sans page d'index affiche son contenu.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # ── Fichiers et dossiers cachés ──────────────────────────────────────────
+    # .git en premier lieu : son contenu permet de reconstituer l'intégralité
+    # du code et de son histoire, mots de passe d'alors compris. Également
+    # .gitignore, .env, les fichiers d'éditeur.
+    #
+    # Exception : .well-known/, utilisé par les certificats TLS. Le bloquer
+    # empêcherait leur renouvellement.
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule (^|/)\. - [F,L]
+
+    # ── Dossiers qui n'ont rien à faire sur le web ───────────────────────────
+    #   docs/       documentation interne (dont le suivi de l'incident e-mail)
+    #   tools/      scripts de maintenance
+    #   phpmailer/  bibliothèque, jamais appelée directement
+    #   partials/   fragments inclus côté serveur
+    #   cache/      cache applicatif
+    #   ARCHIVE/    anciennes versions du site
+    #   config/     configuration et secrets
+    RewriteRule ^(docs|tools|phpmailer|partials|cache|ARCHIVE|config)(/|$) - [F,L]
+</IfModule>
+
+# ── Extensions à ne jamais servir ────────────────────────────────────────────
+# Documentation, exports de base, journaux, sauvegardes, scripts.
+# robots.txt, sitemap.xml et llms.txt ne sont pas concernés : ils doivent
+# rester lisibles.
+<FilesMatch "\.(md|sql|log|bak|old|save|swp|swo|orig|rej|zip|tar|gz|tgz|yml|yaml|ini|sh|py|lock|dist|example)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ── Fichier de configuration resté à la racine ───────────────────────────────
+# config_datatourisme.php contient une clé d'accès au flux touristique. PHP ne
+# la divulgue pas en s'exécutant, mais ce fichier n'a aucune raison de répondre
+# à une requête directe. À terme, cette clé a sa place dans config/secrets.php.
+<Files "config_datatourisme.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# ── En-têtes de sécurité ─────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    # Empêche le navigateur de deviner un type de fichier autre que celui
+    # annoncé — la voie classique pour faire exécuter une image comme un script.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Interdit l'affichage du site dans un cadre sur un autre domaine, ce qui
+    # permettrait de faire cliquer un visiteur à son insu.
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Le site référent n'est transmis qu'en HTTPS et sans le détail du chemin.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Aucune page n'a besoin de la caméra, du micro ni de la géolocalisation.
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+</IfModule>
+
+# =============================================================================
+# FACULTATIF — adresse canonique
+# -----------------------------------------------------------------------------
+# Le site doit répondre à une seule adresse : https://bellevuedaveyron.fr.
+# Servi aussi en « www », en « .com » ou en clair, il se fait concurrence à
+# lui-même dans les moteurs de recherche.
+#
+# Les lignes ci-dessous redirigent tout vers l'adresse canonique. Elles sont
+# volontairement désactivées : activez-les seulement après avoir vérifié que
+# le domaine .fr répond bien, et que vous n'utilisez pas d'adresse de
+# prévisualisation de l'hébergeur. Pour les activer, retirez le « # » devant
+# les six lignes qui suivent.
+#
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTPS} !=on [OR]
+#     RewriteCond %{HTTP_HOST} !^bellevuedaveyron\.fr$ [NC]
+#     RewriteRule ^(.*)$ https://bellevuedaveyron.fr/$1 [R=301,L]
+# </IfModule>
+# =============================================================================
