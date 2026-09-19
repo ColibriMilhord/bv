@@ -312,11 +312,7 @@ function stats_enregistrer(?PDO $pdo, string $page): void
             $referent = $hote && strpos($hote, 'bellevuedaveyron') === false ? $hote : '';
         }
 
-        $stmt = $pdo->prepare(
-            "INSERT INTO visites (vue_le, jour, page, prefixe_ip, pays, visiteur, referent, appareil, campagne)
-             VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)"
-        );
-        $stmt->execute([
+        $valeurs = [
             date('Y-m-d H:i:s'),
             date('Y-m-d'),
             substr($page, 0, 190),
@@ -325,7 +321,40 @@ function stats_enregistrer(?PDO $pdo, string $page): void
             substr($referent, 0, 190) ?: null,
             stats_appareil($ua),
             stats_campagne(),
-        ]);
+        ];
+
+        $ecrire = function () use ($pdo, $valeurs) {
+            $pdo->prepare(
+                "INSERT INTO visites (vue_le, jour, page, prefixe_ip, pays, visiteur, referent, appareil, campagne)
+                 VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)"
+            )->execute($valeurs);
+        };
+
+        try {
+            $ecrire();
+        } catch (PDOException $e) {
+            // Le schéma n'est pas à jour : table absente après une première
+            // mise en ligne, ou colonne ajoutée par une version plus récente.
+            //
+            // Les migrations ne se jouaient qu'à l'ouverture des écrans
+            // d'administration ; entre le déploiement et la première visite du
+            // propriétaire, chaque page publique échouait à s'enregistrer et
+            // remplissait le journal d'erreurs. La mise à jour est donc tentée
+            // ici, une seule fois par requête, puis l'écriture est reprise.
+            static $reparation = false;
+
+            // Le code d'état est lu aux deux endroits où les pilotes le
+            // déposent : tous ne renseignent pas getCode().
+            $etats = [(string) $e->getCode()];
+            if (isset($e->errorInfo[0])) $etats[] = (string) $e->errorInfo[0];
+
+            $recuperable = (bool) array_intersect($etats, ['42S02', '42S22']);
+            if ($reparation || !$recuperable) throw $e;
+
+            $reparation = true;
+            stats_migrer($pdo);
+            $ecrire();
+        }
     } catch (Throwable $e) {
         // Silencieux par construction : la mesure ne doit rien casser.
         error_log('[bellevue] stats : enregistrement impossible — ' . $e->getMessage());
