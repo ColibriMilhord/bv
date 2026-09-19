@@ -82,6 +82,84 @@ function seo_asset(string $chemin): string
     return $chemin . '?v=' . $version;
 }
 
+/**
+ * Version en ligne, pour repérer un décalage entre le dépôt et le serveur.
+ * ---------------------------------------------------------------------------
+ * L'hébergement déploie le dépôt Git : le dossier .git est donc présent sur le
+ * serveur, et l'empreinte du dernier commit s'y lit sans rien exécuter. Elle
+ * répond à la seule question qui compte quand un correctif ne semble pas
+ * appliqué : « la version en ligne est-elle bien la dernière ? »
+ *
+ * Si .git est absent — archive téléversée à la main — la date de modification
+ * des fichiers du site sert de repère. Moins précis, mais jamais faux.
+ *
+ * @return array{ref:string, date:string} empreinte courte et date
+ */
+function seo_version(): array
+{
+    static $version = null;
+    if ($version !== null) return $version;
+
+    $racine = __DIR__ . '/..';
+    $ref    = '';
+    $horodatage = 0;
+
+    $tete = $racine . '/.git/HEAD';
+    if (is_readable($tete)) {
+        $contenu = trim((string) @file_get_contents($tete));
+
+        if (strpos($contenu, 'ref:') === 0) {
+            // Branche : l'empreinte est dans le fichier de référence…
+            $chemin = $racine . '/.git/' . trim(substr($contenu, 4));
+            if (is_readable($chemin)) {
+                $ref = substr(trim((string) @file_get_contents($chemin)), 0, 7);
+                $horodatage = (int) @filemtime($chemin);
+            } else {
+                // …ou dans packed-refs, quand Git a compacté ses références.
+                $paquet = $racine . '/.git/packed-refs';
+                $nom    = trim(substr($contenu, 4));
+                if (is_readable($paquet)) {
+                    foreach (file($paquet) as $ligne) {
+                        if (substr($ligne, -strlen($nom) - 1) === $nom . "\n") {
+                            $ref = substr(trim($ligne), 0, 7);
+                            $horodatage = (int) @filemtime($paquet);
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            // HEAD détaché : l'empreinte est écrite directement.
+            $ref = substr($contenu, 0, 7);
+            $horodatage = (int) @filemtime($tete);
+        }
+    }
+
+    if (!$horodatage) {
+        foreach (['index.php', 'config/seo.php', 'css/style.css', 'js/script.js'] as $f) {
+            $chemin = $racine . '/' . $f;
+            if (is_file($chemin)) $horodatage = max($horodatage, (int) filemtime($chemin));
+        }
+    }
+
+    return $version = [
+        'ref'  => preg_match('/^[0-9a-f]{7}$/', $ref) ? $ref : '',
+        'date' => $horodatage ? date('d/m/Y', $horodatage) : '',
+    ];
+}
+
+/** Version en une ligne : « v. 1e9316b — 19/09/2026 ». */
+function seo_version_texte(): string
+{
+    $v = seo_version();
+
+    if ($v['ref'] !== '' && $v['date'] !== '') return 'v. ' . $v['ref'] . ' — ' . $v['date'];
+    if ($v['ref'] !== '')  return 'v. ' . $v['ref'];
+    if ($v['date'] !== '') return 'mise à jour du ' . $v['date'];
+
+    return '';
+}
+
 /** Échappement HTML court. */
 function seo_e(?string $value): string {
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

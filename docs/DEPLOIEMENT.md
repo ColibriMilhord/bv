@@ -207,10 +207,36 @@ https://bellevuedaveyron.fr/.git/HEAD        → doit renvoyer 403 ou 404
 https://bellevuedaveyron.fr/docs/            → doit renvoyer 403
 ```
 
-**2. `config/secrets.php` n'est pas dans le dépôt** — c'est voulu. Vérifiez
-qu'un déploiement ne l'efface pas : si les tarifs disparaissent de la page
-d'accueil après une mise en ligne, c'est lui. Gardez-en une copie hors du
-serveur.
+**2. `config/secrets.php` n'est pas dans le dépôt** — c'est voulu, et c'est le
+piège principal de ce mode de déploiement : **un déploiement Git peut l'effacer**,
+puisqu'il remplace le dossier par le contenu du dépôt, où ce fichier n'existe pas.
+
+Les symptômes sont trompeurs : le site continue de s'afficher, mais les
+identifiants sont vides. **Les envois de courrier échouent silencieusement**, et
+les tarifs peuvent disparaître de la page d'accueil.
+
+Pour savoir où vous en êtes, ouvrez :
+
+```
+https://bellevuedaveyron.fr/diagnostic.php?cle=bellevue-diag
+```
+
+La ligne `config/secrets.php` doit être verte. Si elle est rouge, le fichier est
+absent : recréez-le à partir de `config/secrets.example.php`, qui est livré avec
+le site dans le dossier `config/`. **Gardez-en une copie hors du serveur** —
+vous en aurez besoin après chaque déploiement qui l'efface.
+
+Pour tester l'envoi de courrier en lisant la réponse exacte du serveur :
+
+```
+https://bellevuedaveyron.fr/diagnostic.php?cle=bellevue-diag&smtp=1
+```
+
+Ce contrôle ouvre une vraie connexion et tente une authentification. Le mot de
+passe n'est jamais affiché ; la réponse du serveur, si. C'est elle qui dit si la
+boîte est suspendue, le mot de passe erroné, ou le réglage absent. Ne le lancez
+pas en boucle : des tentatives répétées sont précisément ce qui fait fermer une
+boîte d'envoi.
 
 **3. Une erreur dans le `.htaccess` met tout le site en erreur 500.** Le
 remède tient en un geste : dans le gestionnaire de fichiers, renommez
@@ -275,6 +301,13 @@ place : il n'est utilisé que par la nouvelle version.
 - Les deux messages du formulaire — celui des propriétaires et l'accusé de
   réception du client — sont désormais mis en forme à l'image du site, en
   HTML doublé d'une version texte.
+- Le site n'annonce plus une demande « bien reçue » quand aucun message n'a pu
+  partir : il dit ce qui s'est passé et invite à appeler. La demande reste
+  enregistrée en base.
+- `diagnostic.php?…&smtp=1` teste l'envoi de courrier et affiche la réponse du
+  serveur de messagerie.
+- Numéro de version en pied de page : il permet de vérifier d'un coup d'œil
+  que le site en ligne correspond bien à la dernière version publiée.
 - `.htaccess` à la racine : ferme `.git/`, `docs/`, `tools/`, `phpmailer/`,
   `partials/`, `cache/`, les fichiers cachés et les extensions sensibles —
   nécessaire depuis que l'hébergement déploie le dépôt tel quel. Ajoute aussi

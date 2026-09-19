@@ -1279,7 +1279,12 @@ try {
             <span class="separator">•</span>
             <a href="politique.php?retour=decouvrir.php&amp;section=agenda">Politique de Confidentialité</a>
         </div>
-        <div class="signature">Excellence &amp; Tradition</div>
+        <div class="signature">
+            Excellence &amp; Tradition
+            <?php $v = seo_version_texte(); if ($v !== ''): ?>
+                <span class="version" title="Version en ligne — à comparer au dépôt en cas de doute"><?php echo seo_e($v); ?></span>
+            <?php endif; ?>
+        </div>
     </div>
 </footer>
 

@@ -2799,6 +2799,17 @@ header:not(#navbar) {
     z-index: auto;
 }
 
+/* Numéro de version en pied de page : repère discret pour vérifier que le
+   site en ligne correspond bien à la dernière version publiée. */
+.signature .version {
+    display: block;
+    margin-top: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .68rem;
+    letter-spacing: .04em;
+    color: rgba(255, 255, 255, .28);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    RÉSERVATION
    ──────────────────────────────────────────────────────────────────────────

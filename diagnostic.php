@@ -194,7 +194,69 @@ if (!is_dir($cache)) {
     );
 }
 
-// ── 7. Journal d'erreurs PHP ───────────────────────────────────────────────
+// ── 7. Serveur de messagerie (sur demande) ─────────────────────────────────
+// Ce contrôle ouvre une vraie connexion et tente une authentification. Il
+// n'est donc pas lancé à chaque ouverture de la page : une suite de tentatives
+// répétées est exactement ce qui fait fermer une boîte d'envoi. Il se déclenche
+// en ajoutant &smtp=1 à l'adresse.
+//
+// Le mot de passe n'est jamais affiché. Seule la réponse du serveur l'est —
+// c'est elle qui dit si la boîte est suspendue, le mot de passe erroné, ou le
+// réglage simplement absent.
+if (isset($_GET['smtp']) && is_file($racine . '/config/mail_config.php')) {
+    require_once $racine . '/config/env.php';
+    require_once $racine . '/config/mail_config.php';
+
+    if (SMTP_USER === '' || SMTP_PASS === '') {
+        verdict($lignes, 'ko', 'Envoi de courrier',
+            'SMTP_USER ou SMTP_PASS est vide — config/secrets.php est absent ou incomplet. '
+            . "Aucun envoi n'est possible tant que ce n'est pas corrigé.");
+    } else {
+        $flux = @fsockopen('ssl://' . SMTP_HOST, SMTP_PORT, $errno, $errstr, 10);
+
+        if (!$flux) {
+            verdict($lignes, 'ko', 'Connexion à ' . SMTP_HOST . ':' . SMTP_PORT,
+                $errstr . ' (' . $errno . ')');
+        } else {
+            stream_set_timeout($flux, 10);
+
+            $lire = function ($flux) {
+                $reponse = '';
+                while ($ligne = fgets($flux, 515)) {
+                    $reponse .= $ligne;
+                    if (substr($ligne, 3, 1) === ' ') break;
+                }
+                return trim($reponse);
+            };
+
+            $banniere = $lire($flux);
+            verdict($lignes, 'ok', 'Connexion à ' . SMTP_HOST . ':' . SMTP_PORT, $banniere);
+
+            fputs($flux, "EHLO diagnostic\r\n");  $lire($flux);
+            fputs($flux, "AUTH LOGIN\r\n");       $lire($flux);
+            fputs($flux, base64_encode(SMTP_USER) . "\r\n"); $lire($flux);
+            fputs($flux, base64_encode(SMTP_PASS) . "\r\n");
+            $auth = $lire($flux);
+
+            fputs($flux, "QUIT\r\n");
+            fclose($flux);
+
+            if (strpos($auth, '235') === 0) {
+                verdict($lignes, 'ok', 'Authentification de ' . SMTP_USER,
+                    'acceptée — la boîte est active et le mot de passe correct');
+            } else {
+                verdict($lignes, 'ko', 'Authentification de ' . SMTP_USER,
+                    'REFUSÉE — réponse du serveur : ' . $auth);
+            }
+        }
+    }
+} elseif (is_file($racine . '/config/mail_config.php')) {
+    verdict($lignes, 'info', 'Envoi de courrier',
+        'non testé — ajoutez &smtp=1 à l\'adresse de cette page pour tenter une '
+        . 'connexion au serveur de messagerie et lire sa réponse.');
+}
+
+// ── 8. Journal d'erreurs PHP ───────────────────────────────────────────────
 $journaux = array_filter([
     ini_get('error_log') ?: null,
     $racine . '/error_log',
