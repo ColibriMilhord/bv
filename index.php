@@ -232,12 +232,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
-        if (!$mailSent) {
-            $errorMsg = "Erreur lors de l'envoi de l'email. Merci de nous contacter par téléphone.";
+        // ── Ce que voit le visiteur ────────────────────────────────────────
+        // La confirmation n'est affichée que si un message est réellement
+        // parti. Auparavant elle l'était dans tous les cas : un visiteur
+        // repartait rassuré alors que sa demande n'était arrivée nulle part.
+        // La demande reste enregistrée en base, elle : elle n'est pas perdue.
+        if ($mailSent) {
+            $bookingSuccess = true;
+        } else {
+            error_log('[bellevue] aucune notification envoyée — ' . implode(' | ', $mail_errors));
+            $errorMsg = "Votre demande est bien enregistrée, mais notre serveur de messagerie "
+                      . "ne répond pas. Merci de nous appeler au " . SEO_PHONE_HUMAN
+                      . " pour que nous la traitions sans attendre.";
         }
 
-        $mailDebug      = $mailSent ? "SMTP OK" : "SMTP FAIL";
-        $bookingSuccess = true;
+        $mailDebug = $mailSent ? "SMTP OK" : "SMTP FAIL";
 
     } catch (Exception $e) {
         $errorMsg = $e->getMessage();
@@ -849,7 +858,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <span class="separator">•</span>
             <a href="politique.php?retour=index.php&amp;section=reservation">Politique de Confidentialité</a>
         </div>
-        <div class="signature">Excellence &amp; Tradition</div>
+        <div class="signature">
+            Excellence &amp; Tradition
+            <?php $v = seo_version_texte(); if ($v !== ''): ?>
+                <span class="version" title="Version en ligne — à comparer au dépôt en cas de doute"><?php echo seo_e($v); ?></span>
+            <?php endif; ?>
+        </div>
     </div>
 </footer>
 
