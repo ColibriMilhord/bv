@@ -149,6 +149,8 @@ Dans l'ordre, en notant tout ce qui cloche :
 | `https://bellevuedaveyron.fr/sitemap.xml` | Le fichier s'affiche |
 | `https://bellevuedaveyron.fr/llms.txt` | Le fichier s'affiche |
 | `https://bellevuedaveyron.fr/config/db.php` | **Erreur 403** — si le fichier se télécharge, le `.htaccess` n'est pas monté |
+| `https://bellevuedaveyron.fr/.git/HEAD` | **Erreur 403 ou 404** — si le fichier s'affiche, tout l'historique du code est public |
+| `https://bellevuedaveyron.fr/docs/securite-mail.md` | **Erreur 403** |
 | `https://bellevuedaveyron.fr/admin/` | Page de connexion, puis tableau de bord |
 | Administration → **Audience du site** | Les tuiles s'affichent et **la carte du monde apparaît**, la France colorée. Si le message « la carte n'a pas pu s'afficher » s'affiche, c'est que le dossier `js/vendor/` n'a pas été téléversé |
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
@@ -184,6 +186,36 @@ une valeur est erronée. C'est la cause dans la quasi-totalité des cas.
    <https://www.mail-tester.com> : viser 9 ou 10 sur 10.
 5. **Photos** : voir `docs/seo-ia/installer-python-windows.md` et
    `images/decouvrir/README.md`. Rien d'urgent, le site est complet sans elles.
+
+---
+
+## Déploiement par Git — ce qu'il faut savoir
+
+L'hébergement est relié au dépôt : le contenu de la branche est copié tel quel
+dans le dossier public du site. Trois conséquences.
+
+**1. Tout ce qui est versionné devient accessible par le web.** C'est pourquoi
+un `.htaccess` a été ajouté à la racine : il ferme `.git/`, `docs/`, `tools/`,
+`phpmailer/`, `partials/`, `cache/`, les fichiers commençant par un point et
+les extensions sensibles. Sans lui, `/.git/HEAD` se télécharge — et avec lui
+l'intégralité du code et de son histoire.
+
+Après chaque déploiement, une vérification suffit :
+
+```
+https://bellevuedaveyron.fr/.git/HEAD        → doit renvoyer 403 ou 404
+https://bellevuedaveyron.fr/docs/            → doit renvoyer 403
+```
+
+**2. `config/secrets.php` n'est pas dans le dépôt** — c'est voulu. Vérifiez
+qu'un déploiement ne l'efface pas : si les tarifs disparaissent de la page
+d'accueil après une mise en ligne, c'est lui. Gardez-en une copie hors du
+serveur.
+
+**3. Une erreur dans le `.htaccess` met tout le site en erreur 500.** Le
+remède tient en un geste : dans le gestionnaire de fichiers, renommez
+`.htaccess` en `.htaccess-hs`. Le site revient aussitôt, sans ses protections,
+le temps de corriger.
 
 ---
 
@@ -243,6 +275,11 @@ place : il n'est utilisé que par la nouvelle version.
 - Les deux messages du formulaire — celui des propriétaires et l'accusé de
   réception du client — sont désormais mis en forme à l'image du site, en
   HTML doublé d'une version texte.
+- `.htaccess` à la racine : ferme `.git/`, `docs/`, `tools/`, `phpmailer/`,
+  `partials/`, `cache/`, les fichiers cachés et les extensions sensibles —
+  nécessaire depuis que l'hébergement déploie le dépôt tel quel. Ajoute aussi
+  quelques en-têtes de sécurité, et propose en option la redirection vers
+  l'adresse canonique.
 - Suivi des campagnes publicitaires sans traceur ni cookie : les paramètres
   posés au bout d'un lien d'annonce sont comptés, et les demandes qui en
   découlent rattachées. Les colonnes se créent seules.
