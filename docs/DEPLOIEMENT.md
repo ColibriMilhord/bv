@@ -208,8 +208,23 @@ https://bellevuedaveyron.fr/docs/            → doit renvoyer 403
 ```
 
 **2. `config/secrets.php` n'est pas dans le dépôt** — c'est voulu, et c'est le
-piège principal de ce mode de déploiement : **un déploiement Git peut l'effacer**,
+piège principal de ce mode de déploiement : **un déploiement Git l'efface**,
 puisqu'il remplace le dossier par le contenu du dépôt, où ce fichier n'existe pas.
+
+> **Le remède définitif : placer les identifiants hors de la racine web.**
+> Créez un fichier `secrets-bellevue.php` **à côté** du dossier du site — donc
+> un niveau au-dessus de `public_html/`, par exemple
+> `/home/u424962071/domains/bellevuedaveyron.fr/secrets-bellevue.php`. Le
+> déploiement ne touche jamais à ce dossier : le fichier survit à toutes les
+> mises en ligne.
+>
+> Son contenu est exactement celui de `config/secrets.php` (voir
+> `config/secrets.example.php`). Une fois créé, `config/secrets.php` peut être
+> supprimé — s'il subsiste, il reste prioritaire, ce qui permet une transition
+> en douceur.
+>
+> La ligne « Secrets hors racine web » de `diagnostic.php` indique le chemin
+> exact attendu et s'il est en place.
 
 Les symptômes sont trompeurs : le site continue de s'afficher, mais les
 identifiants sont vides. **Les envois de courrier échouent silencieusement**, et

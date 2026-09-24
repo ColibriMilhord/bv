@@ -124,6 +124,26 @@ foreach ($fichiers as $fichier => $obligatoire) {
     }
 }
 
+// ── 3 bis. Où sont lus les secrets ─────────────────────────────────────────
+// Le déploiement Git remplace le dossier du site par le contenu du dépôt, où
+// config/secrets.php ne figure pas : il disparaît donc à chaque mise en ligne.
+// Un second emplacement, hors de la racine web, y survit. Cette ligne dit
+// lequel des deux est effectivement en place.
+if (is_file($racine . '/config/env.php')) {
+    require_once $racine . '/config/env.php';
+    $externe = secret_chemin_externe();
+
+    verdict(
+        $lignes,
+        is_file($externe) ? 'ok' : 'attention',
+        'Secrets hors racine web',
+        is_file($externe)
+            ? 'présent : ' . $externe . ' — à l\'abri des déploiements'
+            : 'absent : ' . $externe . ' — à créer, sans quoi les identifiants '
+              . 'disparaîtront à la prochaine mise en ligne'
+    );
+}
+
 // ── 4. Réglages présents dans secrets.php (jamais les valeurs) ─────────────
 $cheminSecrets = $racine . '/config/secrets.php';
 if (is_file($cheminSecrets)) {
