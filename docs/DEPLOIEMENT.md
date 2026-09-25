@@ -155,6 +155,7 @@ Dans l'ordre, en notant tout ce qui cloche :
 | Administration → **Audience du site** | Les tuiles s'affichent et **la carte du monde apparaît**, la France colorée. Si le message « la carte n'a pas pu s'afficher » s'affiche, c'est que le dossier `js/vendor/` n'a pas été téléversé |
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
+| Administration → Paramètres du Gîte → **« Envoyer un message d'essai »** | Chaque destinataire passe au vert. C'est le contrôle le plus direct de la chaîne d'envoi : aucun filtre anti-robots, et la réponse du serveur est affichée telle quelle |
 | Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
 | Administration → **Audience du site** → « Campagnes publicitaires » | Le bloc s'affiche ; sans campagne en cours, il explique comment étiqueter un lien d'annonce (voir `docs/campagnes-publicitaires.md`) |
 | Section **Réserver votre séjour** | Le calendrier s'affiche, les semaines déjà louées apparaissent grisées et barrées. Cliquez une arrivée puis un départ : le récapitulatif se remplit et l'intitulé du bouton devient « Demander cette période » |

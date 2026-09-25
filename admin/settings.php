@@ -4,6 +4,7 @@ session_start();
 require_once '../config/db.php';
 require_once '../config/mail_config.php';
 require_once '../config/notifications.php';
+require_once '../config/mail_smtp.php';
 
 if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
@@ -15,9 +16,41 @@ $colonne_destinataires = notifications_migrer($pdo);
 
 $message      = '';
 $avertissement = '';
+$essai        = [];   // résultat de l'envoi d'essai, destinataire par destinataire
+
+// ── Envoi d'essai ──────────────────────────────────────────────────────────
+// Le formulaire public ne dit pas grand-chose quand un envoi échoue, et ses
+// garde-fous anti-robots compliquent les vérifications répétées. Ce bouton
+// envoie un vrai message aux destinataires réglés et rapporte, pour chacun,
+// la réponse exacte du serveur.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['essai_envoi'])) {
+    $settings_essai = $pdo->query("SELECT * FROM gite_settings WHERE id = 1")->fetch() ?: [];
+    $quand = date('d/m/Y à H\\hi');
+
+    $texte = "Ceci est un message d'essai envoyé depuis l'administration du site.\n\n"
+           . "S'il vous parvient, la chaîne d'envoi fonctionne : le site sait joindre\n"
+           . "le serveur de messagerie, et vos demandes de réservation arriveront.\n\n"
+           . "Envoyé le " . $quand . ".\n"
+           . "Expéditeur : " . SMTP_FROM . "\n";
+
+    foreach (notifications_destinataires($settings_essai) as $adresse) {
+        $debut     = microtime(true);
+        $resultat  = send_smtp_mail($adresse, "Essai d'envoi — Bellevue d'Aveyron", $texte);
+        $essai[]   = [
+            'adresse' => $adresse,
+            'ok'      => $resultat === true,
+            'detail'  => $resultat === true ? 'accepté par le serveur' : (string) $resultat,
+            'duree'   => round(microtime(true) - $debut, 1),
+        ];
+    }
+
+    if (!$essai) {
+        $avertissement = "Aucun destinataire réglé : rien n'a pu être envoyé.";
+    }
+}
 
 // Handle Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['essai_envoi'])) {
     $frais_menage = floatval($_POST['frais_menage']);
     $acompte = intval($_POST['acompte']);
     $check_in = $_POST['check_in'];
@@ -185,6 +218,54 @@ $settings = $stmt->fetch();
                         </div>
                     </div>
                 </form>
+
+                <!-- ── Envoi d'essai ─────────────────────────────────────────
+                     Formulaire distinct : un formulaire imbriqué serait ignoré
+                     par le navigateur, et surtout l'essai ne doit pas dépendre
+                     de l'enregistrement des réglages. -->
+                <div class="mt-8 border-t border-gray-200 pt-6">
+                    <h3 class="text-base font-medium text-gray-900">Vérifier l'envoi</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Envoie un vrai message aux destinataires ci-dessus et rapporte, pour
+                        chacun, la réponse du serveur de messagerie. C'est le moyen le plus
+                        direct de savoir si la chaîne d'envoi fonctionne : contrairement au
+                        formulaire public, rien n'est filtré et la réponse est affichée telle quelle.
+                    </p>
+
+                    <form method="POST" class="mt-4">
+                        <button type="submit" name="essai_envoi" value="1"
+                            class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Envoyer un message d'essai
+                        </button>
+                    </form>
+
+                    <?php if ($essai): ?>
+                        <ul class="mt-5 space-y-2">
+                            <?php foreach ($essai as $ligne): ?>
+                                <li class="flex items-start gap-3 rounded-md border px-4 py-3 text-sm <?php
+                                    echo $ligne['ok'] ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50';
+                                ?>">
+                                    <span class="font-semibold <?php echo $ligne['ok'] ? 'text-green-700' : 'text-red-700'; ?>">
+                                        <?php echo $ligne['ok'] ? '✔' : '✖'; ?>
+                                    </span>
+                                    <span>
+                                        <span class="font-mono"><?php echo htmlspecialchars($ligne['adresse']); ?></span>
+                                        — <?php echo htmlspecialchars($ligne['detail']); ?>
+                                        <span class="text-gray-400">(<?php echo $ligne['duree']; ?> s)</span>
+                                    </span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+
+                        <?php if (array_filter(array_column($essai, 'ok'))): ?>
+                            <p class="mt-3 text-sm text-gray-500">
+                                « Accepté par le serveur » signifie que le message a bien quitté le
+                                site. S'il n'arrive pas dans la boîte, regardez le dossier
+                                <strong>indésirables</strong> : la suite ne dépend plus du site.
+                            </p>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
