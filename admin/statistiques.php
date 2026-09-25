@@ -203,7 +203,8 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                 <?php if (!$listeAutres): ?>
                     <p class="text-sm text-gray-500 py-4">Aucune visite hors de la zone proche.</p>
                 <?php else: ?>
-                    <table class="w-full text-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
                         <tbody class="divide-y divide-gray-100">
                             <?php foreach (array_slice($listeAutres, 0, 12) as $p): ?>
                                 <tr>
@@ -218,6 +219,7 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -263,7 +265,8 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                                 : 'Pas encore de données.'; ?>
                         </p>
                     <?php else: ?>
-                        <table class="w-full text-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
                             <tbody class="divide-y divide-gray-100">
                                 <?php foreach ($donnees as $d): ?>
                                     <tr>
@@ -275,6 +278,7 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
@@ -304,7 +308,8 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                     </p>
                 </div>
             <?php else: ?>
-                <table class="w-full text-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
                     <thead>
                         <tr class="text-left text-xs uppercase tracking-wide text-gray-500 border-b border-gray-200">
                             <th class="py-2 font-medium">Campagne</th>
@@ -326,6 +331,7 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
                 <p class="mt-3 text-xs text-gray-400 leading-relaxed">
                     Une demande est rattachée à la campagne du jour même&nbsp;: l'empreinte du
                     visiteur est renouvelée chaque nuit, et aucun rapprochement n'est possible
@@ -352,7 +358,8 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                 </div>
             </div>
             <?php if ($formulaire['motifs']): ?>
-                <table class="w-full text-sm mt-4">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm mt-4">
                     <tbody class="divide-y divide-gray-100">
                         <?php foreach ($formulaire['motifs'] as $motif): ?>
                             <tr>
@@ -362,6 +369,7 @@ $e = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); 
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             <?php elseif (!$formulaire['refuses']): ?>
                 <p class="text-sm text-gray-500 mt-4">Aucune tentative écartée sur la période.</p>
             <?php endif; ?>

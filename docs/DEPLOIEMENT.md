@@ -156,6 +156,7 @@ Dans l'ordre, en notant tout ce qui cloche :
 | Administration → **Annonces du site** | Le formulaire s'affiche, sans bandeau rouge |
 | Administration → **Paramètres du Gîte** | Le champ « Destinataires des demandes du formulaire » est présent, sans bandeau orange |
 | Administration → Paramètres du Gîte → **« Envoyer un message d'essai »** | Chaque destinataire passe au vert. C'est le contrôle le plus direct de la chaîne d'envoi : aucun filtre anti-robots, et la réponse du serveur est affichée telle quelle |
+| Administration → **Demandes reçues** | La liste s'affiche, la plus récente en tête. La colonne de suivi se crée seule à la première ouverture |
 | Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
 | Administration → **Audience du site** → « Campagnes publicitaires » | Le bloc s'affiche ; sans campagne en cours, il explique comment étiqueter un lien d'annonce (voir `docs/campagnes-publicitaires.md`) |
 | Section **Réserver votre séjour** | Le calendrier s'affiche, les semaines déjà louées apparaissent grisées et barrées. Cliquez une arrivée puis un départ : le récapitulatif se remplit et l'intitulé du bouton devient « Demander cette période » |
@@ -347,6 +348,11 @@ place : il n'est utilisé que par la nouvelle version.
 - Les deux messages du formulaire — celui des propriétaires et l'accusé de
   réception du client — sont désormais mis en forme à l'image du site, en
   HTML doublé d'une version texte.
+- Écran **Demandes reçues** : toutes les demandes du formulaire, avec leurs
+  coordonnées cliquables, et le repérage de celles qui n'ont pas pu être
+  notifiées. La trace ne dépend plus du courriel.
+- Administration utilisable sur téléphone : la balise `viewport` manquait sur
+  sept écrans, le navigateur rendait donc en largeur bureau avant de réduire.
 - Le site n'annonce plus une demande « bien reçue » quand aucun message n'a pu
   partir : il dit ce qui s'est passé et invite à appeler. La demande reste
   enregistrée en base.

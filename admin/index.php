@@ -18,7 +18,11 @@ $pending_count = $pdo->query("SELECT COUNT(*) FROM reservations WHERE statut = '
 $revenue_total = $pdo->query("SELECT SUM(prix_total) FROM reservations WHERE statut = 'validee'")->fetchColumn();
 
 // 3. Next Check-in
-$next_checkin = $pdo->query("SELECT * FROM reservations WHERE statut = 'validee' AND date_debut >= CURDATE() ORDER BY date_debut ASC LIMIT 1")->fetch();
+// Date calculée en PHP plutôt que par CURDATE() : la requête reste ainsi
+// vérifiable hors MySQL, comme le reste des modules du site.
+$stmt_arrivee = $pdo->prepare("SELECT * FROM reservations WHERE statut = 'validee' AND date_debut >= ? ORDER BY date_debut ASC LIMIT 1");
+$stmt_arrivee->execute([date('Y-m-d')]);
+$next_checkin = $stmt_arrivee->fetch();
 
 // 4. Occupancy Rate (Next 30 days)
 // Simplified calculation
@@ -31,6 +35,7 @@ $dernier_envoi = notifications_dernier();
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>administration - Tableau de Bord</title>
     <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -49,27 +54,32 @@ $dernier_envoi = notifications_dernier();
     <nav class="bg-white shadow-sm border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <div class="bg-blue-600 text-white p-1 rounded mr-2">
+                <div class="flex items-center min-w-0">
+                    <div class="bg-blue-600 text-white p-1 rounded mr-2 shrink-0">
                         <span class="material-symbols-outlined block">dashboard</span>
                     </div>
-                    <h1 class="text-xl font-bold text-slate-800">Administration du gite de Bellevue</h1>
+                    <h1 class="text-base sm:text-xl font-bold text-slate-800 truncate">
+                        <span class="sm:hidden">Administration</span>
+                        <span class="hidden sm:inline">Administration du gite de Bellevue</span>
+                    </h1>
                 </div>
-                <div class="flex items-center space-x-6">
-                    <a href="../index.php" target="_blank"
+                <div class="flex items-center space-x-4 sm:space-x-6 shrink-0 ml-3">
+                    <a href="../index.php" target="_blank" title="Voir le site"
                         class="text-slate-500 hover:text-blue-600 text-sm font-medium flex items-center transition">
-                        <span class="material-symbols-outlined text-lg mr-1">public</span> Voir le site
+                        <span class="material-symbols-outlined text-lg sm:mr-1">public</span>
+                        <span class="hidden sm:inline">Voir le site</span>
                     </a>
-                    <a href="logout.php"
+                    <a href="logout.php" title="Déconnexion"
                         class="text-red-600 hover:text-red-800 text-sm font-medium flex items-center transition">
-                        <span class="material-symbols-outlined text-lg mr-1">logout</span> Déconnexion
+                        <span class="material-symbols-outlined text-lg sm:mr-1">logout</span>
+                        <span class="hidden sm:inline">Déconnexion</span>
                     </a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
 
         <!-- Welcome Section -->
         <div class="mb-8">
@@ -104,7 +114,7 @@ $dernier_envoi = notifications_dernier();
         <?php endif; ?>
 
         <!-- KPIs Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10 sm:mb-12">
             <!-- KPI 1: Reservations En Attente -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition">
                 <div class="flex justify-between items-start mb-4">
@@ -169,9 +179,19 @@ $dernier_envoi = notifications_dernier();
             Menu d'Administration
         </h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 
             <!-- Card 1: Calendrier & Réservations -->
+            <a href="demandes.php"
+                class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-lg transition flex flex-col items-center text-center">
+                <div
+                    class="h-14 w-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mb-4 group-hover:bg-orange-600 group-hover:text-white transition">
+                    <span class="material-symbols-outlined text-3xl">inbox</span>
+                </div>
+                <h4 class="font-bold text-slate-800 mb-1">Demandes reçues</h4>
+                <p class="text-xs text-slate-500">Toutes les demandes du formulaire, même si le courriel n'est pas parti.</p>
+            </a>
+
             <a href="calendar.php"
                 class="group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-lg transition flex flex-col items-center text-center">
                 <div

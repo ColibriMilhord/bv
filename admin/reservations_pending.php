@@ -74,6 +74,7 @@ $pending = $pdo->query("SELECT * FROM reservations WHERE statut = 'attente' ORDE
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Demandes en Attente</title>
     <meta name="robots" content="noindex, nofollow">
     <script src="https://cdn.tailwindcss.com"></script>

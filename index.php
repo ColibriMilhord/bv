@@ -159,6 +159,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             // ainsi vérifiable hors MySQL, comme le reste des modules.
             $pdo->prepare("INSERT INTO reservations (client_nom, client_email, client_tel, date_debut, date_fin, prix_total, acompte_montant, option_menage, client_message, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'attente', ?)")
                 ->execute([$client_nom, $client_email, $client_tel, $date_debut, $date_fin, $prix_total, $acompte_montant, $option_menage, $client_note, date('Y-m-d H:i:s')]);
+
+            // Identifiant retenu pour consigner, après l'envoi, si la demande
+            // a bien prévenu quelqu'un.
+            $demande_id  = (int) $pdo->lastInsertId();
             $bookingData = ['nuits' => $nuits, 'total' => $prix_total];
         } catch (Exception $e) {}
 
@@ -240,6 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Le tableau de bord doit pouvoir dire, au premier coup d'œil, que les
         // notifications ne partent plus : sans cela la panne reste invisible.
         notifications_marquer($mailSent, $mailSent ? '' : implode(' | ', $mail_errors));
+        notifications_marquer_demande($pdo, $demande_id ?? 0, $mailSent);
 
         if ($mailSent) {
             $bookingSuccess = true;
