@@ -40,7 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['essai_envoi'])) {
         $essai[]   = [
             'adresse' => $adresse,
             'ok'      => $resultat === true,
-            'detail'  => $resultat === true ? 'accepté par le serveur' : (string) $resultat,
+            // La réponse est affichée telle quelle : elle porte l'identifiant
+            // de file, seule prise pour faire tracer un message qui n'arrive pas.
+            'detail'  => $resultat === true
+                ? (smtp_derniere_reponse() ?: 'accepté par le serveur')
+                : (string) $resultat,
             'duree'   => round(microtime(true) - $debut, 1),
         ];
     }
@@ -260,9 +264,12 @@ $settings = $stmt->fetch();
 
                         <?php if (array_filter(array_column($essai, 'ok'))): ?>
                             <p class="mt-3 text-sm text-gray-500">
-                                « Accepté par le serveur » signifie que le message a bien quitté le
-                                site. S'il n'arrive pas dans la boîte, regardez le dossier
-                                <strong>indésirables</strong> : la suite ne dépend plus du site.
+                                Une réponse en <span class="font-mono">250</span> signifie que le
+                                message a bien quitté le site, et le <span class="font-mono">queued as …</span>
+                                est son identifiant chez l'hébergeur. S'il n'arrive ni dans la boîte
+                                ni dans les <strong>indésirables</strong>, communiquez cet identifiant
+                                à l'assistance : lui seul permet de savoir ce que le message est
+                                devenu après avoir quitté le serveur.
                             </p>
                         <?php endif; ?>
                     <?php endif; ?>
