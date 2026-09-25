@@ -101,6 +101,16 @@ function antispam_compter_liens(string $texte): int
  */
 function antispam_verifier(?PDO $pdo, array $post): array
 {
+    // 0. Un administrateur connecté teste son propre formulaire.
+    //
+    // Les barrages de rythme sont faits pour un visiteur, pas pour le
+    // propriétaire qui vérifie que ses envois partent : trois essais et il
+    // était bloqué une heure, sans comprendre pourquoi. Il reste soumis au
+    // contrôle de l'adresse e-mail — une faute de frappe doit être signalée —
+    // mais ni au délai minimal ni au quota. L'exemption demande d'être
+    // authentifié dans l'espace d'administration : elle n'ouvre rien.
+    $administrateur = !empty($_SESSION['admin_id']);
+
     // 1. Champ piège : un humain ne le voit pas, donc ne le remplit pas.
     if (trim((string) ($post['site_web'] ?? '')) !== '') {
         return [false, 'champ piège rempli'];
@@ -108,7 +118,7 @@ function antispam_verifier(?PDO $pdo, array $post): array
 
     // 2. Délai de remplissage.
     $ouvert = (int) ($post['ouvert_a'] ?? 0);
-    if ($ouvert > 0 && (time() - $ouvert) < ANTISPAM_DELAI_MIN) {
+    if (!$administrateur && $ouvert > 0 && (time() - $ouvert) < ANTISPAM_DELAI_MIN) {
         return [false, 'formulaire envoyé trop vite'];
     }
 
@@ -132,6 +142,8 @@ function antispam_verifier(?PDO $pdo, array $post): array
     }
 
     // 5. Fréquence par réseau.
+    if ($administrateur) return [true, 'essai administrateur'];
+
     [$autorise, $motif] = antispam_verifier_frequence($pdo);
     if (!$autorise) return [false, $motif];
 
@@ -147,9 +159,13 @@ function antispam_verifier_frequence(?PDO $pdo): array
     if ($prefixe === null) return [true, ''];
 
     try {
+        // Les essais du propriétaire sont exclus du décompte : sans cela,
+        // trois vérifications de sa part condamneraient l'heure suivante pour
+        // les visiteurs venus du même réseau — la box du gîte, par exemple.
         $stmt = $pdo->prepare(
             "SELECT COUNT(*) FROM envois_formulaire
-              WHERE prefixe_ip = ? AND accepte = 1 AND envoye_le >= ?"
+              WHERE prefixe_ip = ? AND accepte = 1 AND envoye_le >= ?
+                AND (motif IS NULL OR motif <> 'essai administrateur')"
         );
 
         $stmt->execute([$prefixe, date('Y-m-d H:i:s', time() - 3600)]);

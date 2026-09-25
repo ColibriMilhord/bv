@@ -158,7 +158,7 @@ Dans l'ordre, en notant tout ce qui cloche :
 | Administration → **Audience du site** → « Demandes reçues par le formulaire » | Le bloc s'affiche, à zéro tant qu'aucune demande n'est passée |
 | Administration → **Audience du site** → « Campagnes publicitaires » | Le bloc s'affiche ; sans campagne en cours, il explique comment étiqueter un lien d'annonce (voir `docs/campagnes-publicitaires.md`) |
 | Section **Réserver votre séjour** | Le calendrier s'affiche, les semaines déjà louées apparaissent grisées et barrées. Cliquez une arrivée puis un départ : le récapitulatif se remplit et l'intitulé du bouton devient « Demander cette période » |
-| Formulaire de réservation du site | **Faire un envoi de test** : les deux messages arrivent, mis en forme. Prenez plus de trois secondes à le remplir, sans quoi la protection anti-robots l'écarte |
+| Formulaire de réservation du site | **Faire un envoi de test**. Connectez-vous d'abord à l'administration dans le même navigateur : le propriétaire connecté échappe au délai minimal et au quota de trois demandes par heure, et peut donc enchaîner ses essais |
 
 Si les tarifs n'apparaissent pas ou si l'administration répond « Service
 temporairement indisponible » : `config/secrets.php` est absent, mal nommé, ou
