@@ -240,6 +240,56 @@ function courriel_recap_texte(array $d, bool $avec_prix): string
 }
 
 /**
+ * Message d'essai, à l'identique de ce qu'un client reçoit.
+ * ---------------------------------------------------------------------------
+ * Il emprunte la même enveloppe, les mêmes polices et la même structure que
+ * l'accusé de réception : c'est la seule façon qu'un service de notation —
+ * mail-tester.com, par exemple — juge ce que vos clients reçoivent vraiment,
+ * et non un message en texte brut fabriqué pour l'occasion.
+ *
+ * @return array{sujet:string, texte:string, html:string}
+ */
+function courriel_essai(string $quand, string $expediteur): array
+{
+    $sujet = "Essai d'envoi — Bellevue d'Aveyron";
+
+    $texte  = "Message d'essai envoyé depuis l'administration du site.\n\n";
+    $texte .= "S'il vous parvient, la chaîne d'envoi fonctionne : le site sait joindre\n";
+    $texte .= "le serveur de messagerie, et les demandes de réservation arriveront.\n\n";
+    $texte .= "Envoyé le " . $quand . "\n";
+    $texte .= "Expéditeur : " . $expediteur . "\n\n";
+    $texte .= "Ce message reprend exactement la mise en forme des accusés de réception\n";
+    $texte .= "adressés aux clients : ce qui est jugé ici vaut pour eux.\n";
+
+    $sans = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+    $contenu  = '<p style="margin:0 0 16px;">Ceci est un <strong>message d\'essai</strong>, '
+              . 'envoyé depuis l\'administration du site.</p>';
+    $contenu .= '<p style="margin:0 0 20px;">S\'il vous parvient, la chaîne d\'envoi fonctionne : '
+              . 'le site sait joindre le serveur de messagerie, et les demandes de réservation '
+              . 'arriveront à bon port.</p>';
+
+    $contenu .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+              . courriel_ligne('Envoyé le', courriel_e($quand))
+              . courriel_ligne('Expéditeur', courriel_e($expediteur))
+              . '</table>';
+
+    $contenu .= '<p style="margin:26px 0 0;padding-top:20px;border-top:1px solid #eeeae2;'
+              . 'font-family:' . $sans . ';font-size:13px;color:' . COURRIEL_DISCRET . ';">'
+              . 'Ce message reprend exactement la mise en forme des accusés de réception '
+              . 'adressés aux clients : ce qui est jugé ici vaut pour eux.</p>';
+
+    $html = courriel_enveloppe(
+        "Essai d'envoi",
+        'Vérification de la chaîne de messagerie du site.',
+        $contenu,
+        "Message d'essai — la chaîne d'envoi fonctionne."
+    );
+
+    return ['sujet' => $sujet, 'texte' => $texte, 'html' => $html];
+}
+
+/**
  * Message aux propriétaires.
  *
  * Fait pour être traité, non pour être admiré : les coordonnées d'abord, en

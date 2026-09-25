@@ -6,6 +6,7 @@ require_once '../config/mail_config.php';
 require_once '../config/notifications.php';
 require_once '../config/mail_smtp.php';
 require_once '../config/seo.php';   // pour seo_version_texte()
+require_once '../config/courriels.php';
 
 if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
@@ -26,18 +27,31 @@ $essai        = [];   // résultat de l'envoi d'essai, destinataire par destinat
 // la réponse exacte du serveur.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['essai_envoi'])) {
     $settings_essai = $pdo->query("SELECT * FROM gite_settings WHERE id = 1")->fetch() ?: [];
-    $quand = date('d/m/Y à H\\hi');
+    $courriel = courriel_essai(date('d/m/Y à H\\hi'), SMTP_FROM);
 
-    $texte = "Ceci est un message d'essai envoyé depuis l'administration du site.\n\n"
-           . "S'il vous parvient, la chaîne d'envoi fonctionne : le site sait joindre\n"
-           . "le serveur de messagerie, et vos demandes de réservation arriveront.\n\n"
-           . "Envoyé le " . $quand . ".\n"
-           . "Expéditeur : " . SMTP_FROM . "\n";
+    // Une adresse saisie remplace les destinataires réglés, le temps d'un
+    // essai. C'est ce qu'attendent les services de notation du type
+    // mail-tester.com, qui fournissent une adresse jetable à usage unique.
+    $vise = trim((string) ($_POST['essai_adresse'] ?? ''));
 
-    foreach (notifications_destinataires($settings_essai) as $adresse) {
-        $debut     = microtime(true);
-        $resultat  = send_smtp_mail($adresse, "Essai d'envoi — Bellevue d'Aveyron", $texte);
-        $essai[]   = [
+    if ($vise !== '' && !filter_var($vise, FILTER_VALIDATE_EMAIL)) {
+        $avertissement = "L'adresse d'essai « " . htmlspecialchars($vise) . " » n'est pas valide.";
+        $vise = '';
+        $cibles = [];
+    } else {
+        $cibles = $vise !== '' ? [$vise] : notifications_destinataires($settings_essai);
+    }
+
+    foreach ($cibles as $adresse) {
+        $debut    = microtime(true);
+        $resultat = send_smtp_mail(
+            $adresse,
+            $courriel['sujet'],
+            $courriel['texte'],
+            '',
+            $courriel['html']       // même mise en forme que les vrais messages
+        );
+        $essai[] = [
             'adresse' => $adresse,
             'ok'      => $resultat === true,
             // La réponse est affichée telle quelle : elle porte l'identifiant
@@ -49,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['essai_envoi'])) {
         ];
     }
 
-    if (!$essai) {
+    if (!$essai && $avertissement === '') {
         $avertissement = "Aucun destinataire réglé : rien n'a pu être envoyé.";
     }
 }
@@ -237,8 +251,22 @@ $settings = $stmt->fetch();
                         formulaire public, rien n'est filtré et la réponse est affichée telle quelle.
                     </p>
 
-                    <form method="POST" class="mt-4">
-                        <button type="submit" name="essai_envoi" value="1"
+                    <form method="POST" class="mt-4 sm:flex sm:items-end sm:gap-3">
+                        <div class="flex-1">
+                            <label for="essai_adresse" class="block text-sm font-medium text-gray-700">
+                                Envoyer plutôt à cette adresse <span class="font-normal text-gray-500">(facultatif)</span>
+                            </label>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Laissez vide pour utiliser les destinataires ci-dessus. Pour faire noter
+                                la qualité de vos envois, collez ici l'adresse jetable fournie par
+                                <span class="font-mono">mail-tester.com</span>, puis retournez sur ce site
+                                lire le résultat.
+                            </p>
+                            <input type="email" name="essai_adresse" id="essai_adresse"
+                                placeholder="exemple : test-a1b2c3@srv1.mail-tester.com"
+                                class="mt-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border font-mono">
+                        </div>
+                        <button type="submit" name="essai_envoi" value="1" class="mt-3 sm:mt-0"
                             class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Envoyer un message d'essai
                         </button>
