@@ -29,6 +29,23 @@ $next_checkin = $stmt_arrivee->fetch();
 
 // 5. La dernière notification est-elle partie ?
 $dernier_envoi = notifications_dernier();
+
+// 6. Le témoin ci-dessus vit dans un fichier de cache : un déploiement peut
+//    l'effacer. La base, elle, garde la trace. Une demande enregistrée depuis
+//    plus d'un quart d'heure et toujours pas notifiée signale une panne
+//    d'envoi, même si plus personne ne se souvient de la dernière tentative.
+$sans_notification = 0;
+if (notifications_migrer_suivi($pdo)) {
+    try {
+        $stmt_muettes = $pdo->prepare(
+            "SELECT COUNT(*) FROM reservations WHERE notifie = 0 AND created_at <= ?"
+        );
+        $stmt_muettes->execute([date('Y-m-d H:i:s', time() - 900)]);
+        $sans_notification = (int) $stmt_muettes->fetchColumn();
+    } catch (Throwable $e) {
+        $sans_notification = 0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -38,9 +55,9 @@ $dernier_envoi = notifications_dernier();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>administration - Tableau de Bord</title>
     <meta name="robots" content="noindex, nofollow">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/tailwind.css'); ?>">
+    <link rel="stylesheet" href="assets/icones.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/icones.css'); ?>">
+    <link rel="stylesheet" href="assets/inter/inter.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/inter/inter.css'); ?>">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -60,7 +77,7 @@ $dernier_envoi = notifications_dernier();
                     </div>
                     <h1 class="text-base sm:text-xl font-bold text-slate-800 truncate">
                         <span class="sm:hidden">Administration</span>
-                        <span class="hidden sm:inline">Administration du gite de Bellevue</span>
+                        <span class="hidden sm:inline">Administration du gîte de Bellevue</span>
                     </h1>
                 </div>
                 <div class="flex items-center space-x-4 sm:space-x-6 shrink-0 ml-3">
@@ -110,6 +127,23 @@ $dernier_envoi = notifications_dernier();
                         Constaté le <?php echo htmlspecialchars(date('d/m/Y à H\\hi', strtotime($dernier_envoi['quand']))); ?>.
                     </p>
                 <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($sans_notification > 0): ?>
+            <div class="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
+                <h3 class="text-sm font-semibold text-amber-900">
+                    <?php echo $sans_notification; ?>
+                    demande<?php echo $sans_notification > 1 ? 's' : ''; ?>
+                    enregistrée<?php echo $sans_notification > 1 ? 's' : ''; ?>
+                    sans courriel de notification
+                </h3>
+                <p class="mt-1 text-sm text-amber-800">
+                    Le client a bien envoyé sa demande, mais l'avis ne vous est pas parvenu.
+                    Rien n'est perdu :
+                    <a href="demandes.php?filtre=non-notifiees" class="underline font-medium">consultez-les ici</a>
+                    et rappelez directement.
+                </p>
             </div>
         <?php endif; ?>
 

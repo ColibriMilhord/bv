@@ -1,0 +1,5 @@
+/* Entrée du générateur : Tailwind remplace ces trois directives par les seules
+   règles employées par les écrans d'administration. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -93,8 +93,8 @@ $tarifs = $pdo->query("SELECT * FROM tarifs_saison ORDER BY date_debut")->fetchA
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gérer les Tarifs</title>
     <meta name="robots" content="noindex, nofollow">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/tailwind.css'); ?>">
+    <link rel="stylesheet" href="assets/icones.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/icones.css'); ?>">
 </head>
 
 <body class="bg-gray-50 min-h-screen">
@@ -129,14 +129,14 @@ $tarifs = $pdo->query("SELECT * FROM tarifs_saison ORDER BY date_debut")->fetchA
                     <ul class="divide-y divide-gray-200">
                         <?php foreach ($tarifs as $t): ?>
                             <li
-                                class="p-4 hover:bg-gray-50 flex items-center justify-between group transition <?php echo ($id_edit == $t['id']) ? 'bg-orange-50 border-l-4 border-orange-500' : ''; ?>">
-                                <div class="flex items-center">
+                                class="p-4 hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 group transition <?php echo ($id_edit == $t['id']) ? 'bg-orange-50 border-l-4 border-orange-500' : ''; ?>">
+                                <div class="flex items-start gap-3 min-w-0">
                                     <div
                                         class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                                         <?php echo substr($t['nom_saison'], 0, 1); ?>
                                     </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 flex flex-wrap items-center gap-2">
                                             <?php echo htmlspecialchars($t['nom_saison']); ?>
                                             <?php
                                             $prixTous = array_map(function ($x) { return (float) $x['prix_semaine']; }, $tarifs);
@@ -157,11 +157,11 @@ $tarifs = $pdo->query("SELECT * FROM tarifs_saison ORDER BY date_debut")->fetchA
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-center space-x-1">
-                                    <div class="text-right mr-4">
-                                        <div class="text-sm font-bold text-gray-900">
+                                <div class="flex items-center justify-between sm:justify-end gap-1 shrink-0">
+                                    <div class="text-left sm:text-right sm:mr-3">
+                                        <div class="text-sm font-bold text-gray-900 whitespace-nowrap">
                                             <?php echo number_format($t['prix_semaine'], 0, ',', ' '); ?> €</div>
-                                        <div class="text-xs text-gray-400">/ semaine</div>
+                                        <div class="text-xs text-gray-400 whitespace-nowrap">/ semaine</div>
                                     </div>
 
                                     <a href="?edit=<?php echo $t['id']; ?>"

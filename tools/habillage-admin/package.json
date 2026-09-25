@@ -1,0 +1,11 @@
+{
+  "name": "habillage-admin-bellevue",
+  "private": true,
+  "description": "Génère admin/assets/tailwind.css à partir des écrans d'administration.",
+  "scripts": {
+    "build": "tailwindcss -c tailwind.config.js -i entree.css -o ../../admin/assets/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.19"
+  }
+}

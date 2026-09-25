@@ -50,8 +50,8 @@ $users = $pdo->query("SELECT * FROM admins ORDER BY created_at DESC")->fetchAll(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gérer les Utilisateurs</title>
     <meta name="robots" content="noindex, nofollow">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/tailwind.css'); ?>">
+    <link rel="stylesheet" href="assets/icones.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/icones.css'); ?>">
 </head>
 
 <body class="bg-gray-50 min-h-screen">

@@ -61,6 +61,19 @@ $jolie_date = function (?string $iso): string {
          . $mois[(int) $d->format('n')] . ' ' . $d->format('Y');
 };
 
+/** Le libellé stocké en base, écrit comme on l'écrirait à la main. */
+$etat_lisible = function (?string $statut): string {
+    $mots = [
+        'attente'   => 'en attente',
+        'validee'   => 'validée',
+        'confirmee' => 'confirmée',
+        'annulee'   => 'annulée',
+        'refusee'   => 'refusée',
+    ];
+    $statut = (string) $statut;
+    return $mots[$statut] ?? ($statut !== '' ? $statut : '—');
+};
+
 $nuits = function (?string $a, ?string $b): int {
     $d1 = $a ? date_create($a) : null;
     $d2 = $b ? date_create($b) : null;
@@ -75,8 +88,8 @@ $nuits = function (?string $a, ?string $b): int {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>Demandes reçues — Administration</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/tailwind.css'); ?>">
+    <link rel="stylesheet" href="assets/icones.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/icones.css'); ?>">
 </head>
 
 <body class="bg-slate-50 min-h-screen">
@@ -173,7 +186,7 @@ $nuits = function (?string $a, ?string $b): int {
                                 echo $d['statut'] === 'validee'
                                     ? 'bg-green-100 text-green-700'
                                     : ($d['statut'] === 'attente' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600');
-                            ?>"><?php echo $e($d['statut']); ?></span>
+                            ?>"><?php echo $e($etat_lisible($d['statut'])); ?></span>
                         </div>
                     </div>
 
@@ -184,11 +197,13 @@ $nuits = function (?string $a, ?string $b): int {
                             <a href="mailto:<?php echo $e($d['client_email']); ?>"
                                class="text-blue-600 hover:underline truncate"><?php echo $e($d['client_email']); ?></a>
                         </div>
+                        <?php if ($tel_brut !== ''): ?>
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-base text-slate-400 shrink-0">call</span>
                             <a href="tel:<?php echo $e($tel_brut); ?>"
                                class="text-blue-600 hover:underline"><?php echo $e($d['client_tel']); ?></a>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Séjour -->

@@ -77,8 +77,8 @@ $pending = $pdo->query("SELECT * FROM reservations WHERE statut = 'attente' ORDE
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Demandes en Attente</title>
     <meta name="robots" content="noindex, nofollow">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/tailwind.css'); ?>">
+    <link rel="stylesheet" href="assets/icones.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/icones.css'); ?>">
 </head>
 
 <body class="bg-gray-50 min-h-screen">
@@ -118,30 +118,40 @@ $pending = $pdo->query("SELECT * FROM reservations WHERE statut = 'attente' ORDE
                                     <?php echo htmlspecialchars($res['client_nom']); ?>
                                 </h3>
                                 <div class="mt-2 text-sm text-gray-600 space-y-1">
-                                    <p class="flex items-center">
+                                    <?php
+                                    // Une demande d'information n'a ni dates ni montant : l'écrire
+                                    // plutôt que d'afficher « du 01/01/1970 » et « 0,00 € ».
+                                    $avec_dates = !empty($res['date_debut']) && !empty($res['date_fin']);
+                                    ?>
+                                    <p class="flex items-start">
                                         <span class="material-symbols-outlined text-gray-400 mr-2 text-lg">calendar_month</span>
-                                        Du <strong>
-                                            <?php echo date('d/m/Y', strtotime($res['date_debut'])); ?>
-                                        </strong>
-                                        au <strong>
-                                            <?php echo date('d/m/Y', strtotime($res['date_fin'])); ?>
-                                        </strong>
-                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded text-xs">
-                                            <?php
-                                            $d1 = new DateTime($res['date_debut']);
-                                            $d2 = new DateTime($res['date_fin']);
-                                            echo $d1->diff($d2)->days . " nuits";
-                                            ?>
-                                        </span>
+                                        <?php if ($avec_dates): ?>
+                                            <span>Du
+                                                <strong><?php echo date('d/m/Y', strtotime($res['date_debut'])); ?></strong>
+                                                au
+                                                <strong><?php echo date('d/m/Y', strtotime($res['date_fin'])); ?></strong>
+                                                <span class="ml-1 bg-gray-100 px-2 py-0.5 rounded text-xs whitespace-nowrap">
+                                                    <?php
+                                                    $d1 = new DateTime($res['date_debut']);
+                                                    $d2 = new DateTime($res['date_fin']);
+                                                    echo $d1->diff($d2)->days . ' nuits';
+                                                    ?>
+                                                </span>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="italic text-gray-500">Demande d'information — aucune date précisée.</span>
+                                        <?php endif; ?>
                                     </p>
-                                    <p class="flex items-center">
-                                        <span class="material-symbols-outlined text-gray-400 mr-2 text-lg">euro</span>
-                                        Total: <strong class="ml-1">
-                                            <?php echo number_format($res['prix_total'], 2); ?> €
-                                        </strong>
-                                        <?php if ($res['option_menage'])
-                                            echo " <span class='text-xs text-gray-500 ml-2'>(Ménage inclus)</span>"; ?>
-                                    </p>
+                                    <?php if ((float) $res['prix_total'] > 0): ?>
+                                        <p class="flex items-start">
+                                            <span class="material-symbols-outlined text-gray-400 mr-2 text-lg">euro</span>
+                                            <span>Total&nbsp;: <strong><?php echo number_format((float) $res['prix_total'], 2, ',', ' '); ?> €</strong>
+                                                <?php if ($res['option_menage']): ?>
+                                                    <span class="text-xs text-gray-500 ml-1">(ménage inclus)</span>
+                                                <?php endif; ?>
+                                            </span>
+                                        </p>
+                                    <?php endif; ?>
                                     <p class="flex items-center">
                                         <span class="material-symbols-outlined text-gray-400 mr-2 text-lg">mail</span>
                                         <a href="mailto:<?php echo htmlspecialchars($res['client_email']); ?>"
@@ -185,7 +195,7 @@ $pending = $pdo->query("SELECT * FROM reservations WHERE statut = 'attente' ORDE
                                     <input type="hidden" name="action" value="delete">
                                     <button type="submit"
                                         class="w-full sm:w-auto bg-red-100 hover:bg-red-200 text-red-600 px-4 py-2 rounded flex items-center justify-center font-medium shadow-sm transition">
-                                        <span class="material-symbols-outlined mr-2">delete</span>
+                                        <span class="material-symbols-outlined mr-2">delete</span> Supprimer
                                     </button>
                                 </form>
                             </div>

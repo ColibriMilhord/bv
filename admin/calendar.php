@@ -16,10 +16,12 @@ if (!isset($_SESSION['admin_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendrier des Réservations</title>
     <meta name="robots" content="noindex, nofollow">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/fr.global.min.js'></script>
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/tailwind.css'); ?>">
+    <link rel="stylesheet" href="assets/icones.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/icones.css'); ?>">
+    <!-- FullCalendar 6.1.10, servi par le site : l'écran de planning ne dépend
+         plus d'un réseau de diffusion externe. Licence MIT. -->
+    <script src="assets/fullcalendar/index.global.min.js?v=<?php echo (int) @filemtime(__DIR__ . '/assets/fullcalendar/index.global.min.js'); ?>"></script>
+    <script src="assets/fullcalendar/fr.global.min.js?v=<?php echo (int) @filemtime(__DIR__ . '/assets/fullcalendar/fr.global.min.js'); ?>"></script>
     <style>
         .fc-event {
             cursor: pointer;
@@ -40,35 +42,70 @@ if (!isset($_SESSION['admin_id'])) {
             background-color: #1e40af !important;
             border-color: #1e3a8a !important;
         }
+
+        /* Sur un téléphone, la barre d'outils de FullCalendar dépasse sur la
+           droite : les boutons « Mois » et « Année » sortaient de l'écran et
+           devenaient inatteignables. On la laisse passer à la ligne. */
+        @media (max-width: 640px) {
+            .fc .fc-toolbar {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: .5rem;
+            }
+
+            .fc .fc-toolbar-title {
+                font-size: 1.1rem;
+            }
+
+            .fc .fc-button {
+                padding: .3rem .6rem;
+                font-size: .85rem;
+            }
+
+            /* Le titre du mois prend toute la largeur, les boutons se placent
+               dessous, de part et d'autre. */
+            .fc .fc-toolbar-chunk:nth-child(2) {
+                order: -1;
+                width: 100%;
+                text-align: center;
+            }
+
+            /* Des cases assez hautes pour qu'une réservation s'y lise. */
+            .fc .fc-daygrid-day-frame {
+                min-height: 3.2rem;
+            }
+        }
     </style>
 </head>
 
-<body class="bg-gray-50 h-screen flex flex-col">
+<body class="bg-gray-50 min-h-screen md:h-screen flex flex-col">
     <!-- Navbar -->
     <nav class="bg-white shadow-sm border-b border-gray-200 z-10">
         <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="index.php" class="flex items-center text-gray-500 hover:text-gray-900 mr-4">
+            <div class="flex items-center justify-between gap-2 h-16">
+                <div class="flex items-center min-w-0">
+                    <a href="index.php" class="flex items-center text-gray-500 hover:text-gray-900 mr-2 sm:mr-4 shrink-0">
                         <span class="material-symbols-outlined">arrow_back</span>
                     </a>
-                    <h1 class="text-xl font-bold text-gray-900">Calendrier</h1>
+                    <h1 class="text-base sm:text-xl font-bold text-gray-900 truncate">Calendrier</h1>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <button id="addEventBtn"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center shadow-sm">
-                        <span class="material-symbols-outlined mr-2">add</span> Nouvelle Réservation
+                <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                    <button id="addEventBtn" title="Nouvelle réservation"
+                        aria-label="Nouvelle réservation"
+                        class="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 flex items-center shadow-sm">
+                        <span class="material-symbols-outlined sm:mr-2">add</span>
+                        <span class="hidden sm:inline">Nouvelle Réservation</span>
                     </button>
-                    <a href="tarifs.php" class="text-gray-600 hover:text-gray-900 font-medium">Tarifs</a>
+                    <a href="tarifs.php" class="text-sm sm:text-base text-gray-600 hover:text-gray-900 font-medium">Tarifs</a>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="flex-1 p-4 overflow-hidden flex flex-col md:flex-row gap-4">
+    <div class="flex-1 p-4 md:overflow-hidden flex flex-col md:flex-row gap-4">
         <!-- Sidebar Legend/Tools -->
-        <div class="w-full md:w-64 bg-white rounded-lg shadow p-4 flex-shrink-0">
+        <div class="w-full md:w-64 bg-white rounded-lg shadow p-4 flex-shrink-0 order-2 md:order-1">
             <h3 class="font-bold text-gray-700 mb-4">Légende</h3>
             <div class="space-y-2">
                 <div class="flex items-center"><span class="w-4 h-4 rounded bg-green-500 mr-2"></span> Validée</div>
@@ -87,7 +124,7 @@ if (!isset($_SESSION['admin_id'])) {
         </div>
 
         <!-- Calendar Container -->
-        <div class="flex-1 bg-white rounded-lg shadow p-4 overflow-auto">
+        <div class="flex-1 bg-white rounded-lg shadow p-4 md:overflow-auto order-1 md:order-2">
             <div id='calendar' class="h-full"></div>
         </div>
     </div>
@@ -197,6 +234,10 @@ if (!isset($_SESSION['admin_id'])) {
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'fr', // French Locale
+                // Sans cela, la grille est dimensionnée d'après sa largeur :
+                // sur un téléphone elle tombait à 240 px de haut et les
+                // derniers jours du mois se retrouvaient coupés.
+                height: 'auto',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',

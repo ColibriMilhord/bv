@@ -21,9 +21,9 @@ $iframe_url = "$protocol://$host$path/iframe_calendar.php";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intégration Site - Administration</title>
     <meta name="robots" content="noindex, nofollow">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/tailwind.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/tailwind.css'); ?>">
+    <link rel="stylesheet" href="assets/icones.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/icones.css'); ?>">
+    <link rel="stylesheet" href="assets/inter/inter.css?v=<?php echo (int) @filemtime(__DIR__ . '/assets/inter/inter.css'); ?>">
 </head>
 
 <body class="bg-slate-50 min-h-screen font-sans">

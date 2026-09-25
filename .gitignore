@@ -18,3 +18,7 @@ tools/unsplash_candidates.html
 # Cache Python
 __pycache__/
 *.pyc
+
+# Dépendances du générateur de la feuille de style de l'administration
+tools/habillage-admin/node_modules/
+tools/habillage-admin/package-lock.json

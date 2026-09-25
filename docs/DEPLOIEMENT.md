@@ -99,7 +99,7 @@ bouton vert **« Code » → « Download ZIP »**. Décompresser sur votre ordin
 Copier le contenu du dossier décompressé vers la racine du site sur le serveur
 (`public_html/` ou équivalent), en écrasant les fichiers existants.
 
-**Quatre points de vigilance :**
+**Six points de vigilance :**
 
 1. **Les fichiers commençant par un point.** `config/.htaccess` et
    `ARCHIVE/.htaccess` protègent des dossiers sensibles. La plupart des clients
@@ -114,12 +114,19 @@ Copier le contenu du dossier décompressé vers la racine du site sur le serveur
    plus par un réseau de diffusion externe. Sans lui, la carte ne s'affiche
    pas — le reste de l'écran fonctionne.
 
-4. **Créer le dossier `cache/`** à la racine du site s'il n'existe pas, et le
+4. **Téléverser le dossier `admin/assets/`.** Même piège que le précédent, en
+   plus visible : il contient toute la mise en forme de l'administration
+   (feuille de style, police, icônes, calendrier). Sans lui, les écrans
+   d'administration s'affichent en texte brut, sans couleurs ni disposition.
+   Ce dossier est régénéré par les outils décrits dans
+   `tools/habillage-admin/README.md` ; il n'a pas à être modifié à la main.
+
+5. **Créer le dossier `cache/`** à la racine du site s'il n'existe pas, et le
    laisser accessible en écriture (permissions 755). Il sert au cache de
    l'agenda. En cas d'impossibilité, le site fonctionne quand même, simplement
    sans cache.
 
-5. **Les trois outils de diagnostic** (`diagnostic.php`, `debug-500.php`,
+6. **Les trois outils de diagnostic** (`diagnostic.php`, `debug-500.php`,
    `diagnostic-avis.php`) sont désormais protégés : ils exigent une session
    d'administrateur, ou la clé indiquée en clair au début de chaque fichier
    (`?cle=bellevue-diag`, `?cle=bellevue-debug`, `?cle=bellevue-avis`). Les
