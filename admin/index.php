@@ -2,6 +2,7 @@
 // admin/index.php
 session_start();
 require_once '../config/db.php';
+require_once '../config/notifications.php';
 
 // Auth Check
 if (!isset($_SESSION['admin_id'])) {
@@ -21,6 +22,9 @@ $next_checkin = $pdo->query("SELECT * FROM reservations WHERE statut = 'validee'
 
 // 4. Occupancy Rate (Next 30 days)
 // Simplified calculation
+
+// 5. La dernière notification est-elle partie ?
+$dernier_envoi = notifications_dernier();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -74,6 +78,30 @@ $next_checkin = $pdo->query("SELECT * FROM reservations WHERE statut = 'validee'
             </h2>
             <p class="text-slate-500">Voici un aperçu de l'activité de votre gîte.</p>
         </div>
+
+        <?php if ($dernier_envoi && !$dernier_envoi['ok']): ?>
+            <!-- Une panne d'envoi est silencieuse : elle doit se voir ici, sinon
+                 les demandes s'accumulent sans que personne ne le sache. -->
+            <div class="mb-8 rounded-lg border border-red-200 bg-red-50 px-5 py-4">
+                <h3 class="text-sm font-semibold text-red-800">
+                    La dernière demande n'a pas pu vous être envoyée par courriel
+                </h3>
+                <p class="mt-1 text-sm text-red-700">
+                    Réponse du serveur de messagerie :
+                    <span class="font-mono text-xs"><?php echo htmlspecialchars($dernier_envoi['detail'] ?: 'non précisée'); ?></span>
+                </p>
+                <p class="mt-2 text-sm text-red-700">
+                    <strong>Les demandes restent enregistrées</strong> — elles ne sont pas perdues.
+                    Consultez-les ci-dessous tant que l'envoi ne fonctionne pas, et vérifiez
+                    la chaîne dans <a href="settings.php" class="underline font-medium">Paramètres du Gîte</a>.
+                </p>
+                <?php if ($dernier_envoi['quand']): ?>
+                    <p class="mt-1 text-xs text-red-600">
+                        Constaté le <?php echo htmlspecialchars(date('d/m/Y à H\\hi', strtotime($dernier_envoi['quand']))); ?>.
+                    </p>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
         <!-- KPIs Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
