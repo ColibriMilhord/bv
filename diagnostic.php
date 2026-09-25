@@ -48,6 +48,16 @@ function verdict(&$lignes, $etat, $sujet, $detail = '')
     $lignes[] = ['etat' => $etat, 'sujet' => $sujet, 'detail' => $detail];
 }
 
+// ── 0. Version du site en ligne ────────────────────────────────────────────
+// La première question à se poser quand un correctif semble sans effet :
+// le serveur exécute-t-il bien la dernière version publiée ?
+if (is_file($racine . '/config/seo.php')) {
+    require_once $racine . '/config/seo.php';
+    $v = seo_version_texte();
+    verdict($lignes, 'info', 'Version du site en ligne',
+        $v !== '' ? $v : 'indéterminée — ni dépôt Git ni date de fichier lisibles');
+}
+
 // ── 1. Version de PHP ──────────────────────────────────────────────────────
 $version = PHP_VERSION;
 verdict(

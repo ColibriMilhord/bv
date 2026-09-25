@@ -5,6 +5,7 @@ require_once '../config/db.php';
 require_once '../config/mail_config.php';
 require_once '../config/notifications.php';
 require_once '../config/mail_smtp.php';
+require_once '../config/seo.php';   // pour seo_version_texte()
 
 if (!isset($_SESSION['admin_id'])) {
     header('Location: login.php');
@@ -267,6 +268,11 @@ $settings = $stmt->fetch();
                     <?php endif; ?>
                 </div>
             </div>
+
+            <p class="mt-6 text-center text-xs text-gray-400">
+                Version en ligne : <?php echo htmlspecialchars(seo_version_texte() ?: 'inconnue'); ?>
+                — à comparer au dernier enregistrement du dépôt si un réglage attendu n'apparaît pas.
+            </p>
         </div>
     </div>
 </body>
