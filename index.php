@@ -11,6 +11,7 @@ require_once 'config/stats.php';
 require_once 'config/tarifs.php';
 require_once 'config/antispam.php';
 require_once 'config/courriels.php';
+require_once 'config/demandes.php';
 
 // Avis Google : note, compteur et trois derniers avis (cache 12 h, repli
 // éditorial). Un incident sur ce bloc — réseau, cache en lecture seule,
@@ -153,18 +154,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $acompte_montant = $prix_total * (($settings['acompte_pourcentage'] ?? 30) / 100);
         }
 
-        // Insertion BDD
-        try {
-            // Horodatage calculé en PHP plutôt que par NOW() : la requête reste
-            // ainsi vérifiable hors MySQL, comme le reste des modules.
-            $pdo->prepare("INSERT INTO reservations (client_nom, client_email, client_tel, date_debut, date_fin, prix_total, acompte_montant, option_menage, client_message, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'attente', ?)")
-                ->execute([$client_nom, $client_email, $client_tel, $date_debut, $date_fin, $prix_total, $acompte_montant, $option_menage, $client_note, date('Y-m-d H:i:s')]);
-
-            // Identifiant retenu pour consigner, après l'envoi, si la demande
-            // a bien prévenu quelqu'un.
-            $demande_id  = (int) $pdo->lastInsertId();
-            $bookingData = ['nuits' => $nuits, 'total' => $prix_total];
-        } catch (Exception $e) {}
+        // ── Enregistrement de la demande ──
+        // La base est la seule trace qui ne dépend de rien. Si l'écriture
+        // échoue, config/demandes.php répare la table et retente ; en dernier
+        // recours l'échec est consigné dans le journal du serveur, jamais
+        // avalé en silence. L'horodatage est calculé en PHP plutôt que par
+        // NOW() : la requête reste ainsi vérifiable hors MySQL.
+        $demande_id = demandes_enregistrer($pdo, [
+            'nom'           => $client_nom,
+            'email'         => $client_email,
+            'telephone'     => $client_tel,
+            'date_debut'    => $date_debut,
+            'date_fin'      => $date_fin,
+            'prix_total'    => $prix_total,
+            'acompte'       => $acompte_montant,
+            'option_menage' => $option_menage,
+            'message'       => $client_note,
+            'recu_le'       => date('Y-m-d H:i:s'),
+        ]);
+        $bookingData = ['nuits' => $nuits, 'total' => $prix_total];
 
         // ── Les deux messages ──
         // Le texte et la mise en forme sortent de config/courriels.php : la
@@ -248,11 +256,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         if ($mailSent) {
             $bookingSuccess = true;
-        } else {
+        } elseif ($demande_id > 0) {
             error_log('[bellevue] aucune notification envoyée — ' . implode(' | ', $mail_errors));
             $errorMsg = "Votre demande est bien enregistrée, mais notre serveur de messagerie "
                       . "ne répond pas. Merci de nous appeler au " . SEO_PHONE_HUMAN
                       . " pour que nous la traitions sans attendre.";
+        } else {
+            // Ni écrite, ni envoyée : ne rien promettre au visiteur.
+            error_log('[bellevue] demande ni enregistrée ni envoyée — ' . implode(' | ', $mail_errors));
+            $errorMsg = "Nous n'avons pas pu enregistrer votre demande. Merci de nous appeler "
+                      . "au " . SEO_PHONE_HUMAN . ", ou de réessayer dans quelques minutes.";
         }
 
         $mailDebug = $mailSent ? "SMTP OK" : "SMTP FAIL";

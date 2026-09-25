@@ -159,31 +159,6 @@ function notifications_dernier(): ?array
     ];
 }
 
-/**
- * Ajoute à la table des réservations la colonne qui retient si la demande a
- * bien été notifiée. Idempotent, appelée depuis l'écran des demandes.
- *
- * Le témoin de notifications_marquer() ne retient que le dernier envoi, tous
- * clients confondus. Cette colonne, elle, reste attachée à chaque demande :
- * des mois plus tard, on sait encore laquelle n'a prévenu personne.
- */
-function notifications_migrer_suivi(?PDO $pdo): bool
-{
-    if (!$pdo) return false;
-
-    try {
-        $colonne = $pdo->query("SHOW COLUMNS FROM reservations LIKE 'notifie'")->fetch();
-
-        if (!$colonne) {
-            $pdo->exec("ALTER TABLE reservations ADD COLUMN notifie TINYINT(1) DEFAULT NULL");
-        }
-        return true;
-    } catch (PDOException $e) {
-        error_log('[bellevue] migration notifie : ' . $e->getMessage());
-        return false;
-    }
-}
-
 /** Retient si la demande a été notifiée aux propriétaires. */
 function notifications_marquer_demande(?PDO $pdo, int $id, bool $ok): void
 {

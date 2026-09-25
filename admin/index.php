@@ -3,6 +3,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../config/notifications.php';
+require_once '../config/demandes.php';
 
 // Auth Check
 if (!isset($_SESSION['admin_id'])) {
@@ -35,7 +36,7 @@ $dernier_envoi = notifications_dernier();
 //    plus d'un quart d'heure et toujours pas notifiée signale une panne
 //    d'envoi, même si plus personne ne se souvient de la dernière tentative.
 $sans_notification = 0;
-if (notifications_migrer_suivi($pdo)) {
+if (demandes_migrer($pdo)) {
     try {
         $stmt_muettes = $pdo->prepare(
             "SELECT COUNT(*) FROM reservations WHERE notifie = 0 AND created_at <= ?"

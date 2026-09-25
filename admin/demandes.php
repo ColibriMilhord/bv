@@ -10,6 +10,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../config/notifications.php';
+require_once '../config/demandes.php';
 require_once '../config/seo.php';   // pour seo_version_texte()
 
 if (!isset($_SESSION['admin_id'])) {
@@ -17,8 +18,41 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-// La colonne de suivi se crée seule à la première ouverture de cet écran.
-$suivi = notifications_migrer_suivi($pdo);
+// Les colonnes que le site écrit se créent seules à l'ouverture de cet écran.
+$suivi = demandes_migrer($pdo);
+
+// ── Suppression ──
+// En POST, et avec un jeton : une adresse qu'il suffirait de visiter pour
+// effacer une demande serait déclenchée par n'importe quel aperçu de lien.
+if (empty($_SESSION['jeton_demandes'])) {
+    $_SESSION['jeton_demandes'] = bin2hex(random_bytes(16));
+}
+
+$avis = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'supprimer') {
+    if (!hash_equals($_SESSION['jeton_demandes'], (string) ($_POST['jeton'] ?? ''))) {
+        $avis = "La demande n'a pas été effacée : la page avait expiré. Réessayez.";
+    } elseif (demandes_supprimer($pdo, (int) ($_POST['id'] ?? 0))) {
+        $avis = 'Demande effacée.';
+    } else {
+        $avis = "Cette demande n'a pas pu être effacée.";
+    }
+
+    // Redirection après écriture : un rafraîchissement ne rejoue pas la
+    // suppression.
+    $_SESSION['avis_demandes'] = $avis;
+    $vers = 'demandes.php';
+    if (!empty($_POST['filtre'])) {
+        $vers .= '?filtre=' . rawurlencode((string) $_POST['filtre']);
+    }
+    header('Location: ' . $vers);
+    exit;
+}
+
+if (!empty($_SESSION['avis_demandes'])) {
+    $avis = (string) $_SESSION['avis_demandes'];
+    unset($_SESSION['avis_demandes']);
+}
 
 $filtre = $_GET['filtre'] ?? 'toutes';
 if (!in_array($filtre, ['toutes', 'attente', 'non-notifiees'], true)) $filtre = 'toutes';
@@ -113,6 +147,12 @@ $nuits = function (?string $a, ?string $b): int {
             rien ne se perd.
         </p>
 
+        <?php if ($avis !== ''): ?>
+            <div class="mb-5 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                <?php echo $e($avis); ?>
+            </div>
+        <?php endif; ?>
+
         <?php if (!$suivi): ?>
             <div class="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 Le suivi des notifications n'a pas pu être installé dans la base&nbsp;: les demandes
@@ -160,9 +200,9 @@ $nuits = function (?string $a, ?string $b): int {
         <?php else: ?>
             <div class="space-y-4">
                 <?php foreach ($demandes as $d):
-                    $avec_dates = !empty($d['date_debut']) && !empty($d['date_fin']);
-                    $n = $avec_dates ? $nuits($d['date_debut'], $d['date_fin']) : 0;
-                    $tel_brut = preg_replace('/[^0-9+]/', '', (string) $d['client_tel']);
+                    $avec_dates = !empty(($d['date_debut'] ?? null)) && !empty(($d['date_fin'] ?? null));
+                    $n = $avec_dates ? $nuits(($d['date_debut'] ?? null), ($d['date_fin'] ?? null)) : 0;
+                    $tel_brut = preg_replace('/[^0-9+]/', '', (string) ($d['client_tel'] ?? ''));
                 ?>
                 <article class="rounded-lg border border-slate-200 bg-white overflow-hidden">
 
@@ -170,10 +210,10 @@ $nuits = function (?string $a, ?string $b): int {
                     <div class="flex flex-wrap items-start justify-between gap-3 px-4 sm:px-5 py-4 border-b border-slate-100">
                         <div class="min-w-0">
                             <h2 class="font-semibold text-slate-900 truncate">
-                                <?php echo $e($d['client_nom']); ?>
+                                <?php echo $e(($d['client_nom'] ?? '')); ?>
                             </h2>
                             <p class="text-xs text-slate-400 mt-0.5">
-                                Reçue le <?php echo $e(date('d/m/Y à H\\hi', strtotime((string) $d['created_at']))); ?>
+                                Reçue le <?php echo $e(date('d/m/Y à H\\hi', strtotime((string) ($d['created_at'] ?? '')))); ?>
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 shrink-0">
@@ -183,10 +223,10 @@ $nuits = function (?string $a, ?string $b): int {
                                 </span>
                             <?php endif; ?>
                             <span class="rounded-full px-2.5 py-0.5 text-xs font-medium <?php
-                                echo $d['statut'] === 'validee'
+                                echo ($d['statut'] ?? '') === 'validee'
                                     ? 'bg-green-100 text-green-700'
-                                    : ($d['statut'] === 'attente' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600');
-                            ?>"><?php echo $e($etat_lisible($d['statut'])); ?></span>
+                                    : (($d['statut'] ?? '') === 'attente' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600');
+                            ?>"><?php echo $e($etat_lisible(($d['statut'] ?? ''))); ?></span>
                         </div>
                     </div>
 
@@ -194,14 +234,14 @@ $nuits = function (?string $a, ?string $b): int {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 px-4 sm:px-5 py-4 text-sm">
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="material-symbols-outlined text-base text-slate-400 shrink-0">mail</span>
-                            <a href="mailto:<?php echo $e($d['client_email']); ?>"
-                               class="text-blue-600 hover:underline truncate"><?php echo $e($d['client_email']); ?></a>
+                            <a href="mailto:<?php echo $e(($d['client_email'] ?? '')); ?>"
+                               class="text-blue-600 hover:underline truncate"><?php echo $e(($d['client_email'] ?? '')); ?></a>
                         </div>
                         <?php if ($tel_brut !== ''): ?>
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-base text-slate-400 shrink-0">call</span>
                             <a href="tel:<?php echo $e($tel_brut); ?>"
-                               class="text-blue-600 hover:underline"><?php echo $e($d['client_tel']); ?></a>
+                               class="text-blue-600 hover:underline"><?php echo $e(($d['client_tel'] ?? '')); ?></a>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -210,18 +250,18 @@ $nuits = function (?string $a, ?string $b): int {
                     <div class="px-4 sm:px-5 pb-4 text-sm text-slate-700">
                         <?php if ($avec_dates): ?>
                             <p>
-                                Du <strong><?php echo $e($jolie_date($d['date_debut'])); ?></strong>
-                                au <strong><?php echo $e($jolie_date($d['date_fin'])); ?></strong>
+                                Du <strong><?php echo $e($jolie_date(($d['date_debut'] ?? null))); ?></strong>
+                                au <strong><?php echo $e($jolie_date(($d['date_fin'] ?? null))); ?></strong>
                                 <span class="text-slate-400">— <?php echo $n; ?> nuits</span>
                             </p>
                             <p class="text-slate-500 mt-1">
-                                <?php if ((float) $d['prix_total'] > 0): ?>
-                                    Montant estimé <?php echo number_format((float) $d['prix_total'], 0, ',', ' '); ?> €
-                                    <?php if ((float) $d['acompte_montant'] > 0): ?>
-                                        · acompte <?php echo number_format((float) $d['acompte_montant'], 0, ',', ' '); ?> €
+                                <?php if ((float) ($d['prix_total'] ?? 0) > 0): ?>
+                                    Montant estimé <?php echo number_format((float) ($d['prix_total'] ?? 0), 0, ',', ' '); ?> €
+                                    <?php if ((float) ($d['acompte_montant'] ?? 0) > 0): ?>
+                                        · acompte <?php echo number_format((float) ($d['acompte_montant'] ?? 0), 0, ',', ' '); ?> €
                                     <?php endif; ?>
                                 <?php endif; ?>
-                                <?php if (!empty($d['option_menage'])): ?>
+                                <?php if (!empty(($d['option_menage'] ?? 0))): ?>
                                     · ménage demandé
                                 <?php endif; ?>
                             </p>
@@ -230,18 +270,33 @@ $nuits = function (?string $a, ?string $b): int {
                         <?php endif; ?>
                     </div>
 
-                    <?php if (trim((string) $d['client_message']) !== ''): ?>
+                    <?php if (trim((string) ($d['client_message'] ?? '')) !== ''): ?>
                         <div class="mx-4 sm:mx-5 mb-4 rounded-md bg-slate-50 border-l-2 border-slate-300 px-4 py-3 text-sm text-slate-700 leading-relaxed">
-                            <?php echo nl2br($e(html_entity_decode((string) $d['client_message'], ENT_QUOTES, 'UTF-8'))); ?>
+                            <?php echo nl2br($e(html_entity_decode((string) ($d['client_message'] ?? ''), ENT_QUOTES, 'UTF-8'))); ?>
                         </div>
                     <?php endif; ?>
 
-                    <div class="px-4 sm:px-5 py-3 bg-slate-50 border-t border-slate-100">
-                        <a href="mailto:<?php echo $e($d['client_email']); ?>?subject=<?php
+                    <div class="px-4 sm:px-5 py-3 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                        <a href="mailto:<?php echo $e(($d['client_email'] ?? '')); ?>?subject=<?php
                                echo rawurlencode("Votre séjour à Bellevue d'Aveyron");
                            ?>" class="text-sm font-medium text-blue-600 hover:underline">
                             Répondre au client
                         </a>
+
+                        <form method="post" class="shrink-0"
+                              onsubmit="return confirm('Effacer définitivement la demande de <?php
+                                  echo $e(addslashes((string) ($d['client_nom'] ?? '')));
+                              ?> ? Cette page est la seule trace qui en reste.');">
+                            <input type="hidden" name="action" value="supprimer">
+                            <input type="hidden" name="id" value="<?php echo (int) ($d['id'] ?? 0); ?>">
+                            <input type="hidden" name="filtre" value="<?php echo $e($filtre); ?>">
+                            <input type="hidden" name="jeton" value="<?php echo $e($_SESSION['jeton_demandes']); ?>">
+                            <button type="submit"
+                                    class="inline-flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-red-600 transition">
+                                <span class="material-symbols-outlined text-base">delete</span>
+                                Effacer
+                            </button>
+                        </form>
                     </div>
                 </article>
                 <?php endforeach; ?>
