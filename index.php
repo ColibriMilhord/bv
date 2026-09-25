@@ -237,6 +237,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // parti. Auparavant elle l'était dans tous les cas : un visiteur
         // repartait rassuré alors que sa demande n'était arrivée nulle part.
         // La demande reste enregistrée en base, elle : elle n'est pas perdue.
+        // Le tableau de bord doit pouvoir dire, au premier coup d'œil, que les
+        // notifications ne partent plus : sans cela la panne reste invisible.
+        notifications_marquer($mailSent, $mailSent ? '' : implode(' | ', $mail_errors));
+
         if ($mailSent) {
             $bookingSuccess = true;
         } else {

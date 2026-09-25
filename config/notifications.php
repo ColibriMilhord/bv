@@ -102,3 +102,59 @@ function notifications_migrer(?PDO $pdo): bool
         return false;
     }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Mémoire du dernier envoi
+// ───────────────────────────────────────────────────────────────────────────
+// Une panne d'envoi est silencieuse par nature : le visiteur voit un message,
+// le journal du serveur une ligne que personne ne lit, et les demandes
+// s'accumulent sans que le propriétaire soit prévenu. Il a fallu une semaine
+// pour s'en apercevoir.
+//
+// L'issue de chaque notification est donc consignée dans un petit fichier, et
+// le tableau de bord affiche un bandeau tant que la dernière a échoué. Un
+// fichier plutôt qu'une table : aucune migration, et cela fonctionne même
+// quand la base est indisponible.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Emplacement du témoin. */
+function notifications_temoin(): string
+{
+    return __DIR__ . '/../cache/dernier-envoi.json';
+}
+
+/** Consigne l'issue de la dernière notification envoyée aux propriétaires. */
+function notifications_marquer(bool $ok, string $detail = ''): void
+{
+    $chemin = notifications_temoin();
+    $dossier = dirname($chemin);
+
+    if (!is_dir($dossier)) @mkdir($dossier, 0755, true);
+
+    @file_put_contents($chemin, json_encode([
+        'ok'     => $ok,
+        'detail' => mb_substr($detail, 0, 300),
+        'quand'  => date('c'),
+    ], JSON_UNESCAPED_UNICODE));
+}
+
+/**
+ * Issue de la dernière notification.
+ *
+ * @return array{ok:bool, detail:string, quand:string}|null null si rien n'a
+ *         encore été tenté, ou si le témoin n'est pas lisible.
+ */
+function notifications_dernier(): ?array
+{
+    $chemin = notifications_temoin();
+    if (!is_readable($chemin)) return null;
+
+    $donnees = json_decode((string) @file_get_contents($chemin), true);
+    if (!is_array($donnees) || !isset($donnees['ok'])) return null;
+
+    return [
+        'ok'     => (bool) $donnees['ok'],
+        'detail' => (string) ($donnees['detail'] ?? ''),
+        'quand'  => (string) ($donnees['quand'] ?? ''),
+    ];
+}
