@@ -36,6 +36,24 @@ function smtp_read($socket)
     return $data;
 }
 
+/**
+ * Dernière réponse du serveur à l'acceptation d'un message.
+ *
+ * Elle contient l'identifiant de file attribué par l'hébergeur, du type
+ * « 250 2.0.0 Ok: queued as 1A2B3C4D ». C'est la seule prise qui reste quand
+ * un message est accepté mais n'arrive jamais : muni de cet identifiant,
+ * l'assistance de l'hébergeur peut dire ce qu'il est devenu après la remise
+ * au relais — filtré, rejeté plus loin, ou distribué.
+ */
+function smtp_derniere_reponse(?string $valeur = null): string
+{
+    static $reponse = '';
+
+    if ($valeur !== null) $reponse = trim($valeur);
+
+    return $reponse;
+}
+
 /** Le code de réponse attendu est-il celui reçu ? */
 function smtp_code_est($reponse, $code)
 {
@@ -221,6 +239,8 @@ function send_smtp_mail($to, $subject, $message_content, $reply_to = '', $html =
 
     fputs($socket, "QUIT\r\n");
     fclose($socket);
+
+    smtp_derniere_reponse($finale);
 
     if (smtp_code_est($finale, 250)) return true;
 
