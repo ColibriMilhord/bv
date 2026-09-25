@@ -197,6 +197,44 @@ note sur 10 et la liste de ce qui manque encore. Viser 9 ou 10.
 
 ---
 
+## Le piège du renvoi automatique
+
+Après la levée de la première suspension, l'hébergeur a maintenu la
+restriction en invoquant des **erreurs répétées auprès de certains
+destinataires** — des rejets `550` renvoyés par les serveurs destinataires.
+
+Le site n'en est pas la cause : à ce stade, ses envois étaient eux-mêmes
+refusés. Le coupable le plus probable est le **renvoi automatique** posé sur la
+boîte : `reservation@bellevuedaveyron.fr` réexpédie tout ce qu'elle reçoit vers
+`accueil@bellevuedaveyron.com`, hébergée ailleurs.
+
+Le mécanisme est connu et redoutable :
+
+1. Un message indésirable arrive dans `reservation@`.
+2. Le renvoi le **réexpédie** vers l'adresse externe. Pour l'hébergeur, c'est
+   un envoi sortant de votre compte.
+3. Le serveur destinataire le rejette — parce que c'est un indésirable, ou
+   simplement parce qu'un message réexpédié échoue au contrôle d'authenticité :
+   l'enregistrement SPF de l'expéditeur d'origine n'autorise pas le serveur qui
+   réexpédie.
+4. Ce rejet est porté au débit de **votre** compte.
+
+Une boîte de contact publique reçoit des dizaines d'indésirables par semaine.
+Le renvoi les transforme en autant d'erreurs d'envoi, et la restriction ne peut
+jamais être levée.
+
+**Le remède : supprimer les renvois** (hPanel → Emails → Transferts) et
+consulter la boîte directement, par le webmail ou en la configurant sur son
+téléphone. Puis le signaler à l'hébergeur : c'est la preuve que la source des
+erreurs est tarie.
+
+**À vérifier aussi :** les destinataires réglés dans l'administration. Une
+adresse qui rejette systématiquement produit le même effet à chaque demande de
+séjour. Le bouton « Envoyer un message d'essai » des Paramètres du Gîte
+rapporte le sort de chacune.
+
+---
+
 ## Faut-il changer l'adresse d'envoi ?
 
 **Non.** Vous aviez posé la règle vous-même : l'expéditeur reste
