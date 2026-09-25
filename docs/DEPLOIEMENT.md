@@ -190,6 +190,36 @@ une valeur est erronée. C'est la cause dans la quasi-totalité des cas.
 
 ---
 
+## Faire noter la qualité de vos envois
+
+Un message peut être accepté par le serveur et n'arriver nulle part : filtré en
+route, ou rangé d'office dans les indésirables. Pour savoir où la chaîne casse,
+un service gratuit donne une note sur 10 et le détail de ce qui pèche.
+
+1. Ouvrir <https://www.mail-tester.com>. Le site affiche une **adresse jetable**
+   du type `test-a1b2c3@srv1.mail-tester.com`. La copier.
+2. Administration → **Paramètres du Gîte** → *Vérifier l'envoi* → coller
+   l'adresse dans « Envoyer plutôt à cette adresse », puis envoyer.
+3. Retourner sur mail-tester et cliquer sur **« Vérifiez votre score »**.
+
+Le message d'essai reprend exactement la mise en forme des accusés de réception
+adressés aux clients : la note porte donc sur ce qu'ils reçoivent vraiment.
+
+**Ce que le rapport dit, et ce qu'il faut en retenir :**
+
+| Rubrique | Attendu |
+|---|---|
+| SPF, DKIM, DMARC | Les trois au vert — ils sont en place sur le domaine |
+| Adresse IP en liste noire | Aucune. Une IP mutualisée peut souffrir des envois d'un voisin |
+| Contenu (SpamAssassin) | Score négatif ou proche de zéro |
+| Message correctement formé | Date, Message-ID, versions texte et HTML présentes |
+
+Une note inférieure à 7 explique à elle seule des messages qui n'arrivent pas.
+Au-dessus de 9, le problème est ailleurs : boîte du destinataire, renvoi
+automatique, ou filtrage propre à l'hébergeur.
+
+---
+
 ## Déploiement par Git — ce qu'il faut savoir
 
 L'hébergement est relié au dépôt : le contenu de la branche est copié tel quel
