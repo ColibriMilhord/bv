@@ -49,6 +49,13 @@ $bookingData    = [];
 $errorMsg       = '';
 $mailDebug      = '';
 
+// Ce que la confirmation à l'écran doit pouvoir dire, quoi qu'il arrive
+// ensuite au courriel.
+$reference_demande = '';   // « BVA-2026-0042 », la preuve tangible
+$mailSent          = false;  // les propriétaires ont-ils été prévenus ?
+$accuse_envoye     = false;  // le client a-t-il reçu son accusé ?
+$client_email      = '';
+
 // ── Dates réservées ──
 $booked_dates = [];
 if ($pdo) {
@@ -174,6 +181,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ]);
         $bookingData = ['nuits' => $nuits, 'total' => $prix_total];
 
+        // Le numéro de demande, calculé dès l'enregistrement : il figure à
+        // l'écran, dans les deux courriels et dans l'administration. C'est la
+        // seule chose que le visiteur puisse citer au téléphone si aucun
+        // courriel ne lui parvient.
+        $reference_demande = $demande_id > 0
+            ? 'BVA-' . date('Y') . '-' . str_pad((string) $demande_id, 4, '0', STR_PAD_LEFT)
+            : '';
+
         // ── Les deux messages ──
         // Le texte et la mise en forme sortent de config/courriels.php : la
         // page ne fabrique plus de corps de message. Chaque envoi part en deux
@@ -193,6 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'acompte'       => $acompte_montant,
             'option_menage' => $option_menage,
             'recu_le'       => date('d/m/Y à H\\hi'),
+            'reference'     => $reference_demande,
         ];
 
         $courriel_proprio = courriel_proprietaires($demande);
@@ -230,6 +246,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // envoi détournable. On ne l'émet que si la demande a bien été reçue
         // par les propriétaires — un robot n'obtient donc rien d'un formulaire
         // dont l'envoi principal a échoué.
+        $accuse_envoye = false;
+
         if ($mailSent) {
             $ack_result = send_smtp_mail(
                 $client_email,
@@ -239,28 +257,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $courriel_visiteur['html']
             );
 
-            if ($ack_result !== true) {
+            $accuse_envoye = ($ack_result === true);
+
+            if (!$accuse_envoye) {
                 error_log('[bellevue] accusé de réception en échec — ' . $ack_result);
             }
         }
 
         // ── Ce que voit le visiteur ────────────────────────────────────────
-        // La confirmation n'est affichée que si un message est réellement
-        // parti. Auparavant elle l'était dans tous les cas : un visiteur
-        // repartait rassuré alors que sa demande n'était arrivée nulle part.
-        // La demande reste enregistrée en base, elle : elle n'est pas perdue.
         // Le tableau de bord doit pouvoir dire, au premier coup d'œil, que les
         // notifications ne partent plus : sans cela la panne reste invisible.
         notifications_marquer($mailSent, $mailSent ? '' : implode(' | ', $mail_errors));
         notifications_marquer_demande($pdo, $demande_id ?? 0, $mailSent);
 
-        if ($mailSent) {
+        // La confirmation est due dès que la demande est enregistrée, et non
+        // seulement quand un courriel est parti. Un visiteur qui a rempli le
+        // formulaire doit repartir avec une certitude — pas avec un message
+        // rouge quand c'est notre messagerie qui flanche, ni avec une promesse
+        // creuse quand rien n'a été retenu.
+        //
+        // La certitude tient en un numéro : il figure à l'écran, dans le
+        // courriel, et dans l'administration. Le visiteur peut le citer au
+        // téléphone, et nous retrouvons sa demande même si aucun courriel
+        // n'est arrivé.
+        if ($demande_id > 0) {
             $bookingSuccess = true;
-        } elseif ($demande_id > 0) {
-            error_log('[bellevue] aucune notification envoyée — ' . implode(' | ', $mail_errors));
-            $errorMsg = "Votre demande est bien enregistrée, mais notre serveur de messagerie "
-                      . "ne répond pas. Merci de nous appeler au " . SEO_PHONE_HUMAN
-                      . " pour que nous la traitions sans attendre.";
+
+            if (!$mailSent) {
+                error_log('[bellevue] aucune notification envoyée — ' . implode(' | ', $mail_errors));
+            }
         } else {
             // Ni écrite, ni envoyée : ne rien promettre au visiteur.
             error_log('[bellevue] demande ni enregistrée ni envoyée — ' . implode(' | ', $mail_errors));
@@ -891,17 +916,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <!-- ══ MODALE SUCCÈS ══ -->
 
-<div class="modal-overlay <?php echo $bookingSuccess ? 'active' : ''; ?>" id="successModal">
+<div class="modal-overlay <?php echo $bookingSuccess ? 'active' : ''; ?>" id="successModal"
+     role="dialog" aria-modal="true" aria-labelledby="successModalTitre">
     <div class="modal-card">
         <div class="success-icon">✓</div>
-        <h3 style="font-family:'Cinzel',serif;color:var(--navy-deep);margin-bottom:15px;">Demande Reçue</h3>
-        <p style="color:#666;margin-bottom:20px;">
-            Merci pour l'intérêt que vous portez à notre gîte.<br>
-            Votre demande <?php echo (!empty($bookingData['nuits']) && $bookingData['nuits'] > 0) ? 'pour '.$bookingData['nuits'].' nuits' : 'd\'information'; ?> a bien été enregistrée.
-            <br><br>
-            Nous reviendrons vers vous au plus vite pour confirmer votre demande.
-            <br><br>
+        <h3 id="successModalTitre">Demande enregistrée</h3>
+
+        <p class="resa-confirm-intro">
+            Merci pour l'intérêt que vous portez à notre gîte. Votre demande
+            <?php echo (!empty($bookingData['nuits']) && $bookingData['nuits'] > 0)
+                ? 'de séjour pour ' . (int) $bookingData['nuits'] . ' nuits'
+                : "d'information"; ?>
+            est arrivée chez nous.
         </p>
+
+        <?php if ($reference_demande !== ''): ?>
+            <!-- Le numéro est la preuve tangible : il ne dépend d'aucun
+                 courriel, et permet de nous retrouver par téléphone. -->
+            <div class="resa-confirm-ref">
+                <span>Votre numéro de demande</span>
+                <strong><?php echo htmlspecialchars($reference_demande); ?></strong>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($accuse_envoye && $client_email !== ''): ?>
+            <p class="resa-confirm-detail">
+                Un accusé de réception vient de partir vers
+                <strong><?php echo htmlspecialchars($client_email); ?></strong>.
+                S'il tarde, pensez à regarder dans vos courriers indésirables.
+            </p>
+            <p class="resa-confirm-detail">Nous vous répondons sous 24&nbsp;heures.</p>
+
+        <?php elseif ($mailSent): ?>
+            <p class="resa-confirm-detail">
+                Nous avons bien été prévenus. L'accusé de réception n'a pas pu
+                partir vers votre adresse&nbsp;: notez votre numéro de demande,
+                il nous suffit pour vous retrouver.
+            </p>
+            <p class="resa-confirm-detail">Nous vous répondons sous 24&nbsp;heures.</p>
+
+        <?php else: ?>
+            <!-- Le courriel n'est pas parti. La demande, elle, est enregistrée :
+                 le dire franchement, et donner le téléphone. -->
+            <p class="resa-confirm-detail resa-confirm-alerte">
+                Votre demande est bien enregistrée sous ce numéro, mais notre
+                service de messagerie ne répond pas en ce moment&nbsp;: vous ne
+                recevrez pas d'accusé de réception par courriel.
+            </p>
+            <p class="resa-confirm-detail">
+                Pour être certain que nous la traitons sans attendre, appelez-nous
+                au <a href="tel:<?php echo htmlspecialchars(SEO_PHONE); ?>"><?php
+                    echo htmlspecialchars(SEO_PHONE_HUMAN);
+                ?></a> en citant votre numéro.
+            </p>
+        <?php endif; ?>
+
         <button onclick="document.getElementById('successModal').classList.remove('active')" class="btn-gold">Fermer</button>
     </div>
 </div>

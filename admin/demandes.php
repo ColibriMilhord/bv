@@ -123,6 +123,19 @@ $etat_lisible = function (?string $statut): string {
     return $mots[$statut] ?? ($statut !== '' ? $statut : '—');
 };
 
+/**
+ * Le numéro qu'a lu le client — « BVA-2026-0042 ».
+ *
+ * Il est reconstruit ici plutôt que stocké : c'est l'identifiant de la ligne
+ * et l'année de sa réception, rien de plus. Le client peut le citer au
+ * téléphone, et cette demande se retrouve d'un coup d'œil.
+ */
+$reference = function (int $id, string $recu_le): string {
+    if ($id <= 0) return '';
+    $annee = $recu_le !== '' ? date('Y', strtotime($recu_le)) : date('Y');
+    return 'BVA-' . $annee . '-' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+};
+
 $nuits = function (?string $a, ?string $b): int {
     $d1 = $a ? date_create($a) : null;
     $d2 = $b ? date_create($b) : null;
@@ -298,7 +311,10 @@ $nuits = function (?string $a, ?string $b): int {
                                 <?php echo $e(($d['client_nom'] ?? '')); ?>
                             </h2>
                             <p class="text-xs text-slate-400 mt-0.5">
-                                Reçue le <?php echo $e(date('d/m/Y à H\\hi', strtotime((string) ($d['created_at'] ?? '')))); ?>
+                                <span class="font-mono text-slate-500">
+                                    <?php echo $e($reference((int) ($d['id'] ?? 0), (string) ($d['created_at'] ?? ''))); ?>
+                                </span>
+                                · reçue le <?php echo $e(date('d/m/Y à H\\hi', strtotime((string) ($d['created_at'] ?? '')))); ?>
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 shrink-0">

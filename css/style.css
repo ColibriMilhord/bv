@@ -1013,6 +1013,79 @@ footer#footer-luxe::before {
     margin: 0 auto 20px;
 }
 
+/* ── Confirmation de demande ──────────────────────────────────────────────
+   Elle s'affiche dès que la demande est enregistrée, que le courriel soit
+   parti ou non : le visiteur ne doit jamais repartir dans le doute. */
+
+#successModalTitre {
+    font-family: 'Cinzel', serif;
+    color: var(--navy-deep);
+    margin-bottom: 15px;
+}
+
+.resa-confirm-intro {
+    color: #555;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.resa-confirm-ref {
+    background: #f7f4ee;
+    border: 1px dashed var(--gold-text);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+}
+
+.resa-confirm-ref span {
+    display: block;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a8070;
+    margin-bottom: 4px;
+}
+
+.resa-confirm-ref strong {
+    font-size: 1.35rem;
+    letter-spacing: 0.06em;
+    color: var(--navy-deep);
+    /* Sélectionnable d'un geste : le visiteur le copie ou le note. */
+    user-select: all;
+}
+
+.resa-confirm-detail {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.resa-confirm-detail a {
+    color: var(--navy-deep);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.resa-confirm-alerte {
+    background: #fdf4f3;
+    border-left: 3px solid #c0554a;
+    border-radius: 4px;
+    padding: 12px 14px;
+    text-align: left;
+    color: #8c3a31;
+}
+
+@media (max-width: 600px) {
+    .modal-card {
+        padding: 34px 22px;
+    }
+
+    .resa-confirm-ref strong {
+        font-size: 1.15rem;
+    }
+}
+
 @media (max-width: 900px) {
     .hero h1 {
         font-size: 2.5rem;

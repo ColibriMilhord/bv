@@ -306,13 +306,21 @@ function courriel_proprietaires(array $d): array
     $note  = trim((string) ($d['message'] ?? ''));
     $dates = !empty($d['has_dates']);
 
+    $reference = (string) ($d['reference'] ?? '');
+
     $sujet = $dates
         ? 'Demande de réservation — ' . $nom . ' (' . (int) ($d['nuits'] ?? 0) . ' nuits)'
         : 'Demande d\'information — ' . $nom;
+    if ($reference !== '') $sujet .= ' — ' . $reference;
 
     // ── Version texte ──
     $texte  = ($dates ? "DEMANDE DE RÉSERVATION" : "DEMANDE D'INFORMATION") . " — bellevuedaveyron.fr\n";
     $texte .= str_repeat('=', 52) . "\n\n";
+    if ($reference !== '') {
+        // Le même numéro qu'a lu le visiteur à l'écran : il peut l'appeler en
+        // le citant, et cette demande se retrouve aussitôt.
+        $texte .= "Numéro    : " . $reference . "\n\n";
+    }
     $texte .= "CLIENT\n";
     $texte .= "Nom       : " . $nom . "\n";
     $texte .= "E-mail    : " . $email . "\n";
@@ -332,6 +340,9 @@ function courriel_proprietaires(array $d): array
     $or   = COURRIEL_OR;
 
     $contenu  = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">';
+    if ($reference !== '') {
+        $contenu .= courriel_ligne('Numéro', '<strong>' . courriel_e($reference) . '</strong>');
+    }
     $contenu .= courriel_ligne('Nom', '<strong>' . courriel_e($nom) . '</strong>');
     $contenu .= courriel_ligne('E-mail',
         '<a href="mailto:' . courriel_e($email) . '" style="color:' . $or . ';text-decoration:none;">'
@@ -381,16 +392,22 @@ function courriel_proprietaires(array $d): array
  */
 function courriel_client(array $d): array
 {
-    $nom   = (string) ($d['nom'] ?? '');
-    $dates = !empty($d['has_dates']);
+    $nom       = (string) ($d['nom'] ?? '');
+    $dates     = !empty($d['has_dates']);
+    $reference = (string) ($d['reference'] ?? '');
 
     $sujet = "Nous avons bien reçu votre demande — Bellevue d'Aveyron";
+    if ($reference !== '') $sujet .= ' (' . $reference . ')';
 
     // ── Version texte ──
     $texte  = "Bonjour " . $nom . ",\n\n";
     $texte .= $dates
         ? "Nous avons bien reçu votre demande de réservation pour la villa Bellevue d'Aveyron, et nous vous en remercions.\n\n"
         : "Nous avons bien reçu votre demande d'information concernant la villa Bellevue d'Aveyron, et nous vous en remercions.\n\n";
+    if ($reference !== '') {
+        $texte .= "Votre demande porte le numéro " . $reference . ".\n";
+        $texte .= "Conservez-le : il nous suffit pour la retrouver si vous nous appelez.\n\n";
+    }
     $texte .= "RÉCAPITULATIF\n";
     $texte .= courriel_recap_texte($d, false) . "\n";
     $texte .= "LA SUITE\n";
@@ -414,6 +431,19 @@ function courriel_client(array $d): array
                   ? 'Nous avons bien reçu votre demande de réservation pour la villa, et nous vous en remercions.'
                   : 'Nous avons bien reçu votre demande d\'information concernant la villa, et nous vous en remercions.')
               . '</p>';
+
+    if ($reference !== '') {
+        // Encadré, centré, sélectionnable : c'est ce que le client relira.
+        $contenu .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+                  . 'style="margin:0 0 24px;"><tr><td align="center" '
+                  . 'style="background:#f7f4ee;border:1px dashed ' . COURRIEL_OR . ';border-radius:6px;padding:14px 18px;">'
+                  . '<span style="display:block;font-family:' . $sans . ';font-size:11px;letter-spacing:.08em;'
+                  . 'text-transform:uppercase;color:' . COURRIEL_DISCRET . ';padding-bottom:4px;">'
+                  . 'Votre numéro de demande</span>'
+                  . '<strong style="font-family:' . $sans . ';font-size:19px;letter-spacing:.06em;color:#1c2b3a;">'
+                  . courriel_e($reference) . '</strong>'
+                  . '</td></tr></table>';
+    }
 
     $contenu .= '<p style="margin:0 0 6px;font-family:' . $sans . ';font-size:12px;letter-spacing:.06em;'
               . 'text-transform:uppercase;color:' . COURRIEL_DISCRET . ';">Votre demande</p>';
