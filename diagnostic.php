@@ -307,6 +307,19 @@ foreach ($parcours as $fichier) {
     }
 }
 
+// Un « From: <> » suffit à faire rejeter un message comme non conforme. Il
+// survient dès que les secrets ne sont pas lus — après une mise en production,
+// par exemple, qui efface config/secrets.php.
+$expediteur = defined('SMTP_FROM') ? (string) SMTP_FROM : '';
+verdict(
+    $lignes,
+    filter_var($expediteur, FILTER_VALIDATE_EMAIL) ? 'ok' : 'ko',
+    "Adresse d'expédition (From)",
+    filter_var($expediteur, FILTER_VALIDATE_EMAIL)
+        ? $expediteur
+        : "absente ou mal formée — les messages porteraient un « From: <> », rejeté par les serveurs de messagerie"
+);
+
 verdict(
     $lignes,
     $suspects ? 'erreur' : 'ok',

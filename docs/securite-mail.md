@@ -343,6 +343,74 @@ soit réellement perdu.
 
 ---
 
+## La conformité du message lui-même
+
+Quatrième échange avec l'hébergeur. Cette fois il renvoie à la page de Google
+sur les messages non conformes (`RfcMessageNonCompliant`) et demande
+d'« inspecter le message généré par le site ».
+
+Le message a donc été capturé tel qu'il part, puis passé au crible des règles
+citées. Trois défauts, plus un quatrième latent :
+
+**1. Le sujet dépassait la limite des mots encodés.** La RFC 2047 borne chaque
+mot encodé à 75 caractères. Un sujet comme « Demande de réservation — Marie-
+Hélène Dubreuil-Fontanier (14 nuits) » produisait un mot unique de plus de
+cent caractères. C'est exactement le genre d'écart que relève un filtre
+automatique. Le sujet est désormais découpé en plusieurs mots encodés, repliés
+par un retour à la ligne suivi d'une espace, la découpe respectant les
+frontières des caractères UTF-8 — couper au milieu d'un « é » donnerait des
+losanges.
+
+**2. `From: <>` quand les secrets ne sont pas lus.** C'est le défaut le plus
+sérieux, et il correspond mot pour mot à la description de l'hébergeur : *une
+valeur vide ou mal formée*. Il survient dès que `config/secrets.php` est
+absent — **c'est-à-dire après chaque mise en production**, qui l'efface.
+L'envoi est maintenant refusé dans ce cas, avec un motif explicite, plutôt que
+de partir malformé. Le diagnostic et les Paramètres du Gîte le signalent en
+rouge.
+
+**3. `MAIL FROM: <adresse>` avec une espace.** La RFC 5321 écrit
+`MAIL FROM:<adresse>`, sans espace après les deux-points. La plupart des
+serveurs tolèrent, les plus stricts non.
+
+**4. Un nom d'affichage contenant une virgule ou un point.** Latent, mais à un
+réglage près : `From: Bellevue, gîte <reservation@…>` se lit, pour un
+analyseur, comme **deux** adresses — dont la première, « Bellevue », n'en est
+pas une. Le nom passe désormais entre guillemets dès qu'il contient un
+caractère « special » de la RFC 5322.
+
+### Ce qui a été vérifié
+
+La construction du message a été sortie de la fonction d'envoi : elle peut
+maintenant être examinée caractère par caractère sans ouvrir de connexion.
+Trois messages réels — demande de réservation, demande d'information, accusé
+de réception — ont été soumis à l'analyseur de messages de Python et à des
+contrôles explicites :
+
+| Contrôle | Résultat |
+|---|---|
+| Fins de ligne toutes en CRLF, aucun LF isolé | ✔ |
+| Lignes de 998 octets au maximum (RFC 5322 §2.1.1) | ✔ — 77 au plus |
+| Mots encodés de 75 caractères au maximum (RFC 2047 §2) | ✔ |
+| Exactement un `From:`, avec une adresse valide | ✔ |
+| `Date`, `To`, `Subject`, `Message-ID`, `MIME-Version` présents | ✔ |
+| `Message-ID` de la forme `<identifiant@domaine>` | ✔ |
+| `Date` analysable | ✔ |
+| Texte brut et HTML, dans cet ordre | ✔ |
+| Accents et ligne réduite à un point intacts à la relecture | ✔ |
+
+Neuf noms d'affichage hostiles (virgule, point, guillemets, deux-points,
+contre-oblique, vide, accentué) ont été relus par un analyseur : tous rendent
+une seule adresse, la bonne.
+
+### La pièce à fournir
+
+**Paramètres du Gîte → « Les en-têtes du message » → Afficher les en-têtes.**
+Le bouton montre ce que le site inscrit réellement, sans rien envoyer. C'est
+ce bloc qu'il faut joindre à une réclamation.
+
+---
+
 ## Faut-il changer l'adresse d'envoi ?
 
 **Non.** Vous aviez posé la règle vous-même : l'expéditeur reste

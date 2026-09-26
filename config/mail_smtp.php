@@ -62,7 +62,16 @@ function smtp_code_est($reponse, $code)
 
 /**
  * Encodage d'un en-tête contenant des caractères accentués.
+ *
  * Un en-tête ne transporte que de l'ASCII : le reste passe en base64 balisé.
+ * La RFC 2047 limite chaque mot encodé à 75 caractères, tout compris — une
+ * limite qu'un sujet tel que « Demande de réservation — Marie-Hélène
+ * Dubreuil-Fontanier (14 nuits) » dépassait largement, en un seul mot de
+ * plus de cent caractères. Les filtres le relèvent comme non conforme.
+ *
+ * Le texte est donc découpé en plusieurs mots encodés, repliés par un retour
+ * à la ligne suivi d'une espace. La découpe respecte les frontières des
+ * caractères UTF-8 : couper au milieu d'un « é » produirait des losanges.
  */
 function smtp_entete_encode($valeur)
 {
@@ -70,7 +79,62 @@ function smtp_entete_encode($valeur)
 
     if (preg_match('/^[\x20-\x7E]*$/', $valeur)) return $valeur;
 
-    return '=?UTF-8?B?' . base64_encode($valeur) . '?=';
+    // « =?UTF-8?B?…?= » coûte 12 caractères d'habillage. En limitant la
+    // source à 42 octets, le base64 en fait 56, le mot encodé 68, et la
+    // ligne « Subject: … » reste sous les 78 caractères que recommande la
+    // RFC 5322 — bien en deçà des 998 qu'elle impose.
+    $octets_max = 42;
+
+    $morceaux = [];
+    $courant  = '';
+
+    foreach (preg_split('//u', $valeur, -1, PREG_SPLIT_NO_EMPTY) as $caractere) {
+        if (strlen($courant) + strlen($caractere) > $octets_max) {
+            $morceaux[] = $courant;
+            $courant = '';
+        }
+        $courant .= $caractere;
+    }
+    if ($courant !== '') $morceaux[] = $courant;
+
+    foreach ($morceaux as &$morceau) {
+        $morceau = '=?UTF-8?B?' . base64_encode($morceau) . '?=';
+    }
+    unset($morceau);
+
+    return implode("\r\n ", $morceaux);
+}
+
+/**
+ * Nom d'affichage prêt à figurer devant une adresse.
+ *
+ * Une virgule dans ce nom suffit à tout casser : « From: Bellevue, gîte
+ * <reservation@…> » se lit, pour un analyseur, comme DEUX adresses — dont
+ * la première, « Bellevue », n'en est pas une. Le message devient non
+ * conforme sans que rien ne le laisse voir à l'œil nu. Le point et les
+ * deux-points posent le même problème.
+ *
+ * La RFC 5322 prévoit pour cela la chaîne entre guillemets. Un nom accentué,
+ * lui, part en mot encodé — qui n'a pas besoin de guillemets, et n'en veut
+ * pas.
+ */
+function smtp_nom_affichage($nom)
+{
+    $nom = trim(str_replace(["\r", "\n", "\0"], ' ', (string) $nom));
+    if ($nom === '') return '';
+
+    // Hors ASCII : l'encodage RFC 2047 neutralise déjà tout caractère gênant.
+    if (!preg_match('/^[\x20-\x7E]*$/', $nom)) {
+        return smtp_entete_encode($nom);
+    }
+
+    // Caractères « specials » de la RFC 5322 : leur présence impose les
+    // guillemets.
+    if (preg_match('/[()<>\[\]:;@,."\\\\]/', $nom)) {
+        return '"' . str_replace(['\\', '"'], ['\\\\', '\\"'], $nom) . '"';
+    }
+
+    return $nom;
 }
 
 /**
@@ -85,6 +149,68 @@ function smtp_corps_encode($texte)
     $texte = str_replace("\n", "\r\n", $texte);
 
     return quoted_printable_encode($texte);
+}
+
+/**
+ * Construit le message complet — en-têtes et corps — tel qu'il part sur le
+ * réseau, en CRLF.
+ *
+ * Séparée de l'envoi à dessein : un message peut ainsi être vérifié caractère
+ * par caractère sans ouvrir de connexion. L'hébergeur ayant mis en cause la
+ * conformité des en-têtes, c'était la première chose à rendre observable.
+ *
+ * @param array $champs destinataires, sujet, texte, html, reply_to, domaine
+ * @return string
+ */
+function smtp_message_construire(array $champs): string
+{
+    $destinataires = $champs['destinataires'];
+    $reply_to      = (string) ($champs['reply_to'] ?? '');
+    $html          = (string) ($champs['html'] ?? '');
+    $domaine       = (string) ($champs['domaine'] ?? 'bellevuedaveyron.fr');
+
+    $frontiere = 'bva_' . bin2hex(random_bytes(12));
+
+    // Un seul en-tête From, avec une adresse valide : c'est la première chose
+    // que vérifient les filtres, et un « From: <> » suffit à faire rejeter le
+    // message. Le nom d'affichage est facultatif ; l'adresse ne l'est pas.
+    $de = smtp_nom_affichage(SMTP_FROM_NAME);
+    $de = $de === '' ? '<' . SMTP_FROM . '>' : $de . ' <' . SMTP_FROM . '>';
+
+    $entetes  = "Date: " . date('r') . "\r\n";
+    $entetes .= "Message-ID: <" . bin2hex(random_bytes(12)) . '@' . $domaine . ">\r\n";
+    $entetes .= "From: " . $de . "\r\n";
+    $entetes .= "To: " . implode(', ', $destinataires) . "\r\n";
+    if ($reply_to !== '') {
+        $entetes .= "Reply-To: " . $reply_to . "\r\n";
+    }
+    $entetes .= "Subject: " . smtp_entete_encode((string) $champs['sujet']) . "\r\n";
+    $entetes .= "MIME-Version: 1.0\r\n";
+    $entetes .= "Auto-Submitted: auto-generated\r\n";
+
+    if ($html !== '') {
+        $entetes .= "Content-Type: multipart/alternative; boundary=\"$frontiere\"\r\n\r\n";
+
+        // L'ordre compte : la dernière variante est celle que le logiciel de
+        // messagerie affiche s'il sait la lire. Le texte vient donc d'abord.
+        $corps  = "--$frontiere\r\n";
+        $corps .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $corps .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
+        $corps .= smtp_corps_encode((string) $champs['texte']) . "\r\n";
+
+        $corps .= "--$frontiere\r\n";
+        $corps .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $corps .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
+        $corps .= smtp_corps_encode($html) . "\r\n";
+
+        $corps .= "--$frontiere--\r\n";
+    } else {
+        $entetes .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $entetes .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
+        $corps = smtp_corps_encode((string) $champs['texte']) . "\r\n";
+    }
+
+    return $entetes . $corps;
 }
 
 /**
@@ -125,6 +251,14 @@ function send_smtp_mail($to, $subject, $message_content, $reply_to = '', $html =
 
     $subject = str_replace(["\r", "\n"], ' ', (string) $subject);
 
+    // Sans secrets lisibles, SMTP_FROM est vide et le message partirait avec
+    // un « From: <> » — précisément ce que les filtres rejettent comme non
+    // conforme. Mieux vaut ne pas envoyer et le dire.
+    if (!filter_var(SMTP_FROM, FILTER_VALIDATE_EMAIL)) {
+        error_log('[bellevue] envoi refusé : adresse d\'expédition absente ou mal formée');
+        return "Adresse d'expédition absente ou mal formée (SMTP_FROM).";
+    }
+
     // Le domaine d'envoi sert au salut SMTP et à l'identifiant du message :
     // il vient de l'adresse d'expédition, jamais de l'en-tête Host, que le
     // visiteur contrôle.
@@ -156,7 +290,10 @@ function send_smtp_mail($to, $subject, $message_content, $reply_to = '', $html =
         return "Authentification SMTP échouée : " . trim($auth);
     }
 
-    fputs($socket, "MAIL FROM: <" . SMTP_FROM . ">\r\n");
+    // La RFC 5321 écrit « MAIL FROM:<adresse> », sans espace après les
+    // deux-points. La plupart des serveurs tolèrent l'espace ; les plus
+    // stricts ne le font pas, et rien n'oblige à le courir.
+    fputs($socket, "MAIL FROM:<" . SMTP_FROM . ">\r\n");
     $reponse = smtp_read($socket);
     if (!smtp_code_est($reponse, 250)) {
         fputs($socket, "QUIT\r\n");
@@ -168,7 +305,7 @@ function send_smtp_mail($to, $subject, $message_content, $reply_to = '', $html =
     // alors que le message n'allait nulle part.
     $acceptes = 0;
     foreach ($destinataires as $recipient) {
-        fputs($socket, "RCPT TO: <" . $recipient . ">\r\n");
+        fputs($socket, "RCPT TO:<" . $recipient . ">\r\n");
         $reponse = smtp_read($socket);
         if (smtp_code_est($reponse, 250) || smtp_code_est($reponse, 251)) {
             $acceptes++;
@@ -190,47 +327,19 @@ function send_smtp_mail($to, $subject, $message_content, $reply_to = '', $html =
         return "Le serveur a refusé les données : " . trim($reponse);
     }
 
-    // ── En-têtes ───────────────────────────────────────────────────────────
-    $frontiere = 'bva_' . bin2hex(random_bytes(12));
-
-    $entetes  = "Date: " . date('r') . "\r\n";
-    $entetes .= "Message-ID: <" . bin2hex(random_bytes(12)) . '@' . $domaine . ">\r\n";
-    $entetes .= "From: " . smtp_entete_encode(SMTP_FROM_NAME) . " <" . SMTP_FROM . ">\r\n";
-    $entetes .= "To: " . implode(', ', $destinataires) . "\r\n";
-    if ($reply_to) {
-        $entetes .= "Reply-To: $reply_to\r\n";
-    }
-    $entetes .= "Subject: " . smtp_entete_encode($subject) . "\r\n";
-    $entetes .= "MIME-Version: 1.0\r\n";
-    $entetes .= "Auto-Submitted: auto-generated\r\n";
-
-    if ($html !== '') {
-        $entetes .= "Content-Type: multipart/alternative; boundary=\"$frontiere\"\r\n\r\n";
-
-        // L'ordre compte : la dernière variante est celle que le logiciel de
-        // messagerie affiche s'il sait la lire. Le texte vient donc d'abord.
-        $corps  = "--$frontiere\r\n";
-        $corps .= "Content-Type: text/plain; charset=UTF-8\r\n";
-        $corps .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $corps .= smtp_corps_encode($message_content) . "\r\n";
-
-        $corps .= "--$frontiere\r\n";
-        $corps .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $corps .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $corps .= smtp_corps_encode($html) . "\r\n";
-
-        $corps .= "--$frontiere--\r\n";
-    } else {
-        $entetes .= "Content-Type: text/plain; charset=UTF-8\r\n";
-        $entetes .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $corps = smtp_corps_encode($message_content) . "\r\n";
-    }
+    $donnees = smtp_message_construire([
+        'destinataires' => $destinataires,
+        'sujet'         => $subject,
+        'texte'         => $message_content,
+        'html'          => $html,
+        'reply_to'      => $reply_to,
+        'domaine'       => $domaine,
+    ]);
 
     // ── Échappement du point ───────────────────────────────────────────────
     // Une ligne réduite à un point met fin aux données. Sans ce doublement,
     // un message contenant une telle ligne serait tronqué, et la suite prise
     // pour des commandes SMTP.
-    $donnees = $entetes . $corps;
     $donnees = str_replace("\r\n.", "\r\n..", $donnees);
     if (substr($donnees, 0, 1) === '.') $donnees = '.' . $donnees;
 

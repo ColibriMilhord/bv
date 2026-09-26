@@ -68,6 +68,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['essai_envoi'])) {
     }
 }
 
+// ── Les en-têtes tels qu'ils partent ──────────────────────────────────────
+// L'hébergeur a demandé d'« inspecter le message généré par le site ». Ce
+// bouton le montre, sans rien envoyer : un seul From avec une adresse valide,
+// l'adresse du visiteur en Reply-To, Date et Message-ID présents. C'est la
+// pièce à joindre à une réclamation.
+$entetes_exemple = '';
+$entetes_alerte  = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['voir_entetes'])) {
+    // Sans secrets lisibles, SMTP_FROM est vide et l'en-tête devient
+    // « From: <> » — le message que les filtres rejettent comme non conforme.
+    // C'est ce qui arrive après un déploiement, qui efface config/secrets.php.
+    if (!filter_var(SMTP_FROM, FILTER_VALIDATE_EMAIL)) {
+        $entetes_alerte = "L'adresse d'expédition est vide : les messages porteraient un "
+                        . "« From: <> » que les serveurs de messagerie rejettent. "
+                        . "Le fichier des secrets n'est pas lu — c'est ce qui se produit "
+                        . "après une mise en production, qui l'efface.";
+    }
+
+    $exemple = courriel_proprietaires([
+        'nom'           => 'Marie-Hélène Dubreuil-Fontanier',
+        'email'         => 'visiteur@exemple.fr',
+        'telephone'     => '06 12 34 56 78',
+        'message'       => "La piscine sera-t-elle chauffée fin août ?",
+        'has_dates'     => true,
+        'date_debut'    => '2026-08-01',
+        'date_fin'      => '2026-08-15',
+        'nuits'         => 14,
+        'prix_total'    => 4900,
+        'acompte'       => 1470,
+        'option_menage' => 1,
+        'recu_le'       => date('d/m/Y à H\\hi'),
+    ]);
+
+    $message = smtp_message_construire([
+        'destinataires' => notifications_destinataires(
+            $pdo->query("SELECT * FROM gite_settings WHERE id = 1")->fetch() ?: []
+        ),
+        'sujet'    => $exemple['sujet'],
+        'texte'    => $exemple['texte'],
+        'html'     => $exemple['html'],
+        'reply_to' => 'visiteur@exemple.fr',
+        'domaine'  => substr(strrchr(SMTP_FROM, '@'), 1) ?: 'bellevuedaveyron.fr',
+    ]);
+
+    // Seuls les en-têtes : le corps n'apprendrait rien et tiendrait dix écrans.
+    $coupure = strpos($message, "\r\n\r\n");
+    $entetes_exemple = $coupure === false ? $message : substr($message, 0, $coupure);
+}
+
 // Handle Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['essai_envoi'])) {
     $frais_menage = floatval($_POST['frais_menage']);
@@ -302,6 +351,41 @@ $settings = $stmt->fetch();
                             </p>
                         <?php endif; ?>
                     <?php endif; ?>
+
+                    <!-- ── En-têtes du message ────────────────────────────── -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="text-base font-medium text-gray-900">Les en-têtes du message</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Ce que le site inscrit en tête de chaque message, sans rien envoyer.
+                            À joindre à une réclamation lorsque l'hébergeur ou un service de
+                            messagerie met en cause la conformité du message.
+                        </p>
+
+                        <form method="POST" class="mt-3">
+                            <button type="submit" name="voir_entetes" value="1"
+                                class="w-full sm:w-auto inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Afficher les en-têtes
+                            </button>
+                        </form>
+
+                        <?php if ($entetes_alerte !== ''): ?>
+                            <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                                <?php echo htmlspecialchars($entetes_alerte); ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($entetes_exemple !== ''): ?>
+                            <pre class="mt-4 overflow-x-auto rounded-md bg-slate-900 text-green-300 text-xs p-4 leading-relaxed"><?php
+                                echo htmlspecialchars($entetes_exemple, ENT_QUOTES, 'UTF-8');
+                            ?></pre>
+                            <ul class="mt-3 text-sm text-gray-600 space-y-1 list-disc list-inside">
+                                <li>un seul <span class="font-mono">From:</span>, avec une adresse fixe du domaine ;</li>
+                                <li>l'adresse du visiteur en <span class="font-mono">Reply-To:</span>, jamais en expéditeur ;</li>
+                                <li><span class="font-mono">Date</span> et <span class="font-mono">Message-ID</span> présents, comme l'exige la RFC 5322 ;</li>
+                                <li>le sujet accentué découpé en mots encodés d'au plus 75 caractères.</li>
+                            </ul>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
 
