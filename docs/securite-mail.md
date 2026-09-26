@@ -235,6 +235,71 @@ rapporte le sort de chacune.
 
 ---
 
+## Le troisième blocage : `mail()` et la vieille copie du site
+
+Le 25 septembre, l'hébergeur a fermé l'envoi une troisième fois, avec cette
+fois une explication précise :
+
+> La vérification montre que `reservation@bellevuedaveyron.fr` est
+> opérationnelle, et que les DNS (MX, SPF, DKIM et DMARC) sont correctement
+> configurés. Le blocage concerne plutôt le service PHP `mail()`/Sendmail
+> utilisé par certains formulaires : il a été désactivé par mesure de
+> sécurité, car des scripts compromis peuvent l'exploiter pour envoyer
+> automatiquement de nombreux messages.
+
+Le site ne se sert pas de `mail()` : `config/mail_smtp.php` ouvre lui-même une
+session SMTP authentifiée vers `smtp.hostinger.com:465`. La remarque semblait
+donc à côté. Elle ne l'était pas.
+
+**Un fichier restait, que personne n'ouvrait plus :**
+`ARCHIVE/sauvedu08042026/index.php` — une copie de l'ancienne page d'accueil,
+conservée dans le dépôt, donc déployée sur le serveur. Ligne 156 :
+
+```php
+$headers .= "From: Bellevue d'Aveyron <no-reply@bellevuedaveyron.fr>\r\n";
+$headers .= "Reply-To: $client_email\r\n";   // ← valeur du formulaire
+$headers .= "Bcc: milhord@gmail.com\r\n";
+@mail($to, $subject, $message_html, $headers);
+```
+
+Tout y est réuni : un appel à `mail()`, une valeur venant du formulaire
+injectée telle quelle dans un en-tête — de quoi ajouter des destinataires — et
+un `@` qui masque les erreurs. C'est exactement le profil que décrit
+l'hébergeur : *un formulaire qui peut être détourné pour envoyer
+automatiquement de nombreux messages*.
+
+Deux `.htaccess` en interdisaient l'accès par le web. Mais un fichier présent
+sur le disque suffit à être relevé par un analyseur, et une protection Apache
+tombe à la moindre reconfiguration.
+
+Était également présente une bibliothèque `phpmailer/` qu'**aucune ligne du
+site n'appelait**, et dont le mode d'envoi par défaut est précisément
+`mail()` :
+
+```php
+public $Mailer = 'mail';   // phpmailer/PHPMailer.php, ligne 214
+```
+
+**Les deux dossiers ont été retirés du dépôt** (ils restent consultables dans
+l'historique Git : `git show <commit>:ARCHIVE/…`). `diagnostic.php` vérifie
+désormais qu'il n'en subsiste rien :
+
+> ✔ **Envoi par `mail()` / Sendmail** — aucun appel, sur 46 fichiers PHP
+> examinés ; tous les envois passent par SMTP authentifié
+> (smtp.hostinger.com:465)
+
+Le contrôle lit les fichiers avec l'analyseur lexical de PHP, et non avec une
+expression régulière : celle-ci signalait aussi bien un commentaire mentionnant
+`mail()` qu'une méthode d'objet portant ce nom. Seul un véritable appel à la
+fonction du langage compte. C'est la pièce à joindre à toute réclamation.
+
+**La leçon générale :** un dossier de sauvegarde dans la racine web n'est pas
+une sauvegarde, c'est une surface d'attaque. Le code mort y reste exécutable,
+sans personne pour le tenir à jour. Les sauvegardes se conservent hors du
+dossier public — ou, comme ici, dans l'historique du dépôt, qui n'est pas servi.
+
+---
+
 ## Faut-il changer l'adresse d'envoi ?
 
 **Non.** Vous aviez posé la règle vous-même : l'expéditeur reste

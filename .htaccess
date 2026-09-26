@@ -7,8 +7,7 @@
 # les scripts de maintenance.
 #
 # Ce fichier ferme ces accès. Il s'applique à la racine et à tous les
-# sous-dossiers ; les .htaccess de config/ et ARCHIVE/ restent en place, en
-# second rideau.
+# sous-dossiers ; le .htaccess de config/ reste en place, en second rideau.
 #
 # Rien ici ne modifie le fonctionnement du site : seules des adresses qui
 # n'auraient jamais dû répondre cessent de répondre.
@@ -34,11 +33,14 @@ Options -Indexes
     # ── Dossiers qui n'ont rien à faire sur le web ───────────────────────────
     #   docs/       documentation interne (dont le suivi de l'incident e-mail)
     #   tools/      scripts de maintenance
-    #   phpmailer/  bibliothèque, jamais appelée directement
     #   partials/   fragments inclus côté serveur
     #   cache/      cache applicatif
-    #   ARCHIVE/    anciennes versions du site
     #   config/     configuration et secrets
+    #
+    # ARCHIVE/ et phpmailer/ ont été retirés du dépôt : ils contenaient le
+    # seul appel à mail() du site, dans une vieille copie du formulaire. La
+    # règle les vise toujours, au cas où une copie subsisterait sur le serveur
+    # après une mise en production qui n'efface pas les fichiers disparus.
     RewriteRule ^(docs|tools|phpmailer|partials|cache|ARCHIVE|config)(/|$) - [F,L]
 </IfModule>
 

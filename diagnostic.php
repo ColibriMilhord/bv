@@ -103,6 +103,7 @@ $fichiers = [
     'config/annonces.php'     => true,
     'config/tarifs.php'       => true,
     'config/antispam.php'     => true,
+    'config/demandes.php'     => true,
     'config/.htaccess'        => false,
     'robots.txt'              => false,
     'sitemap.xml'             => false,
@@ -223,6 +224,101 @@ if (!is_dir($cache)) {
         is_writable($cache) ? 'accessible en écriture' : 'lecture seule — agenda et avis ne seront pas mis en cache'
     );
 }
+
+// ── 6 bis. Aucun envoi par mail() ──────────────────────────────────────────
+// L'hébergeur a fermé deux fois la boîte d'envoi en invoquant le service
+// PHP mail()/Sendmail, qu'un script compromis peut exploiter. Le site n'y
+// recourt pas : il ouvre lui-même une session SMTP authentifiée. Ce contrôle
+// le vérifie sur les fichiers réellement présents, et non sur ce que le dépôt
+// est censé contenir — c'est la pièce à fournir en cas de nouveau blocage.
+//
+// La lecture se fait avec l'analyseur lexical de PHP plutôt qu'avec une
+// expression régulière : celle-ci signalait aussi bien un commentaire
+// mentionnant mail() qu'une méthode d'objet portant ce nom. Ici, seul un
+// véritable appel à la fonction compte.
+
+/** Rend vrai si la source appelle la fonction mail() du langage. */
+function appelle_mail(string $source): bool
+{
+    $jetons = @token_get_all($source);
+    if (!$jetons) return false;
+
+    $precedent = null;   // dernier jeton signifiant rencontré
+
+    foreach ($jetons as $index => $jeton) {
+        if (!is_array($jeton) || $jeton[0] !== T_STRING || strtolower($jeton[1]) !== 'mail') {
+            if (is_array($jeton) && in_array($jeton[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;   // l'espace et les commentaires ne comptent pas
+            }
+            $precedent = $jeton;
+            continue;
+        }
+
+        // Écarté si le nom suit ->, ?->, ::, function ou new : ce n'est alors
+        // pas la fonction du langage mais une méthode, une déclaration ou une
+        // classe.
+        $ecarte = [T_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION, T_NEW];
+        if (defined('T_NULLSAFE_OBJECT_OPERATOR')) $ecarte[] = T_NULLSAFE_OBJECT_OPERATOR;
+
+        if (is_array($precedent) && in_array($precedent[0], $ecarte, true)) {
+            $precedent = $jeton;
+            continue;
+        }
+
+        // Suivi d'une parenthèse ouvrante : c'est bien un appel.
+        for ($k = $index + 1; isset($jetons[$k]); $k++) {
+            $suite = $jetons[$k];
+            if (is_array($suite) && in_array($suite[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) continue;
+            if ($suite === '(') return true;
+            break;
+        }
+
+        $precedent = $jeton;
+    }
+
+    return false;
+}
+
+// Les réglages SMTP ne servent ici qu'à nommer le serveur employé dans le
+// rapport ; aucun mot de passe n'est affiché ni aucune connexion ouverte.
+if (!defined('SMTP_HOST')) {
+    @require_once $racine . '/config/env.php';
+    @require_once $racine . '/config/mail_config.php';
+}
+
+$suspects = [];
+$examines = 0;
+$parcours = new RecursiveIteratorIterator(
+    new RecursiveCallbackFilterIterator(
+        new RecursiveDirectoryIterator($racine, FilesystemIterator::SKIP_DOTS),
+        function ($fichier) {
+            return !in_array($fichier->getFilename(), ['.git', 'node_modules'], true);
+        }
+    )
+);
+
+foreach ($parcours as $fichier) {
+    if (!$fichier->isFile() || strtolower($fichier->getExtension()) !== 'php') continue;
+    $examines++;
+
+    $source = @file_get_contents($fichier->getPathname());
+    if ($source !== false && appelle_mail($source)) {
+        $suspects[] = ltrim(str_replace($racine, '', $fichier->getPathname()), '/');
+    }
+}
+
+verdict(
+    $lignes,
+    $suspects ? 'erreur' : 'ok',
+    'Envoi par mail() / Sendmail',
+    $suspects
+        ? 'appel trouvé dans : ' . implode(', ', array_slice($suspects, 0, 5))
+          . (count($suspects) > 5 ? ' (+' . (count($suspects) - 5) . ')' : '')
+          . ' — à supprimer du serveur'
+        : 'aucun appel, sur ' . $examines . ' fichiers PHP examinés ; '
+          . 'tous les envois passent par SMTP authentifié'
+          . (defined('SMTP_HOST') ? ' (' . SMTP_HOST . ':' . SMTP_PORT . ')' : '')
+);
 
 // ── 7. Serveur de messagerie (sur demande) ─────────────────────────────────
 // Ce contrôle ouvre une vraie connexion et tente une authentification. Il
