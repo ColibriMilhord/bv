@@ -117,38 +117,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['voir_entetes'])) {
     $entetes_exemple = $coupure === false ? $message : substr($message, 0, $coupure);
 }
 
-// Handle Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['essai_envoi'])) {
-    $frais_menage = floatval($_POST['frais_menage']);
-    $acompte = intval($_POST['acompte']);
-    $check_in = $_POST['check_in'];
-    $check_out = $_POST['check_out'];
+// ── Enregistrement des réglages ───────────────────────────────────────────
+// Ce bloc ne répondait à aucun bouton en particulier : n'importe quel envoi
+// de cette page le déclenchait. Un second bouton ajouté depuis a donc écrasé
+// les réglages avec des champs vides — dont la liste des destinataires. Il
+// répond désormais au seul bouton « Enregistrer », et refuse un formulaire
+// auquel il manque un champ plutôt que d'écrire n'importe quoi.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['enregistrer_reglages'])) {
 
-    [$destinataires, $rejets] = notifications_parser($_POST['emails_destinataires'] ?? '');
+    $manquants = array_diff(
+        ['frais_menage', 'acompte', 'check_in', 'check_out'],
+        array_keys($_POST)
+    );
 
-    if ($colonne_destinataires) {
-        $stmt = $pdo->prepare("UPDATE gite_settings SET frais_menage = ?, acompte_pourcentage = ?, check_in = ?, check_out = ?, emails_destinataires = ? WHERE id = 1");
-        $ok = $stmt->execute([$frais_menage, $acompte, $check_in, $check_out, notifications_format($destinataires)]);
+    if ($manquants) {
+        $avertissement = "Formulaire incomplet : rien n'a été enregistré. "
+                       . "Champ(s) absent(s) : " . implode(', ', $manquants) . ".";
     } else {
-        $stmt = $pdo->prepare("UPDATE gite_settings SET frais_menage = ?, acompte_pourcentage = ?, check_in = ?, check_out = ? WHERE id = 1");
-        $ok = $stmt->execute([$frais_menage, $acompte, $check_in, $check_out]);
-        $avertissement = "Les montants sont enregistrés, mais la liste des destinataires n'a pas pu être sauvegardée : la colonne est absente de la base.";
-    }
+        $frais_menage = floatval($_POST['frais_menage']);
+        $acompte      = intval($_POST['acompte']);
+        $check_in     = $_POST['check_in'];
+        $check_out    = $_POST['check_out'];
 
-    if ($ok) {
-        $message = "Paramètres mis à jour avec succès.";
-    } else {
-        $message = "Erreur lors de la mise à jour.";
-    }
+        [$destinataires, $rejets] = notifications_parser($_POST['emails_destinataires'] ?? '');
 
-    if ($rejets) {
-        $avertissement .= ($avertissement ? ' ' : '')
-            . "Adresse(s) ignorée(s) car invalide(s) : " . implode(', ', $rejets) . ".";
-    }
-    if ($colonne_destinataires && !$destinataires) {
-        $avertissement .= ($avertissement ? ' ' : '')
-            . "Aucun destinataire valide : les demandes partiront vers les adresses par défaut ("
-            . implode(', ', notifications_defaut()) . ").";
+        if ($colonne_destinataires) {
+            $stmt = $pdo->prepare("UPDATE gite_settings SET frais_menage = ?, acompte_pourcentage = ?, check_in = ?, check_out = ?, emails_destinataires = ? WHERE id = 1");
+            $ok = $stmt->execute([$frais_menage, $acompte, $check_in, $check_out, notifications_format($destinataires)]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE gite_settings SET frais_menage = ?, acompte_pourcentage = ?, check_in = ?, check_out = ? WHERE id = 1");
+            $ok = $stmt->execute([$frais_menage, $acompte, $check_in, $check_out]);
+            $avertissement = "Les montants sont enregistrés, mais la liste des destinataires n'a pas pu être sauvegardée : la colonne est absente de la base.";
+        }
+
+        $message = $ok ? "Paramètres mis à jour avec succès." : "Erreur lors de la mise à jour.";
+
+        if ($rejets) {
+            $avertissement .= ($avertissement ? ' ' : '')
+                . "Adresse(s) ignorée(s) car invalide(s) : " . implode(', ', $rejets) . ".";
+        }
+        if ($colonne_destinataires && !$destinataires) {
+            $avertissement .= ($avertissement ? ' ' : '')
+                . "Aucun destinataire valide : les demandes partiront vers les adresses par défaut ("
+                . implode(', ', notifications_defaut()) . ").";
+        }
     }
 }
 
@@ -280,7 +292,7 @@ $settings = $stmt->fetch();
 
                     <div class="pt-5">
                         <div class="flex justify-end">
-                            <button type="submit"
+                            <button type="submit" name="enregistrer_reglages" value="1"
                                 class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Enregistrer
                             </button>

@@ -47,7 +47,13 @@ if (isset($_GET['edit'])) {
 }
 
 // Form Submission (Add or Update)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Le formulaire des périodes est le seul de cette page, mais un second bouton
+// ajouté un jour suffirait à déclencher l'écriture avec des champs vides :
+// les champs attendus sont donc exigés.
+$champs_periode = ['nom_saison', 'date_debut', 'date_fin', 'prix_semaine'];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && !array_diff($champs_periode, array_keys($_POST))) {
     $nom = $_POST['nom_saison'];
     $debut = $_POST['date_debut'];
     $fin = $_POST['date_fin'];

@@ -12,7 +12,7 @@ if (!isset($_SESSION['admin_id'])) {
 // Handle Actions (Validate, Refuse, Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    $id = intval($_POST['id']);
+    $id = (int) ($_POST['id'] ?? 0);
 
     if ($action === 'validate') {
         // Validate
