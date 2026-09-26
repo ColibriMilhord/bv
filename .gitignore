@@ -22,3 +22,6 @@ __pycache__/
 # Dépendances du générateur de la feuille de style de l'administration
 tools/habillage-admin/node_modules/
 tools/habillage-admin/package-lock.json
+
+# Demandes que la base a refusées : coordonnées de clients, jamais versionnées
+cache/demandes-perdues.jsonl

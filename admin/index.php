@@ -31,6 +31,11 @@ $next_checkin = $stmt_arrivee->fetch();
 // 5. La dernière notification est-elle partie ?
 $dernier_envoi = notifications_dernier();
 
+// 6 bis. Des demandes que la base a refusées attendent-elles dans le fichier
+//        de secours ? C'est l'alerte la plus urgente : ces clients-là n'ont
+//        reçu aucun accusé de réception.
+$perdues = demandes_perdues();
+
 // 6. Le témoin ci-dessus vit dans un fichier de cache : un déploiement peut
 //    l'effacer. La base, elle, garde la trace. Une demande enregistrée depuis
 //    plus d'un quart d'heure et toujours pas notifiée signale une panne
@@ -128,6 +133,21 @@ if (demandes_migrer($pdo)) {
                         Constaté le <?php echo htmlspecialchars(date('d/m/Y à H\\hi', strtotime($dernier_envoi['quand']))); ?>.
                     </p>
                 <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($perdues): ?>
+            <div class="mb-8 rounded-lg border border-red-300 bg-red-50 px-5 py-4">
+                <h3 class="text-sm font-semibold text-red-900">
+                    <?php echo count($perdues); ?>
+                    demande<?php echo count($perdues) > 1 ? 's' : ''; ?>
+                    refusée<?php echo count($perdues) > 1 ? 's' : ''; ?> par la base de données
+                </h3>
+                <p class="mt-1 text-sm text-red-800">
+                    Ces client<?php echo count($perdues) > 1 ? 's' : ''; ?> n'<?php echo count($perdues) > 1 ? 'ont' : 'a'; ?>
+                    reçu aucun accusé de réception. Le site a recopié leurs coordonnées :
+                    <a href="demandes.php" class="underline font-medium">rappelez-les depuis l'écran des demandes</a>.
+                </p>
             </div>
         <?php endif; ?>
 

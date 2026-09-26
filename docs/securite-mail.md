@@ -300,6 +300,49 @@ dossier public — ou, comme ici, dans l'historique du dépôt, qui n'est pas se
 
 ---
 
+## Les demandes d'information que la base refusait
+
+Le journal du 26 septembre a révélé autre chose :
+
+```
+[26-Sep-2026 04:11:14] [bellevue] demande non enregistrée :
+    SQLSTATE[23000] : Column 'date_debut' cannot be null
+[26-Sep-2026 04:11:57] [bellevue] demande non enregistrée :
+    SQLSTATE[23000] : Column 'date_debut' cannot be null
+```
+
+Le formulaire accepte deux usages : réserver des dates, ou simplement poser
+une question. La table, elle, avait été dessinée pour le premier seulement —
+`date_debut`, `date_fin` et `prix_total` y étaient déclarées `NOT NULL`. Toute
+demande d'information était donc **refusée par la base**.
+
+Sans la correction de la veille, ces deux demandes seraient parties dans le
+`catch` vide, sans laisser la moindre trace. Elles ont au moins laissé ces deux
+lignes — mais les clients, eux, étaient perdus.
+
+**Trois mesures :**
+
+1. `demandes_migrer()` lève la contrainte sur les colonnes qu'une demande
+   d'information laisse vides. Le type déclaré est relu puis réécrit tel quel :
+   seule la nullabilité change.
+2. L'enregistrement traite désormais `23000` comme un défaut réparable, au même
+   titre qu'une colonne absente : migration, puis nouvelle tentative.
+3. **Un dernier filet.** Si la base refuse malgré tout, la demande est recopiée
+   dans `cache/demandes-perdues.jsonl` — une ligne de JSON, avec le nom,
+   l'adresse, le téléphone et le message. Le tableau de bord l'annonce en rouge,
+   l'écran des demandes l'affiche en tête avec les coordonnées cliquables, et un
+   bouton vide la liste une fois les clients rappelés. Le fichier vit dans
+   `cache/`, fermé par le `.htaccess`, et n'est jamais versionné : il contient
+   des coordonnées.
+
+**Le principe :** une demande peut échouer à trois endroits — la base, le
+courriel, le réseau. Il faut qu'elle survive à chacun séparément. Elle est
+maintenant écrite en base, notifiée par courriel, et recopiée dans un fichier
+si la base se dérobe. Les trois devraient tomber ensemble pour qu'un client
+soit réellement perdu.
+
+---
+
 ## Faut-il changer l'adresse d'envoi ?
 
 **Non.** Vous aviez posé la règle vous-même : l'expéditeur reste

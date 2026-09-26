@@ -29,6 +29,18 @@ if (empty($_SESSION['jeton_demandes'])) {
 }
 
 $avis = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'oublier-perdues') {
+    if (!hash_equals($_SESSION['jeton_demandes'], (string) ($_POST['jeton'] ?? ''))) {
+        $_SESSION['avis_demandes'] = "La liste n'a pas été vidée : la page avait expiré. Réessayez.";
+    } else {
+        $_SESSION['avis_demandes'] = demandes_perdues_oublier()
+            ? 'Liste des demandes refusées vidée.'
+            : "La liste n'a pas pu être vidée.";
+    }
+    header('Location: demandes.php');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'supprimer') {
     if (!hash_equals($_SESSION['jeton_demandes'], (string) ($_POST['jeton'] ?? ''))) {
         $avis = "La demande n'a pas été effacée : la page avait expiré. Réessayez.";
@@ -53,6 +65,9 @@ if (!empty($_SESSION['avis_demandes'])) {
     $avis = (string) $_SESSION['avis_demandes'];
     unset($_SESSION['avis_demandes']);
 }
+
+// Demandes que la base avait refusées, relues du fichier de secours.
+$perdues = demandes_perdues();
 
 $filtre = $_GET['filtre'] ?? 'toutes';
 if (!in_array($filtre, ['toutes', 'attente', 'non-notifiees'], true)) $filtre = 'toutes';
@@ -192,6 +207,76 @@ $nuits = function (?string $a, ?string $b): int {
                 </a>
             <?php endforeach; ?>
         </div>
+
+        <?php if ($perdues): ?>
+            <section class="mb-6 rounded-lg border border-red-200 bg-red-50 overflow-hidden">
+                <div class="px-4 sm:px-5 py-4 border-b border-red-200">
+                    <h2 class="text-sm font-semibold text-red-900">
+                        <?php echo count($perdues); ?>
+                        demande<?php echo count($perdues) > 1 ? 's' : ''; ?>
+                        que la base a refusée<?php echo count($perdues) > 1 ? 's' : ''; ?>
+                    </h2>
+                    <p class="mt-1 text-sm text-red-800">
+                        Elles n'ont pas pu être écrites dans la base, mais rien n'est perdu :
+                        le site les a recopiées dans un fichier. Rappelez ces clients, puis
+                        signalez-le — le défaut qui les a bloquées est corrigé de lui-même
+                        à la première demande suivante.
+                    </p>
+                </div>
+
+                <?php foreach ($perdues as $p): ?>
+                    <div class="px-4 sm:px-5 py-4 border-b border-red-100 last:border-0 text-sm">
+                        <p class="font-semibold text-slate-900"><?php echo $e($p['nom'] ?? 'sans nom'); ?></p>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Reçue le <?php echo $e(isset($p['quand']) ? date('d/m/Y à H\hi', strtotime($p['quand'])) : '?'); ?>
+                        </p>
+
+                        <?php if (!empty($p['email'])): ?>
+                            <p class="mt-2">
+                                <a href="mailto:<?php echo $e($p['email']); ?>"
+                                   class="text-blue-600 hover:underline"><?php echo $e($p['email']); ?></a>
+                            </p>
+                        <?php endif; ?>
+                        <?php if (!empty($p['telephone'])): ?>
+                            <p>
+                                <a href="tel:<?php echo $e(preg_replace('/[^0-9+]/', '', (string) $p['telephone'])); ?>"
+                                   class="text-blue-600 hover:underline"><?php echo $e($p['telephone']); ?></a>
+                            </p>
+                        <?php endif; ?>
+
+                        <?php if (!empty($p['date_debut']) && !empty($p['date_fin'])): ?>
+                            <p class="mt-2 text-slate-700">
+                                Du <strong><?php echo $e($jolie_date($p['date_debut'])); ?></strong>
+                                au <strong><?php echo $e($jolie_date($p['date_fin'])); ?></strong>
+                            </p>
+                        <?php else: ?>
+                            <p class="mt-2 text-slate-500 italic">Demande d'information — aucune date précisée.</p>
+                        <?php endif; ?>
+
+                        <?php if (trim((string) ($p['message'] ?? '')) !== ''): ?>
+                            <div class="mt-2 rounded-md bg-white border-l-2 border-red-300 px-3 py-2 text-slate-700 leading-relaxed">
+                                <?php echo nl2br($e(html_entity_decode((string) $p['message'], ENT_QUOTES, 'UTF-8'))); ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <p class="mt-2 text-xs text-slate-400 font-mono break-all">
+                            <?php echo $e((string) ($p['motif'] ?? '')); ?>
+                        </p>
+                    </div>
+                <?php endforeach; ?>
+
+                <div class="px-4 sm:px-5 py-3">
+                    <form method="post"
+                          onsubmit="return confirm('Vider cette liste ? Ces coordonnées ne seront plus consultables ici.');">
+                        <input type="hidden" name="action" value="oublier-perdues">
+                        <input type="hidden" name="jeton" value="<?php echo $e($_SESSION['jeton_demandes']); ?>">
+                        <button type="submit" class="text-sm font-medium text-red-700 hover:underline">
+                            J'ai rappelé ces clients — vider la liste
+                        </button>
+                    </form>
+                </div>
+            </section>
+        <?php endif; ?>
 
         <?php if (!$demandes): ?>
             <div class="rounded-lg border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500">
