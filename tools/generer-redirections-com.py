@@ -16,7 +16,7 @@ for r in rows:
     lines.append(COND + f"    RewriteRule {motif} {new} {flags}\n")
 lines.append("    # Toute autre adresse de l'ancien site (accueil compris) : accueil du .fr.\n" + COND + "    RewriteRule ^ https://bellevuedaveyron.fr/ [R=301,L]\n")
 debut = "    # ── Migration de l'ancien site Wix bellevuedaveyron.com"
-fin = "    # www.bellevuedaveyron.fr → bellevuedaveyron.fr"
+fin = "    # ── Fichiers et dossiers cachés"
 s = open(ht, encoding='utf-8').read()
 i, j = s.index(debut), s.index(fin)
 entete = '''    # ── Migration de l'ancien site Wix bellevuedaveyron.com (2026-11-09) ─────

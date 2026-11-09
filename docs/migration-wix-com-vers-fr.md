@@ -37,7 +37,7 @@ autres → accueil.
 **Ne pas résilier le plan Premium Wix tant que l'étape 2 n'est pas faite** : sans plan, le domaine
 .com ne pointe plus sur rien, et les 301 disparaissent avec lui.
 
-## Étape 2 — À FAIRE quand vous voulez quitter Wix : le .com chez Hostinger
+## Étape 2 — À FAIRE AVANT de supprimer Wix : le .com chez Hostinger
 
 But : servir le .com depuis le même hébergement que le .fr, avec le `.htaccess` du dépôt, qui porte
 déjà **les mêmes redirections** (générées depuis le même CSV) **plus l'accueil en vraie 301** et un
@@ -59,13 +59,15 @@ que pour une requête arrivée chez Hostinger avec un nom en .com.
    puis **Paramètres › Changement d'adresse** vers `bellevuedaveyron.fr`. Ce n'est possible qu'avec
    la vraie 301 de l'accueil, donc après le point 3. C'est le signal le plus fort pour transférer le
    référencement. Bing Webmaster Tools a le même outil.
-5. Seulement ensuite, résilier le plan Premium Wix. Garder le **nom de domaine** .com au moins deux
+5. Seulement ensuite, résilier le plan Premium Wix et supprimer le site. Si le nom de domaine .com a
+   été acheté chez Wix, c'est un abonnement distinct du plan : le garder, ou le transférer chez
+   Hostinger, mais ne pas le laisser expirer. Garder le **nom de domaine** .com au moins deux
    ans : les liens et avis qui pointent vers lui continuent de servir.
 
 ## Côté .fr, en complément
 
-- `www.bellevuedaveyron.fr` part désormais en 301 vers `bellevuedaveyron.fr`. Règle limitée à ce
-  seul nom, elle ne touche pas au reste.
+- Rien n'est changé au fonctionnement du .fr : seules les requêtes arrivant avec un nom en .com sont
+  concernées par les règles ajoutées.
 - Remplacer le lien du site sur la fiche Google, Facebook, Instagram, Tourisme Aveyron, Petit Futé,
   Vivaweek, etc. : une 301 transmet, mais un lien direct vaut mieux.
 

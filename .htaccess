@@ -196,10 +196,6 @@ Options -Indexes
     RewriteCond %{HTTP_HOST} ^((www|en|es)\.)?bellevuedaveyron\.com$ [NC]
     RewriteRule ^ https://bellevuedaveyron.fr/ [R=301,L]
 
-    # www.bellevuedaveyron.fr → bellevuedaveyron.fr (sans toucher au reste).
-    RewriteCond %{HTTP_HOST} ^www\.bellevuedaveyron\.fr$ [NC]
-    RewriteRule ^(.*)$ https://bellevuedaveyron.fr/$1 [R=301,L]
-
     # ── Fichiers et dossiers cachés ──────────────────────────────────────────
     # .git en premier lieu : son contenu permet de reconstituer l'intégralité
     # du code et de son histoire, mots de passe d'alors compris. Également
