@@ -44,25 +44,34 @@ déjà **les mêmes redirections** (générées depuis le même CSV) **plus l'ac
 renvoi de toute autre adresse vers l'accueil. Ces règles sont inertes aujourd'hui : elles ne jouent
 que pour une requête arrivée chez Hostinger avec un nom en .com.
 
-1. **Le courrier d'abord.** `accueil@bellevuedaveyron.com` est votre adresse de contact. Avant de
-   toucher au domaine, relever chez son gestionnaire actuel ses enregistrements **MX, SPF (TXT),
-   DKIM, DMARC** et les reproduire à l'identique là où le domaine sera géré. Ne modifier que les
-   enregistrements du **site** (`@`, `www`, `en`, `es`). Une erreur ici coupe la réception des
-   demandes de réservation.
-2. Dans hPanel, ajouter `bellevuedaveyron.com` au même site que le .fr (domaine supplémentaire /
-   alias, **pas** un site séparé), avec le certificat SSL, puis faire pointer `@`, `www`, `en` et
-   `es` vers Hostinger.
-3. Vérifier en navigation privée : `https://www.bellevuedaveyron.com/tarifs` doit répondre
+Le nom de domaine `bellevuedaveyron.com` est **chez OVH** (propriétaire, 2026-11-09).
+
+1. **Savoir qui gère la zone DNS.** Espace client OVH › Noms de domaine › `bellevuedaveyron.com` ›
+   onglet **Serveurs DNS** :
+   - des serveurs `dns…ovh.net` / `ns…ovh.net` : la zone est chez OVH, passer au point 2 ;
+   - des serveurs Wix (`…wixdns.net`) : la zone, **courrier compris**, est chez Wix. Avant tout,
+     relever dans Wix (Domaines › Gérer les enregistrements DNS) **tous** les enregistrements, les
+     recréer à l'identique dans la zone OVH, puis seulement remettre les serveurs DNS d'OVH.
+     Sinon, la suppression de Wix emporte la messagerie.
+2. **Relever la zone avant de la toucher.** Onglet **Zone DNS** : faire une capture d'écran
+   complète. Les enregistrements **MX**, **SPF** (TXT `v=spf1…`), **DKIM** et **DMARC** font vivre
+   `accueil@bellevuedaveyron.com` : **on n'y touche pas**.
+3. **Côté Hostinger** : rattacher `bellevuedaveyron.com`, `www`, `en` et `es` au **même site** que le
+   .fr (domaine parqué ou alias, pas un site séparé), avec un certificat SSL qui couvre ces noms.
+   hPanel donne l'adresse IP (enregistrement A) ou la cible (CNAME) à utiliser.
+4. **Côté OVH, zone DNS** : modifier uniquement les enregistrements du site, qui pointent
+   aujourd'hui vers Wix : `@` (A), `www`, `en`, `es` (CNAME ou A), avec les valeurs données par
+   Hostinger. Supprimer l'éventuel second A de Wix sur `@`. Compter quelques heures de propagation.
+5. Vérifier en navigation privée : `https://www.bellevuedaveyron.com/tarifs` doit répondre
    « 301 » vers `https://bellevuedaveyron.fr/#tarifs` (outil en ligne de vérification d'en-têtes
    HTTP), et l'accueil du .com doit répondre 301 vers l'accueil du .fr.
-4. **Google Search Console** : ajouter la propriété `bellevuedaveyron.com` (si elle n'y est pas),
+6. **Google Search Console** : ajouter la propriété `bellevuedaveyron.com` (si elle n'y est pas),
    puis **Paramètres › Changement d'adresse** vers `bellevuedaveyron.fr`. Ce n'est possible qu'avec
-   la vraie 301 de l'accueil, donc après le point 3. C'est le signal le plus fort pour transférer le
+   la vraie 301 de l'accueil, donc après le point 5. C'est le signal le plus fort pour transférer le
    référencement. Bing Webmaster Tools a le même outil.
-5. Seulement ensuite, résilier le plan Premium Wix et supprimer le site. Si le nom de domaine .com a
-   été acheté chez Wix, c'est un abonnement distinct du plan : le garder, ou le transférer chez
-   Hostinger, mais ne pas le laisser expirer. Garder le **nom de domaine** .com au moins deux
-   ans : les liens et avis qui pointent vers lui continuent de servir.
+7. Seulement ensuite, résilier le plan Premium Wix et supprimer le site. Garder le nom de domaine
+   chez OVH, renouvellement automatique activé : s'il expire, le référencement transmis s'arrête.
+   Le garder au moins deux ans : les liens et les avis qui pointent vers lui continuent de servir.
 
 ## Côté .fr, en complément
 
